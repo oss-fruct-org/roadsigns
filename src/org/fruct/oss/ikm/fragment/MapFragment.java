@@ -1,0 +1,82 @@
+package org.fruct.oss.ikm.fragment;
+
+import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.route.RoadGraph;
+import org.fruct.oss.ikm.route.RoadGraphBuilder;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
+
+import android.content.Context;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+public class MapFragment extends Fragment {
+	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
+	
+	private RoadGraph roadGraph = RoadGraphBuilder.createSampleGraph();
+	private MapView mapView;
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setHasOptionsMenu(true);
+	}
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {		
+		return inflater.inflate(R.layout.map_fragment, container, false);
+	}
+	
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+	    inflater.inflate(R.menu.main, menu);
+	    super.onCreateOptionsMenu(menu, inflater);
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.action_search:
+			int dist = roadGraph.distanceToRoad(mapView.getMapCenter(), 0);
+			
+			Context context = getActivity();
+			Toast toast = Toast.makeText(context, "" + dist, Toast.LENGTH_SHORT);
+			toast.show();
+			return true;
+			
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		
+		Context context = getActivity();
+		
+		mapView = (MapView) getView().findViewById(R.id.map_view);
+	    mapView.setBuiltInZoomControls(true);
+	    
+	    mapView.getController().setZoom(13);
+	    mapView.getController().setCenter(PTZ);
+	   
+	    GpsMyLocationProvider provider = new GpsMyLocationProvider(context);
+	    IMyLocationProvider provider2 = new StubMyLocationProvider(mapView);
+	    
+	    MyLocationNewOverlay myLocationOverlay = new MyLocationNewOverlay(context, provider2, mapView);
+	    mapView.getOverlays().add(myLocationOverlay);
+	    myLocationOverlay.enableMyLocation(provider2);
+	}
+}

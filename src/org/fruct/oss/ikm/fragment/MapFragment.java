@@ -1,10 +1,17 @@
 package org.fruct.oss.ikm.fragment;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.route.RoadGraph;
-import org.fruct.oss.ikm.route.RoadGraphBuilder;
+import org.fruct.oss.ikm.graph.RoadGraph;
+import org.fruct.oss.ikm.poi.PointOfInterest;
+import org.fruct.oss.ikm.poi.PointProvider;
+import org.fruct.oss.ikm.poi.StubPointProvider;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.ItemizedIconOverlay;
+import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
@@ -23,7 +30,10 @@ import android.widget.Toast;
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	
-	private RoadGraph roadGraph = RoadGraphBuilder.createSampleGraph();
+	private PointProvider pointProvider = new StubPointProvider();
+	private List<PointOfInterest> points = pointProvider.getPoints(0, 0, 0);
+	private RoadGraph roadGraph = RoadGraph.createSampleGraph();
+	
 	private MapView mapView;
 	
 	@Override
@@ -34,7 +44,7 @@ public class MapFragment extends Fragment {
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {		
+			Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.map_fragment, container, false);
 	}
 	
@@ -69,7 +79,7 @@ public class MapFragment extends Fragment {
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 	    mapView.setBuiltInZoomControls(true);
 	    
-	    mapView.getController().setZoom(13);
+	    mapView.getController().setZoom(16);
 	    mapView.getController().setCenter(PTZ);
 	   
 	    GpsMyLocationProvider provider = new GpsMyLocationProvider(context);
@@ -78,5 +88,12 @@ public class MapFragment extends Fragment {
 	    MyLocationNewOverlay myLocationOverlay = new MyLocationNewOverlay(context, provider2, mapView);
 	    mapView.getOverlays().add(myLocationOverlay);
 	    myLocationOverlay.enableMyLocation(provider2);
+	    
+    	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
+	    for (PointOfInterest point : points) {
+	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
+	    }
+	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
+	    mapView.getOverlays().add(overlay);
 	}
 }

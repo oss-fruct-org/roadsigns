@@ -20,4 +20,8 @@ public class MapVertex extends Vertex {
 	public List<Road> getRoads() {
 		return roads;
 	}
+	
+	public GeoPoint getNode() {
+		return node;
+	}
 }

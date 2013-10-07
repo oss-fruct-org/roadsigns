@@ -4,7 +4,9 @@ import static java.lang.Math.sqrt;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.osmdroid.api.IGeoPoint;
@@ -137,6 +139,15 @@ public class RoadGraph extends Graph {
 		point.setRoad(road);
 		road.addPointOfInterest(point);
 	}
+	
+	public Road roadBetweenVertex(MapVertex v1, MapVertex v2) {
+		Set<Road> sv1 = new HashSet<Road>(v1.getRoads());
+		Set<Road> sv2 = new HashSet<Road>(v2.getRoads());
+		sv1.retainAll(sv2);
+		return sv1.iterator().next();
+	}
+	
+	
 	
 	public static RoadGraph createSampleGraph() {
 		RoadGraph graph = new RoadGraph();

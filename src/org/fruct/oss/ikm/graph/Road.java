@@ -34,4 +34,8 @@ public class Road
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public List<MapVertex> getPath() {
+		return road;
+	}
 }

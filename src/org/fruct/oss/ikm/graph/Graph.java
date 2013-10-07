@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.graph;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,10 +61,7 @@ public class Graph {
 		vertices.add(v);
 	}
 	
-	public List<Vertex> findPath(int fromId, int toId) {
-		Vertex from = vertices.get(fromId);
-		Vertex to = vertices.get(toId);
-		
+	public List<Vertex> findPath(Vertex from, Vertex to) {
 		Set<Vertex> closed = new HashSet<Vertex>();
 		PriorityQueue<Vertex> open = new PriorityQueue<Vertex>(8, new VertexComparator());
  		
@@ -82,7 +80,7 @@ public class Graph {
 					x = x.from;
 				}
 				ret.add(from);
-				
+				Collections.reverse(ret);
 				return ret;
 			}
 			
@@ -119,6 +117,12 @@ public class Graph {
 		}
 		
 		return null;
+	}
+	
+	public List<Vertex> findPath(int fromId, int toId) {
+		Vertex from = vertices.get(fromId);
+		Vertex to = vertices.get(toId);
+		return findPath(from, to);
 	}
 	
 	private int h(Vertex v) {

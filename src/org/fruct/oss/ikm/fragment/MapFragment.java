@@ -7,6 +7,7 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.graph.MapVertex;
 import org.fruct.oss.ikm.graph.Road;
 import org.fruct.oss.ikm.graph.RoadGraph;
+import org.fruct.oss.ikm.graph.Vertex;
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.fruct.oss.ikm.poi.PointProvider;
 import org.fruct.oss.ikm.poi.StubPointProvider;
@@ -62,12 +63,21 @@ public class MapFragment extends Fragment {
 		case R.id.action_search:
 			int[] out = new int[1];
 
-			
 			MapVertex cross = roadGraph.nearestCrossroad(mapView.getMapCenter(), out);
-			for (Road road : cross.getRoads()) {
-				for (PointOfInterest point : road.getPointsOfInterest()) {
-					Log.d("qwe", point.getName());
+			for (PointOfInterest point : points) {
+				List<Vertex> path = roadGraph.findPath(cross, point.getRoadVertex());
+				
+				Road road;
+				if (path.size() == 1) {
+					road = point.getRoad();
+				} else {
+					MapVertex v1 = (MapVertex) path.get(0);
+					MapVertex v2 = (MapVertex) path.get(1);
+					road = roadGraph.roadBetweenVertex(v1, v2);
 				}
+				
+				//Log.d("qwe", point.getName() + " " + path.size());
+				Log.d("qwe", point.getName() + " " + road.getName());
 			}
 
 			/*Context context = getActivity();

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.db.RoadOpenHelper;
 import org.fruct.oss.ikm.graph.MapVertex;
 import org.fruct.oss.ikm.graph.Road;
 import org.fruct.oss.ikm.graph.RoadGraph;
@@ -20,6 +21,8 @@ import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -36,7 +39,9 @@ public class MapFragment extends Fragment {
 	private PointProvider pointProvider = new StubPointProvider();
 	private List<PointOfInterest> points = pointProvider.getPoints(0, 0, 0);
 	private RoadGraph roadGraph = RoadGraph.createSampleGraph();
-	 
+	private RoadOpenHelper roadOpenHelper; 
+	private SQLiteDatabase sqlite;
+	
 	private MapView mapView;
 	
 	@Override
@@ -62,7 +67,7 @@ public class MapFragment extends Fragment {
 		switch (item.getItemId()) {
 		case R.id.action_search:
 			int[] out = new int[1];
-
+			long last = System.nanoTime();
 			MapVertex cross = roadGraph.nearestCrossroad(mapView.getMapCenter(), out);
 			for (PointOfInterest point : points) {
 				List<Vertex> path = roadGraph.findPath(cross, point.getRoadVertex());
@@ -79,7 +84,13 @@ public class MapFragment extends Fragment {
 				//Log.d("qwe", point.getName() + " " + path.size());
 				Log.d("qwe", point.getName() + " " + road.getName());
 			}
+			long curr = System.nanoTime();
+			Log.d("qwe", "" + (curr - last) / 1e9);
 
+			
+			//Cursor cursor = sqlite.rawQuery("select * from nodeways where nodeId=247347562", null);
+			//Log.d("qwe", "" + cursor.getColumnNames()[0]);
+			
 			/*Context context = getActivity();
 			Toast toast = Toast.makeText(context, text + " " + dist, Toast.LENGTH_SHORT);
 			toast.show();*/
@@ -96,6 +107,11 @@ public class MapFragment extends Fragment {
 		
 		Context context = getActivity();
 		
+		RoadOpenHelper.initialize(context.getApplicationContext());
+		roadOpenHelper = new RoadOpenHelper(context, null, 1);
+		sqlite = roadOpenHelper.getReadableDatabase();
+		roadGraph = RoadGraph.loadFromDatabase(sqlite);
+
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 	    mapView.setBuiltInZoomControls(true);
 	    

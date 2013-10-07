@@ -3,15 +3,18 @@ package org.fruct.oss.ikm.graph;
 import static java.lang.Math.sqrt;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 public class RoadGraph extends Graph {
@@ -157,16 +160,58 @@ public class RoadGraph extends Graph {
 		graph.addNode(61.797784,34.362291); // Kirova a			2
 		graph.addNode(61.784974,34.346541); // Lenina/Shotmana	3
 		graph.addNode(61.789072,34.341456); // Shotmana/Chapaeva	4
-		graph.addNode(61.778562,34.30766);// Chapaeva koltso		5
+		graph.addNode(61.778562,34.30766); // Chapaeva koltso		5
 		graph.addNode(61.772209,34.287146); // Chapaeva a			6
 		
-		graph.addRoad(new int[] {0, 1, 3}).setName("Lenina"); // Lenina
+		graph.addNode(61.789662,34.351131); // Antic a 				7
+		graph.addNode(61.787366,34.354371); // Antic/Lenina			8
+		graph.addNode(61.780579,34.363920); // Antic b				9
+		
+		graph.addRoad(new int[] {0, 1, 8, 3}).setName("Lenina"); // Lenina
 		graph.addRoad(new int[] {1, 2}).setName("Kirova"); // Kirova
 		graph.addRoad(new int[] {3, 4}).setName("Shotmana"); // Shotmana
 		graph.addRoad(new int[] {4, 5, 6}).setName("Chapaeva"); // Chapaeva
+		graph.addRoad(new int[] {7, 8, 9}).setName("Anticainena");
 		
 		graph.initialize();
 		
+		return graph;
+	}
+	
+	public static RoadGraph loadFromDatabase(SQLiteDatabase db) {
+		Map<Long, Integer> idsMap = new HashMap<Long, Integer>();
+		RoadGraph graph = new RoadGraph();
+		
+		int ctr = 0;
+		Cursor nodes = db.rawQuery("select * from nodes", null);
+		while (nodes.moveToNext()) {
+			long id = nodes.getLong(0);
+			double lat = nodes.getDouble(1);
+			double lon = nodes.getDouble(2);
+
+			graph.addNode(lat, lon);
+			idsMap.put(id, ctr++);
+		}
+		nodes.close();
+		
+		Cursor ways = db.rawQuery("select * from ways", null);
+		while (ways.moveToNext()) {
+			long wayId = ways.getLong(0);
+			String name = ways.getString(1);
+			String[] args = new String[] {String.valueOf(wayId)};
+			
+			Cursor nodeways = db.rawQuery("select id  from nodes inner join nodeways  on nodes.id = nodeways.nodeId  where wayId = ?  order by nodeways.rowid;", args);
+			ctr = 0;
+			int[] ids = new int[nodeways.getCount()];
+			while (nodeways.moveToNext()) {
+				ids[ctr++] = idsMap.get(Long.valueOf(nodeways.getLong(0)));
+			}
+			nodeways.close();
+			graph.addRoad(ids).setName(name);
+		}
+		ways.close();
+		
+		graph.initialize();
 		return graph;
 	}
 }

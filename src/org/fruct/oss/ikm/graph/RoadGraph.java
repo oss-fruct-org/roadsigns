@@ -3,26 +3,21 @@ package org.fruct.oss.ikm.graph;
 import static java.lang.Math.sqrt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
 import android.util.Log;
 
-class MapVertex extends Vertex {
-	GeoPoint node;
-
-	public MapVertex(GeoPoint node) {
-		this.node = node;
-	}
-
-}
-
 public class RoadGraph extends Graph {
-	private List<List<MapVertex>> roads = new ArrayList<List<MapVertex>>();
+	private List<Road> roads = new ArrayList<Road>();
+	private List<PointOfInterest> poi = new ArrayList<PointOfInterest>();
+	private List<MapVertex> crossroads = new ArrayList<MapVertex>();
 	
-	public List<MapVertex> getRoad(int id) {
+	public Road getRoad(int id) {
 		return roads.get(id);
 	}
 	
@@ -38,15 +33,17 @@ public class RoadGraph extends Graph {
 		int p = (c + a + b) / 2;
 		int h = (int) (2 * sqrt(p) * sqrt(p - a) * sqrt(p - b) * sqrt(p - c) / c);
 		
-		Log.d("qwe", String.format("Triangle %d %d %d %d %d", a, b, c, h, p));
-									
 		return h;
 	}
 	
 	public int distanceToRoad(IGeoPoint p, int id) {
+		return distanceToRoad(p, roads.get(id));
+	}
+	
+	public int distanceToRoad(IGeoPoint p, Road r) {
 		int min = 40075000;
-
-		List<MapVertex> road = roads.get(id);
+		
+		List<MapVertex> road = r.road;
 		for (int i = 0; i < road.size() - 1; i++) {
 			GeoPoint a = road.get(i).node;
 			GeoPoint b = road.get(i + 1).node;
@@ -60,8 +57,48 @@ public class RoadGraph extends Graph {
 		return min;
 	}
 	
-	public void addRoad(int... nodes) {
+	public Road nearestRoad(IGeoPoint p, int[] dist_out) {
+		Road ret = null;
+		int min = 0;
+		
+		for (Road road : roads) {
+			int d = distanceToRoad(p, road);
+
+			if (d < min || ret == null) {
+				ret = road;
+				min = d;
+			}
+		}
+		
+		if (dist_out != null && dist_out.length > 0)
+			dist_out[0] = min;
+		
+		return ret;
+	}
+	
+	public MapVertex nearestCrossroad(IGeoPoint p, int[] dist_out) {
+		MapVertex ret = null;
+		int min = 0;
+		
+		for (MapVertex mv : crossroads) {
+			int d = mv.node.distanceTo(p);
+			
+			if (d < min || ret == null) {
+				ret = mv;
+				min = d;
+			}
+		}
+		
+		if (dist_out != null && dist_out.length > 0) {
+			dist_out[0] = min;
+		}
+		
+		return ret;
+	}
+	
+	public Road addRoad(int... nodes) {
 		List<MapVertex> road = new ArrayList<MapVertex>();
+		Road ret = new Road(road);
 		
 		for (int i = 0; i < nodes.length - 1; i++) {
 			int n1 = nodes[i];
@@ -70,15 +107,35 @@ public class RoadGraph extends Graph {
 			MapVertex v1 = (MapVertex) vertices.get(n1);
 			MapVertex v2 = (MapVertex) vertices.get(n2);
 			addEdge(v1, v2, v1.node.distanceTo(v2.node));
+
 			road.add(v1);
+			v1.addRoad(ret);
 		}
 		
-		road.add((MapVertex) vertices.get(vertices.size() - 1));
-		roads.add(road);
+		MapVertex lastVertex = (MapVertex) vertices.get(nodes[nodes.length - 1]);
+		road.add(lastVertex);
+		lastVertex.addRoad(ret);
+		roads.add(ret);
+		return ret;
+	}
+
+	private void initialize() {
+		for (Vertex v : vertices) {
+			MapVertex mv = (MapVertex) v;
+			if (mv.getRoads().size() > 1)
+				crossroads.add(mv);
+		}
 	}
 	
 	public void addNode(double lat, double lon) {
 		addVertex(new MapVertex(new GeoPoint(lat, lon)));
+	}
+	
+	public void addPointOfInterest(PointOfInterest point) {
+		poi.add(point);
+		Road road = nearestRoad(point.toPoint(), null);
+		point.setRoad(road);
+		road.addPointOfInterest(point);
 	}
 	
 	public static RoadGraph createSampleGraph() {
@@ -92,10 +149,12 @@ public class RoadGraph extends Graph {
 		graph.addNode(61.778562,34.30766);// Chapaeva koltso		5
 		graph.addNode(61.772209,34.287146); // Chapaeva a			6
 		
-		graph.addRoad(new int[] {0, 1, 3}); // Lenina
-		graph.addRoad(new int[] {1, 2}); // Kirova
-		graph.addRoad(new int[] {3, 4}); // Shotmana
-		graph.addRoad(new int[] {4, 5, 6}); // Chapaeva
+		graph.addRoad(new int[] {0, 1, 3}).setName("Lenina"); // Lenina
+		graph.addRoad(new int[] {1, 2}).setName("Kirova"); // Kirova
+		graph.addRoad(new int[] {3, 4}).setName("Shotmana"); // Shotmana
+		graph.addRoad(new int[] {4, 5, 6}).setName("Chapaeva"); // Chapaeva
+		
+		graph.initialize();
 		
 		return graph;
 	}

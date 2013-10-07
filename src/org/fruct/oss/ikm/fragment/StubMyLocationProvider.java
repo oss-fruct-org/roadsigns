@@ -60,5 +60,4 @@ public class StubMyLocationProvider implements IMyLocationProvider, Runnable {
 	public void stopLocationProvider() {
 		cont = false;
 	}
-
 }

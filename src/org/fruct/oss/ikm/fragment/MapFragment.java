@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.graph.MapVertex;
+import org.fruct.oss.ikm.graph.Road;
 import org.fruct.oss.ikm.graph.RoadGraph;
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.fruct.oss.ikm.poi.PointProvider;
@@ -19,13 +21,13 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
@@ -33,7 +35,7 @@ public class MapFragment extends Fragment {
 	private PointProvider pointProvider = new StubPointProvider();
 	private List<PointOfInterest> points = pointProvider.getPoints(0, 0, 0);
 	private RoadGraph roadGraph = RoadGraph.createSampleGraph();
-	
+	 
 	private MapView mapView;
 	
 	@Override
@@ -58,11 +60,19 @@ public class MapFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_search:
-			int dist = roadGraph.distanceToRoad(mapView.getMapCenter(), 0);
+			int[] out = new int[1];
+
 			
-			Context context = getActivity();
-			Toast toast = Toast.makeText(context, "" + dist, Toast.LENGTH_SHORT);
-			toast.show();
+			MapVertex cross = roadGraph.nearestCrossroad(mapView.getMapCenter(), out);
+			for (Road road : cross.getRoads()) {
+				for (PointOfInterest point : road.getPointsOfInterest()) {
+					Log.d("qwe", point.getName());
+				}
+			}
+
+			/*Context context = getActivity();
+			Toast toast = Toast.makeText(context, text + " " + dist, Toast.LENGTH_SHORT);
+			toast.show();*/
 			return true;
 			
 		default:
@@ -92,6 +102,7 @@ public class MapFragment extends Fragment {
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
 	    for (PointOfInterest point : points) {
 	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
+	    	roadGraph.addPointOfInterest(point);
 	    }
 	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
 	    mapView.getOverlays().add(overlay);

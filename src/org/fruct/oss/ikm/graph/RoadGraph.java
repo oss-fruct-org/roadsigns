@@ -150,8 +150,6 @@ public class RoadGraph extends Graph {
 		return sv1.iterator().next();
 	}
 	
-	
-	
 	public static RoadGraph createSampleGraph() {
 		RoadGraph graph = new RoadGraph();
 		

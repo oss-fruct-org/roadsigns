@@ -2,12 +2,12 @@ package org.fruct.oss.ikm.graph;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+
+import org.osmdroid.util.GeoPoint;
 
 class Edge {
 	Edge(Vertex v1, Vertex v2, int d) {
@@ -36,6 +36,7 @@ class VertexComparator implements java.util.Comparator<Vertex> {
 public class Graph {
 	protected List<Vertex> vertices = new ArrayList<Vertex>();
 	protected List<Edge> edges = new ArrayList<Edge>();
+	protected int time = 0;
 	
 	public void addEdge(int v1, int v2, int d) {
 		Vertex vv1 = vertices.get(v1);
@@ -62,14 +63,17 @@ public class Graph {
 	}
 	
 	public List<Vertex> findPath(Vertex from, Vertex to) {
+		time++;
 		Set<Vertex> closed = new HashSet<Vertex>();
 		PriorityQueue<Vertex> open = new PriorityQueue<Vertex>(8, new VertexComparator());
  		
 		from.from = null;
 		from.g = 0;
-		from.h = h(from);
+		from.h = h(from, to);
 		from.f = from.g + from.h;
+		
 		open.add(from);
+		from.open(time);
 		
 		while (!open.isEmpty()) {
 			Vertex x = open.peek();
@@ -86,17 +90,19 @@ public class Graph {
 			
 			open.poll();
 			closed.add(x);
+			x.close(time);
 			
 			for (Edge edge : x.neig) {
 				Vertex y = (x == edge.v1) ? edge.v2 : edge.v1;
-				if (closed.contains(y))
+				if (y.isClosed(time))
 					continue;
 				
 				int g = x.g + edge.d;
 				boolean better;
 				
-				if (!open.contains(y)) {
+				if (!y.isOpen(time)) {
 					open.add(y);
+					y.open(time);
 					better = true;
 				} else {
 					if (g < y.g)
@@ -108,8 +114,9 @@ public class Graph {
 				if (better) {
 					y.from = x;
 					y.g = g;
-					y.h = h(y);
+					y.h = h(y, to);
 					y.f = y.g + y.h;
+					
 					updateQueue(open, y);
 				}
 			}
@@ -125,8 +132,8 @@ public class Graph {
 		return findPath(from, to);
 	}
 	
-	private int h(Vertex v) {
-		return v.h();
+	private int h(Vertex v, Vertex target) {
+		return v.h(target);
 	}
 	
 	private <T> void updateQueue(PriorityQueue<T> queue, T obj) {

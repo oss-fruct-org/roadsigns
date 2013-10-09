@@ -1,7 +1,10 @@
 package org.fruct.oss.ikm.fragment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.FutureTask;
 
 import org.fruct.oss.ikm.R;
@@ -21,9 +24,6 @@ import org.osmdroid.views.overlay.DirectedLocationOverlay;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
-import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;
-import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -35,6 +35,7 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -42,6 +43,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+class Direction {
+	GeoPoint direction;
+	List<PointOfInterest> points;
+}
 
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
@@ -51,7 +57,7 @@ public class MapFragment extends Fragment {
 	private RoadGraph roadGraph;
 	private RoadOpenHelper roadOpenHelper; 
 	private SQLiteDatabase sqlite;
-	private FutureTask roadGraphLoading;
+	private FutureTask<Void> roadGraphLoading;
 	
 	private List<DirectedLocationOverlay> crossDirections;
 	
@@ -104,45 +110,64 @@ public class MapFragment extends Fragment {
 		if (cross == null || out[0] > 20)
 			return;
 		
-		List<GeoPoint> directions = new ArrayList<GeoPoint>();
+		Map<GeoPoint, List<PointOfInterest>> directions = new HashMap<GeoPoint, List<PointOfInterest>>();
 		for (PointOfInterest point : points) {
 			List<Vertex> path = roadGraph.findPath(cross, point.getRoadVertex());
 			
 			Road road;
+			GeoPoint directionNode;
 			if (path.size() == 1) {
 				road = point.getRoad();
-				directions.add(point.getRoadVertex().getNode());
+				directionNode = point.getRoadVertex().getNode();
 			} else {
 				MapVertex v1 = (MapVertex) path.get(0);
 				MapVertex v2 = (MapVertex) path.get(1);
 				road = roadGraph.roadBetweenVertex(v1, v2);
-				directions.add(v2.getNode());
+				directionNode = v2.getNode();
 			}
 			Log.d("qwe", point.getName() + " " + road.getName());
+			
+			List<PointOfInterest> pointsInDirection = directions.get(directionNode);
+			if (pointsInDirection == null) {
+				pointsInDirection = new ArrayList<PointOfInterest>();
+				directions.put(directionNode, pointsInDirection);
+			}
+			
+			pointsInDirection.add(point);
 		}
+		
 		long curr = System.nanoTime();
 		Log.d("qwe", "" + (curr - last) / 1e9);
-
+		
 		updateDirectionOverlay(cross.getNode(), directions);
 	}
 	
-	private void updateDirectionOverlay(GeoPoint center, List<GeoPoint> directions) {
+	private void updateDirectionOverlay(GeoPoint center, Map<GeoPoint, List<PointOfInterest>> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
-			Log.d("qwe", "qweqweqwe");
 			mapView.getOverlays().removeAll(crossDirections);
 		}
 		
 		crossDirections = new ArrayList<DirectedLocationOverlay>();
-		for (GeoPoint directionPoint : directions) {
-			DirectedLocationOverlay overlay = new DirectedLocationOverlay(context);
-			crossDirections.add(overlay);
+		for (Entry<GeoPoint, List<PointOfInterest>> entry : directions.entrySet()) {
+			final GeoPoint directionPoint = entry.getKey();
+			final List<PointOfInterest> points = entry.getValue();
 			
 			double bearing = center.bearingTo(directionPoint);
 			GeoPoint markerPosition = center.destinationPoint(50, (float) bearing); // TODO: zoom distance
-			overlay.setLocation(markerPosition);
-			overlay.setBearing((float) bearing);
+			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing, points);
+			
+			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
+				@Override
+				public void onClick() {
+					for (PointOfInterest poi : points) {
+						Log.d("qwe", poi.getName());
+					}
+				}
+			});
+			
 			mapView.getOverlays().add(overlay);
+			crossDirections.add(overlay);
 		}
 		
 		mapView.invalidate();
@@ -230,7 +255,7 @@ public class MapFragment extends Fragment {
 		if (!roadGraphLoading.isDone()) {
 			roadGraphLoading.cancel(true);
 		}
-		
+	
 		super.onDestroy();
 	}
 }

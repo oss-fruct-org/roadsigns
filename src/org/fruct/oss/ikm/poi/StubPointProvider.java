@@ -9,6 +9,7 @@ public class StubPointProvider implements PointProvider {
 		stubPoints.add(new PointOfInterest("Voenkomat", 61781090, 34362360));
 		stubPoints.add(new PointOfInterest("Bsmp", 61796590, 34365400));
 		stubPoints.add(new PointOfInterest("Physic corpus", 61773060, 34283250));
+		stubPoints.add(new PointOfInterest("TV", 61775372, 34328494));
 	}
 	
 	@Override

@@ -180,6 +180,8 @@ public class RoadGraph extends Graph {
 		Map<Long, Integer> idsMap = new HashMap<Long, Integer>();
 		RoadGraph graph = new RoadGraph();
 		
+		long startTime = System.nanoTime();
+		
 		int ctr = 0;
 		Cursor nodes = db.rawQuery("select * from nodes", null);
 		while (nodes.moveToNext()) {
@@ -192,22 +194,53 @@ public class RoadGraph extends Graph {
 		}
 		nodes.close();
 		
-		Cursor ways = db.rawQuery("select * from ways", null);
+		Log.d("qwe", "Nodes loaded " + (System.nanoTime() - startTime) / 1e9);
+
+		String currentWayName = "";
+		List<Integer> currentWay = new ArrayList<Integer>();
+		long currentWayId = -1;
+		
+		Cursor ways = db.rawQuery("select wayId,nodeId,name from nodeways inner join ways on nodeways.wayId = ways.id  order by wayId,nodeways.rowId", null);
+
 		while (ways.moveToNext()) {
 			long wayId = ways.getLong(0);
-			String name = ways.getString(1);
-			String[] args = new String[] {String.valueOf(wayId)};
+			long realNodeId = ways.getLong(1);
+			int nodeId = idsMap.get(ways.getLong(1));
+			String name = ways.getString(2);
 			
-			Cursor nodeways = db.rawQuery("select id  from nodes inner join nodeways  on nodes.id = nodeways.nodeId  where wayId = ?  order by nodeways.rowid;", args);
-			ctr = 0;
-			int[] ids = new int[nodeways.getCount()];
-			while (nodeways.moveToNext()) {
-				ids[ctr++] = idsMap.get(Long.valueOf(nodeways.getLong(0)));
+			// TODO: remove duplicated code
+			if (currentWayId != wayId) {
+				if (currentWayId != -1) {
+					int c = 0;
+					int[] arr = new int[currentWay.size()];
+					
+					for (int id : currentWay)
+						arr[c++] = id;
+
+					graph.addRoad(arr).setName(currentWayName);
+				}
+				
+				currentWayName = name;
+				currentWayId = wayId;
+				currentWay.clear();
 			}
-			nodeways.close();
-			graph.addRoad(ids).setName(name);
+			
+			currentWay.add(nodeId);
 		}
+		
+		if (currentWayId != -1) {
+			int c = 0;
+			int[] arr = new int[currentWay.size()];
+			
+			for (int id : currentWay)
+				arr[c++] = id;
+
+			graph.addRoad(arr).setName(currentWayName);
+		}
+		
 		ways.close();
+		
+		Log.d("qwe", "Roads loaded " + (System.nanoTime() - startTime) / 1e9);
 		
 		graph.initialize();
 		return graph;

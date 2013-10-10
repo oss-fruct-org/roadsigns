@@ -93,6 +93,9 @@ public class MapFragment extends Fragment {
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 	    inflater.inflate(R.menu.main, menu);
+	    
+	    //mapView.getOverlayManager().onCreateOptionsMenu(menu, 4, mapView);
+	    
 	    super.onCreateOptionsMenu(menu, inflater);
 	}
 	
@@ -111,19 +114,22 @@ public class MapFragment extends Fragment {
 						
 			return true;
 			
-		case R.id.action_remove:
-			new TestListFragment().show(getFragmentManager(), "tag");
+		case R.id.action_place:
+			Intent intent = new Intent(getActivity(), PointsActivity.class);
+			intent.putExtra(POI_LIST_ID, (Serializable) pointDesc);
+			startActivity(intent);
 			break;
 			
 		case R.id.action_settings:
-			Intent intent = new Intent(getActivity(), SettingsActivity.class);
+			intent = new Intent(getActivity(), SettingsActivity.class);
 			startActivity(intent);
 			break;
 			
 		default:
+			//mapView.getOverlayManager().onOptionsItemSelected(item, 4, mapView);
 			return super.onOptionsItemSelected(item);
 		}
-		
+
 		return true;
 	}
 	

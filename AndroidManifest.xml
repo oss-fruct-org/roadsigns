@@ -37,7 +37,7 @@
         
         <activity
             android:name="org.fruct.oss.ikm.PointsActivity"
-            android:label="@string/title_activity_directions"
+            android:label="@string/title_activity_points"
             android:parentActivityName="org.fruct.oss.ikm.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

@@ -5,7 +5,11 @@
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
-	<classpathentry kind="lib" path="libs/osmdroid-android-3.0.10.jar"/>
+	<classpathentry kind="lib" path="libs/osmdroid-android-3.0.10.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/ivashov/projects/osm/libs/osmdroid-android-3.0.10-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="libs/slf4j-android-1.6.1-RC1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

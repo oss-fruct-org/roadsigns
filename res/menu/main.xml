@@ -12,9 +12,9 @@
           android:title="@string/action_search"
           yourapp:showAsAction="ifRoom" />
     
-    <item android:id="@+id/action_remove"
-          android:icon="@drawable/ic_action_remove"
-          android:title="@string/action_remove"
+    <item android:id="@+id/action_place"
+          android:icon="@drawable/ic_action_place"
+          android:title="@string/action_place"
           yourapp:showAsAction="ifRoom" />
     
 </menu>

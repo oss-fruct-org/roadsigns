@@ -20,6 +20,7 @@ public class PointsActivity extends ActionBarActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.directions, menu);
+		
 		return true;
 	}
 	

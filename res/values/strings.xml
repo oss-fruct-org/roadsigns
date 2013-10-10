@@ -4,5 +4,8 @@
     <string name="app_name">Road Signs</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-	<string name="action_search">Search</string>
+    <string name="action_search">Search</string>
+    <string name="action_remove">Remove</string>
+    <string name="title_activity_directions">DirectionsActivity</string>
+
 </resources>

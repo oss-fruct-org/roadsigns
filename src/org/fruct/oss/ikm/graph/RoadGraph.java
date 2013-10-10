@@ -138,7 +138,7 @@ public class RoadGraph extends Graph {
 	
 	public void addPointOfInterest(PointOfInterest point) {
 		poi.add(point);
-		Road road = nearestRoad(point.toPoint(), null);
+		Road road = nearestRoad(point.getDesc().toPoint(), null);
 		point.setRoad(road);
 		road.addPointOfInterest(point);
 	}
@@ -201,7 +201,6 @@ public class RoadGraph extends Graph {
 		long currentWayId = -1;
 		
 		Cursor ways = db.rawQuery("select wayId,nodeId,name from nodeways inner join ways on nodeways.wayId = ways.id  order by wayId,nodeways.rowId", null);
-
 		while (ways.moveToNext()) {
 			long wayId = ways.getLong(0);
 			long realNodeId = ways.getLong(1);

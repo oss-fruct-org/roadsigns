@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.fragment;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,13 +8,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.FutureTask;
 
+import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.db.RoadOpenHelper;
 import org.fruct.oss.ikm.graph.MapVertex;
 import org.fruct.oss.ikm.graph.Road;
 import org.fruct.oss.ikm.graph.RoadGraph;
 import org.fruct.oss.ikm.graph.Vertex;
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.fruct.oss.ikm.poi.PointProvider;
 import org.fruct.oss.ikm.poi.StubPointProvider;
@@ -26,6 +30,7 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -35,7 +40,6 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -51,9 +55,14 @@ class Direction {
 
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
-	
+	public static final int DEFAULT_ZOOM = 18;
+	public static final String POI_LIST_ID = "org.fruct.oss.ikm.fragment.POI_LIST";
+		
 	private PointProvider pointProvider = new StubPointProvider();
-	private List<PointOfInterest> points = pointProvider.getPoints(0, 0, 0);
+	
+	private List<PointDesc> pointDesc = pointProvider.getPoints(0, 0, 0);
+	private List<PointOfInterest> points = new ArrayList<PointOfInterest>();
+	
 	private RoadGraph roadGraph;
 	private RoadOpenHelper roadOpenHelper; 
 	private SQLiteDatabase sqlite;
@@ -62,6 +71,12 @@ public class MapFragment extends Fragment {
 	private List<DirectedLocationOverlay> crossDirections;
 	
 	private MapView mapView;
+	
+	public MapFragment() {
+		for (PointDesc p : pointDesc) {
+			points.add(new PointOfInterest(p));
+		}
+	}
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -96,6 +111,15 @@ public class MapFragment extends Fragment {
 						
 			return true;
 			
+		case R.id.action_remove:
+			new TestListFragment().show(getFragmentManager(), "tag");
+			break;
+			
+		case R.id.action_settings:
+			Intent intent = new Intent(getActivity(), SettingsActivity.class);
+			startActivity(intent);
+			break;
+			
 		default:
 			return super.onOptionsItemSelected(item);
 		}
@@ -103,20 +127,27 @@ public class MapFragment extends Fragment {
 		return true;
 	}
 	
+	/**
+	 * Update point-of-interest's directions and display them on screen
+	 */
 	private void updateDirections() {
 		int[] out = new int[1];
 		long last = System.nanoTime();
 		MapVertex cross = roadGraph.nearestCrossroad(mapView.getMapCenter(), out);
+		
+		// If there is no crossroads near, do nothing
 		if (cross == null || out[0] > 20)
 			return;
 		
-		Map<GeoPoint, List<PointOfInterest>> directions = new HashMap<GeoPoint, List<PointOfInterest>>();
+		Map<GeoPoint, List<PointDesc>> directions = new HashMap<GeoPoint, List<PointDesc>>();
 		for (PointOfInterest point : points) {
 			List<Vertex> path = roadGraph.findPath(cross, point.getRoadVertex());
 			
 			Road road;
 			GeoPoint directionNode;
+			
 			if (path.size() == 1) {
+				// Already near POI
 				road = point.getRoad();
 				directionNode = point.getRoadVertex().getNode();
 			} else {
@@ -125,15 +156,15 @@ public class MapFragment extends Fragment {
 				road = roadGraph.roadBetweenVertex(v1, v2);
 				directionNode = v2.getNode();
 			}
-			Log.d("qwe", point.getName() + " " + road.getName());
+			Log.d("qwe", point.getDesc().getName() + " " + road.getName());
 			
-			List<PointOfInterest> pointsInDirection = directions.get(directionNode);
+			List<PointDesc> pointsInDirection = directions.get(directionNode);
 			if (pointsInDirection == null) {
-				pointsInDirection = new ArrayList<PointOfInterest>();
+				pointsInDirection = new ArrayList<PointDesc>();
 				directions.put(directionNode, pointsInDirection);
 			}
 			
-			pointsInDirection.add(point);
+			pointsInDirection.add(point.getDesc());
 		}
 		
 		long curr = System.nanoTime();
@@ -142,27 +173,31 @@ public class MapFragment extends Fragment {
 		updateDirectionOverlay(cross.getNode(), directions);
 	}
 	
-	private void updateDirectionOverlay(GeoPoint center, Map<GeoPoint, List<PointOfInterest>> directions) {
+	private void updateDirectionOverlay(GeoPoint center, Map<GeoPoint, List<PointDesc>> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
 			mapView.getOverlays().removeAll(crossDirections);
 		}
 		
 		crossDirections = new ArrayList<DirectedLocationOverlay>();
-		for (Entry<GeoPoint, List<PointOfInterest>> entry : directions.entrySet()) {
+		for (Entry<GeoPoint, List<PointDesc>> entry : directions.entrySet()) {
 			final GeoPoint directionPoint = entry.getKey();
-			final List<PointOfInterest> points = entry.getValue();
+			final List<PointDesc> points = entry.getValue();
 			
 			double bearing = center.bearingTo(directionPoint);
-			GeoPoint markerPosition = center.destinationPoint(50, (float) bearing); // TODO: zoom distance
+			GeoPoint markerPosition = center.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing); // TODO: zoom distance
 			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing, points);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override
 				public void onClick() {
-					for (PointOfInterest poi : points) {
-						Log.d("qwe", poi.getName());
+					for (PointDesc pointDesc : points) {
+						Log.d("qwe", pointDesc.getName());
 					}
+					
+					Intent intent = new Intent(getActivity(), PointsActivity.class);
+					intent.putExtra(POI_LIST_ID, (Serializable) points);
+					startActivity(intent);
 				}
 			});
 			
@@ -177,7 +212,7 @@ public class MapFragment extends Fragment {
 		Context context = getActivity();
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
 	    for (PointOfInterest point : points) {
-	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
+	    	items.add(new OverlayItem(point.getDesc().getName(), "", point.getDesc().toPoint()));
 	    	roadGraph.addPointOfInterest(point);
 	    }
 	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
@@ -188,7 +223,6 @@ public class MapFragment extends Fragment {
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
-				Log.d("qwe", "Running thread");
 				final RoadGraph roadGraph = RoadGraph.loadFromDatabase(sqlite);
 				MapFragment.this.getActivity().runOnUiThread(new Runnable() {
 					@Override
@@ -221,9 +255,15 @@ public class MapFragment extends Fragment {
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 	    mapView.setBuiltInZoomControls(true);
 	    
-	    mapView.getController().setZoom(18);
-	    mapView.getController().setCenter(PTZ);
-	   
+	    if (savedInstanceState == null) {
+	    	mapView.getController().setZoom(DEFAULT_ZOOM);
+	    	mapView.getController().setCenter(PTZ);
+	    } else {
+	    	mapView.getController().setZoom(savedInstanceState.getInt("zoom"));
+	    	GeoPoint center = new GeoPoint(savedInstanceState.getInt("center-lat"),
+	    									savedInstanceState.getInt("center-lon"));
+	    	mapView.getController().setCenter(center);
+	    }
 	    //GpsMyLocationProvider provider = new GpsMyLocationProvider(context);
 	    //IMyLocationProvider provider2 = new StubMyLocationProvider(mapView);
 	    
@@ -257,5 +297,12 @@ public class MapFragment extends Fragment {
 		}
 	
 		super.onDestroy();
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		outState.putInt("center-lat", mapView.getMapCenter().getLatitudeE6());
+		outState.putInt("center-lon", mapView.getMapCenter().getLongitudeE6());
+		outState.putInt("zoom", mapView.getZoomLevel());
 	}
 }

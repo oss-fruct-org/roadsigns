@@ -4,11 +4,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
      >
-    
-    <org.osmdroid.views.MapView
-        android:id="@+id/map_view"
+
+    <TextView
+        android:id="@+id/direction_name"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tilesource="Mapnik"
+        android:layout_height="wrap_content"
+        android:text="TextView" 
+        android:textColor="#000"
+        android:textSize="16sp"
+        android:gravity="center"
         />
+
 </LinearLayout>

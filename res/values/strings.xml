@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Road Signs</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_search">Search</string>
     <string name="action_place">Show places</string>
-    
     <string name="title_activity_points">Points of interest</string>
+    <string name="title_activity_details">Details</string>
+
 </resources>

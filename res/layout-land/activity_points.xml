@@ -1,0 +1,27 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    
+    android:baselineAligned="false"
+    android:orientation="horizontal"
+    
+    tools:context=".PointsActivity" >
+
+    <fragment android:name="org.fruct.oss.ikm.fragment.PointsFragment"
+              android:id="@+id/point_fragment"
+              android:layout_height="match_parent"
+              android:layout_width="0dp"
+              
+              android:layout_weight="1" />
+    
+    <FrameLayout
+        android:id="@+id/point_details"
+        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        
+        android:layout_weight="2" >
+    </FrameLayout>
+
+    
+</LinearLayout>

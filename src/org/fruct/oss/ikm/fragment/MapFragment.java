@@ -12,12 +12,6 @@ import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.db.RoadOpenHelper;
-import org.fruct.oss.ikm.graph.AdjacencyList;
-import org.fruct.oss.ikm.graph.MapVertex;
-import org.fruct.oss.ikm.graph.Road;
-import org.fruct.oss.ikm.graph.RoadGraph;
-import org.fruct.oss.ikm.graph.Vertex;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.fruct.oss.ikm.poi.PointProvider;
@@ -30,12 +24,8 @@ import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
-import com.graphhopper.GraphHopper;
-import com.graphhopper.GraphHopperAPI;
-
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -52,6 +42,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.graphhopper.GHRequest;
+import com.graphhopper.GHResponse;
+import com.graphhopper.GraphHopper;
+import com.graphhopper.GraphHopperAPI;
+import com.graphhopper.util.PointList;
+
 class Direction {
 	GeoPoint direction;
 	List<PointOfInterest> points;
@@ -67,14 +63,13 @@ public class MapFragment extends Fragment {
 	private List<PointDesc> pointDesc = pointProvider.getPoints(0, 0, 0);
 	private List<PointOfInterest> points = new ArrayList<PointOfInterest>();
 	
-	private RoadGraph roadGraph;
-	private RoadOpenHelper roadOpenHelper; 
-	private SQLiteDatabase sqlite;
 	private FutureTask<Void> roadGraphLoading;
 	
 	private List<DirectedLocationOverlay> crossDirections;
 	
 	private MapView mapView;
+	
+	private GraphHopperAPI hopper;
 	
 	public MapFragment() {
 		for (PointDesc p : pointDesc) {
@@ -107,7 +102,7 @@ public class MapFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_search:
-			if (roadGraph == null) {
+			if (hopper == null) {
 				Context context = getActivity();
 				Toast toast = Toast.makeText(context, "Database not ready yet", Toast.LENGTH_SHORT);
 				toast.show();
@@ -143,31 +138,23 @@ public class MapFragment extends Fragment {
 	private void updateDirections() {
 		int[] out = new int[1];
 		long last = System.nanoTime();
-		MapVertex cross = roadGraph.nearestCrossroad(mapView.getMapCenter(), out);
 		
-		// If there is no crossroads near, do nothing
-		if (cross == null || out[0] > 20)
-			return;
-		
+		GeoPoint current = Utils.copyGeoPoint(mapView.getMapCenter());
+				
 		Map<GeoPoint, List<PointDesc>> directions = new HashMap<GeoPoint, List<PointDesc>>();
-		for (PointOfInterest point : points) {
-			List<Vertex> path = roadGraph.findPath(cross, point.getRoadVertex());
+		for (PointOfInterest point : points) {			
+			GHRequest request = new GHRequest(
+					current.getLatitudeE6() / 1e6,
+					current.getLongitudeE6() / 1e6,
+					point.getDesc().toPoint().getLatitudeE6() / 1e6,
+					point.getDesc().toPoint().getLongitudeE6() / 1e6);
+			//request.setAlgorithm("dijkstraOneToMany");
 			
-			Road road;
-			GeoPoint directionNode;
+			GHResponse response = hopper.route(request);
+			PointList path = response.getPoints();
 			
-			if (path.size() == 1) {
-				// Already near POI
-				road = point.getRoad();
-				directionNode = point.getRoadVertex().getNode();
-			} else {
-				MapVertex v1 = (MapVertex) path.get(0);
-				MapVertex v2 = (MapVertex) path.get(1);
-				road = roadGraph.roadBetweenVertex(v1, v2);
-				directionNode = v2.getNode();
-			}
-			Log.d("qwe", point.getDesc().getName() + " " + road.getName());
-			
+			GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
+						
 			List<PointDesc> pointsInDirection = directions.get(directionNode);
 			if (pointsInDirection == null) {
 				pointsInDirection = new ArrayList<PointDesc>();
@@ -180,7 +167,7 @@ public class MapFragment extends Fragment {
 		long curr = System.nanoTime();
 		Log.d("qwe", "" + (curr - last) / 1e9);
 		
-		updateDirectionOverlay(cross.getNode(), directions);
+		updateDirectionOverlay(current, directions);
 	}
 	
 	private void updateDirectionOverlay(GeoPoint center, Map<GeoPoint, List<PointDesc>> directions) {
@@ -223,7 +210,6 @@ public class MapFragment extends Fragment {
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
 	    for (PointOfInterest point : points) {
 	    	items.add(new OverlayItem(point.getDesc().getName(), "", point.getDesc().toPoint()));
-	    	roadGraph.addPointOfInterest(point);
 	    }
 	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
 	    mapView.getOverlays().add(overlay);
@@ -233,19 +219,19 @@ public class MapFragment extends Fragment {
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
-				//GraphHopperAPI hopper = new GraphHopper().forMobile();
+				final GraphHopper hopper = new GraphHopper().forMobile();
+				hopper.setCHShortcuts("fastest");
+				boolean res = hopper.load("/sdcard/graphhopper/maps/karelia-gh");
+				Log.d("qwe", "GH loaded " + res);
 				
-				final RoadGraph roadGraph = RoadGraph.loadFromDatabase(sqlite);
 				MapFragment.this.getActivity().runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
-						MapFragment.this.roadGraph = roadGraph;
+						MapFragment.this.hopper = hopper;
+
 						createPOIOverlay();
-					    sqlite.close();
-					    sqlite = null;
 					}
 				});
-				Log.d("qwe", "Finished thread");
 			}
 		};
 		
@@ -259,9 +245,6 @@ public class MapFragment extends Fragment {
 		
 		Context context = getActivity();
 		
-		RoadOpenHelper.initialize(context.getApplicationContext());
-		roadOpenHelper = new RoadOpenHelper(context, null, 1);
-		sqlite = roadOpenHelper.getReadableDatabase();
 		loadRoadGraph();
 
 		mapView = (MapView) getView().findViewById(R.id.map_view);

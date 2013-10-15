@@ -27,7 +27,7 @@ public class RoadGraph extends Graph {
 	}
 	
 	// XXX: may be overflow
-	public int distanceToSegment(IGeoPoint P, GeoPoint A, GeoPoint B) {
+	public static int distanceToSegment(IGeoPoint P, GeoPoint A, GeoPoint B) {
 		int c = A.distanceTo(B);		
 		int a = B.distanceTo(P);
 		int b = A.distanceTo(P);
@@ -45,7 +45,7 @@ public class RoadGraph extends Graph {
 		return distanceToRoad(p, roads.get(id));
 	}
 	
-	public int distanceToRoad(IGeoPoint p, Road r) {
+	public static int distanceToRoad(IGeoPoint p, Road r) {
 		int min = 40075000;
 		
 		List<MapVertex> road = r.road;
@@ -118,8 +118,10 @@ public class RoadGraph extends Graph {
 		}
 		
 		MapVertex lastVertex = (MapVertex) vertices.get(nodes[nodes.length - 1]);
+		
 		road.add(lastVertex);
 		lastVertex.addRoad(ret);
+		
 		roads.add(ret);
 		return ret;
 	}
@@ -138,6 +140,7 @@ public class RoadGraph extends Graph {
 	
 	public void addPointOfInterest(PointOfInterest point) {
 		poi.add(point);
+		
 		Road road = nearestRoad(point.getDesc().toPoint(), null);
 		point.setRoad(road);
 		road.addPointOfInterest(point);
@@ -200,12 +203,24 @@ public class RoadGraph extends Graph {
 		List<Integer> currentWay = new ArrayList<Integer>();
 		long currentWayId = -1;
 		
-		Cursor ways = db.rawQuery("select wayId,nodeId,name from nodeways inner join ways on nodeways.wayId = ways.id  order by wayId,nodeways.rowId", null);
+		Cursor ways = db.rawQuery("select wayId,nodeId,name"
+									+ " from nodeways inner join ways"
+									+ " on nodeways.wayId = ways.id"
+									+ " order by wayId,nodeways.rowId", null);
 		while (ways.moveToNext()) {
-			long wayId = ways.getLong(0);
-			long realNodeId = ways.getLong(1);
-			int nodeId = idsMap.get(ways.getLong(1));
-			String name = ways.getString(2);
+			long wayId;
+			long realNodeId = -1;
+			int nodeId;
+			String name;
+			try {
+				wayId = ways.getLong(0);
+				realNodeId = ways.getLong(1);
+				nodeId = idsMap.get(realNodeId);
+				name = ways.getString(2);
+			} catch (Exception ex) {
+				Log.d("qwe", "Way contains node that not in node list: " + realNodeId);
+				continue;
+			}
 			
 			// TODO: remove duplicated code
 			if (currentWayId != wayId) {

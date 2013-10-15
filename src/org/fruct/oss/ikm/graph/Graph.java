@@ -9,6 +9,8 @@ import java.util.Set;
 
 import org.osmdroid.util.GeoPoint;
 
+import android.os.Debug;
+
 class Edge {
 	Edge(Vertex v1, Vertex v2, int d) {
 		this.v1 = v1;
@@ -63,6 +65,8 @@ public class Graph {
 	}
 	
 	public List<Vertex> findPath(Vertex from, Vertex to) {
+		//Debug.startMethodTracing("path");
+		
 		time++;
 		Set<Vertex> closed = new HashSet<Vertex>();
 		PriorityQueue<Vertex> open = new PriorityQueue<Vertex>(8, new VertexComparator());
@@ -85,6 +89,7 @@ public class Graph {
 				}
 				ret.add(from);
 				Collections.reverse(ret);
+				//Debug.stopMethodTracing();
 				return ret;
 			}
 			
@@ -123,6 +128,7 @@ public class Graph {
 			
 		}
 		
+		//Debug.stopMethodTracing();
 		return null;
 	}
 	

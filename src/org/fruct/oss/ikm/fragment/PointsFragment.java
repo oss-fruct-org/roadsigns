@@ -1,14 +1,17 @@
 package org.fruct.oss.ikm.fragment;
 
 import java.util.ArrayList;
+
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
+
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -75,13 +78,17 @@ public class PointsFragment extends ListFragment {
 			args.putSerializable(DetailsActivity.POINT_ARG, pointDesc);
 			fragment.setArguments(args);
 			getActivity().getSupportFragmentManager().beginTransaction()
-				.replace(R.id.point_details, fragment, "details").commit();
+				.replace(R.id.point_details, fragment, "details")
+				.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+				.commit();
 			
 		} else {
 			Intent intent = new Intent(getActivity(), DetailsActivity.class);
 			intent.putExtra(DetailsActivity.POINT_ARG, pointDesc);
 			startActivity(intent);
 		}
+		
+		
 	}
 	
 	@Override

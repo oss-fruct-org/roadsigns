@@ -13,6 +13,7 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.db.RoadOpenHelper;
+import org.fruct.oss.ikm.graph.AdjacencyList;
 import org.fruct.oss.ikm.graph.MapVertex;
 import org.fruct.oss.ikm.graph.Road;
 import org.fruct.oss.ikm.graph.RoadGraph;
@@ -28,6 +29,9 @@ import org.osmdroid.views.overlay.DirectedLocationOverlay;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
+
+import com.graphhopper.GraphHopper;
+import com.graphhopper.GraphHopperAPI;
 
 import android.content.Context;
 import android.content.Intent;
@@ -229,6 +233,8 @@ public class MapFragment extends Fragment {
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {
+				//GraphHopperAPI hopper = new GraphHopper().forMobile();
+				
 				final RoadGraph roadGraph = RoadGraph.loadFromDatabase(sqlite);
 				MapFragment.this.getActivity().runOnUiThread(new Runnable() {
 					@Override

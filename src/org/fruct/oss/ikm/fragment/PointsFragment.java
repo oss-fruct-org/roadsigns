@@ -10,10 +10,10 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +32,7 @@ public class PointsFragment extends ListFragment {
 		try {
 			@SuppressWarnings("unchecked")
 			ArrayList<PointDesc> poiList = (ArrayList<PointDesc>) getActivity()
-					.getIntent().getSerializableExtra(MapFragment.POI_LIST_ID);
+					.getIntent().getSerializableExtra(MapFragment.POINTS);
 			this.poiList = poiList;
 			
 			ArrayList<String> poiNames = new ArrayList<String>();
@@ -81,10 +81,9 @@ public class PointsFragment extends ListFragment {
 				.replace(R.id.point_details, fragment, "details")
 				.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
 				.commit();
-			
 		} else {
 			Intent intent = new Intent(getActivity(), DetailsActivity.class);
-			intent.putExtra(DetailsActivity.POINT_ARG, pointDesc);
+			intent.putExtra(DetailsActivity.POINT_ARG, (Parcelable) pointDesc);
 			startActivity(intent);
 		}
 		
@@ -101,6 +100,7 @@ public class PointsFragment extends ListFragment {
 		else
 			isDualPane = false;
 		
+		// Remove detail fragment when switching from two-panel mode to one-panel mode
 		Fragment detailFragment = getActivity().getSupportFragmentManager().findFragmentByTag("details");
 		if (detailFragment != null && !isDualPane) {
 			getActivity().getSupportFragmentManager().beginTransaction().remove(detailFragment).commit();

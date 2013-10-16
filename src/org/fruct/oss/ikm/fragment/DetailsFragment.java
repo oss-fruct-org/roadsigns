@@ -1,16 +1,18 @@
 package org.fruct.oss.ikm.fragment;
 
 import org.fruct.oss.ikm.DetailsActivity;
+import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
 
-import android.content.res.Configuration;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class DetailsFragment extends Fragment {
@@ -30,12 +32,24 @@ public class DetailsFragment extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
-		PointDesc desc = (PointDesc) getArguments().getSerializable(DetailsActivity.POINT_ARG);
-		TextView textView = (TextView) getActivity().findViewById(R.id.details_text);
+		final PointDesc desc = (PointDesc) getArguments().getSerializable(DetailsActivity.POINT_ARG);
+		TextView titleView = (TextView) getActivity().findViewById(R.id.title_text);
+		TextView descView = (TextView) getActivity().findViewById(R.id.details_text);
 		
-		if (textView == null)
+		if (titleView == null || descView == null)
 			return;
 		
-		textView.setText(desc.getName());
+		ImageButton placeButton = (ImageButton) getActivity().findViewById(R.id.show_place_button);
+		placeButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(getActivity(), MainActivity.class);
+				intent.putExtra(MapFragment.MAP_CENTER, (Parcelable) desc.toPoint());
+				startActivity(intent);
+			}
+		});
+		
+		titleView.setText(desc.getName());
+		descView.setText(desc.getDescription());
 	}
 }

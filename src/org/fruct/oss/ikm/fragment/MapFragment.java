@@ -4,18 +4,17 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.FutureTask;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointOfInterest;
 import org.fruct.oss.ikm.poi.PointProvider;
 import org.fruct.oss.ikm.poi.StubPointProvider;
+import org.fruct.oss.ikm.service.DirectionService;
+import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
@@ -24,15 +23,19 @@ import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,47 +43,53 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
-
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
-import com.graphhopper.GraphHopper;
-import com.graphhopper.GraphHopperAPI;
-import com.graphhopper.util.PointList;
-
-class Direction {
-	GeoPoint direction;
-	List<PointOfInterest> points;
-}
 
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
-	public static final String POI_LIST_ID = "org.fruct.oss.ikm.fragment.POI_LIST";
-		
+	
+	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
+	public static final String MAP_CENTER = "org.fruct.oss.ikm.fragment.MAP_CENTER";
+	
 	private PointProvider pointProvider = new StubPointProvider();
 	
-	private List<PointDesc> pointDesc = pointProvider.getPoints(0, 0, 0);
-	private List<PointOfInterest> points = new ArrayList<PointOfInterest>();
-	
-	private FutureTask<Void> roadGraphLoading;
-	
+	private List<PointDesc> points = pointProvider.getPoints(0, 0, 0);
+		
 	private List<DirectedLocationOverlay> crossDirections;
 	
 	private MapView mapView;
 	
-	private GraphHopperAPI hopper;
-	
-	public MapFragment() {
-		for (PointDesc p : pointDesc) {
-			points.add(new PointOfInterest(p));
-		}
-	}
-	
+	private BroadcastReceiver directionsReceiver;
+		
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
+		
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		
+		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
+				
+				@SuppressWarnings("unchecked")
+				HashMap<GeoPoint, ArrayList<PointDesc>> directions = 
+						(HashMap<GeoPoint, ArrayList<PointDesc>>) intent.getSerializableExtra(DirectionService.GET_DIRECTIONS_RESULT);
+				updateDirectionOverlay(geoPoint, directions);
+			}
+		}, new IntentFilter(DirectionService.GET_DIRECTIONS_READY));
+	}
+	
+	@Override
+	public void onPause() {
+		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
+		
+		super.onPause();
 	}
 	
 	@Override
@@ -101,21 +110,14 @@ public class MapFragment extends Fragment {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-		case R.id.action_search:
-			if (hopper == null) {
-				Context context = getActivity();
-				Toast toast = Toast.makeText(context, "Database not ready yet", Toast.LENGTH_SHORT);
-				toast.show();
-				break;
-			}
-			
+		case R.id.action_search:			
 			updateDirections();
 						
 			return true;
 			
 		case R.id.action_place:
 			Intent intent = new Intent(getActivity(), PointsActivity.class);
-			intent.putExtra(POI_LIST_ID, (Serializable) pointDesc);
+			intent.putExtra(POINTS, (Serializable) points);
 			startActivity(intent);
 			break;
 			
@@ -131,58 +133,34 @@ public class MapFragment extends Fragment {
 
 		return true;
 	}
-	
+		
 	/**
 	 * Update point-of-interest's directions and display them on screen
 	 */
 	private void updateDirections() {
-		int[] out = new int[1];
-		long last = System.nanoTime();
-		
-		GeoPoint current = Utils.copyGeoPoint(mapView.getMapCenter());
-				
-		Map<GeoPoint, List<PointDesc>> directions = new HashMap<GeoPoint, List<PointDesc>>();
-		for (PointOfInterest point : points) {			
-			GHRequest request = new GHRequest(
-					current.getLatitudeE6() / 1e6,
-					current.getLongitudeE6() / 1e6,
-					point.getDesc().toPoint().getLatitudeE6() / 1e6,
-					point.getDesc().toPoint().getLongitudeE6() / 1e6);
-			//request.setAlgorithm("dijkstraOneToMany");
-			
-			GHResponse response = hopper.route(request);
-			PointList path = response.getPoints();
-			
-			GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
-						
-			List<PointDesc> pointsInDirection = directions.get(directionNode);
-			if (pointsInDirection == null) {
-				pointsInDirection = new ArrayList<PointDesc>();
-				directions.put(directionNode, pointsInDirection);
-			}
-			
-			pointsInDirection.add(point.getDesc());
-		}
-		
-		long curr = System.nanoTime();
-		Log.d("qwe", "" + (curr - last) / 1e9);
-		
-		updateDirectionOverlay(current, directions);
+		Intent intent = new Intent(getActivity(), DirectionService.class);
+		intent.setAction(DirectionService.GET_DIRECTIONS);
+		intent.putExtra(DirectionService.CENTER,
+				(Parcelable) Utils.copyGeoPoint(mapView.getMapCenter()));
+		intent.putParcelableArrayListExtra(DirectionService.POINTS,
+				new ArrayList<PointDesc>(points));
+
+		getActivity().startService(intent);
 	}
 	
-	private void updateDirectionOverlay(GeoPoint center, Map<GeoPoint, List<PointDesc>> directions) {
+	private void updateDirectionOverlay(GeoPoint center, HashMap<GeoPoint, ArrayList<PointDesc>> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
 			mapView.getOverlays().removeAll(crossDirections);
 		}
 		
 		crossDirections = new ArrayList<DirectedLocationOverlay>();
-		for (Entry<GeoPoint, List<PointDesc>> entry : directions.entrySet()) {
+		for (Entry<GeoPoint, ArrayList<PointDesc>> entry : directions.entrySet()) {
 			final GeoPoint directionPoint = entry.getKey();
 			final List<PointDesc> points = entry.getValue();
 			
 			double bearing = center.bearingTo(directionPoint);
-			GeoPoint markerPosition = center.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing); // TODO: zoom distance
+			GeoPoint markerPosition = center.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
 			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing, points);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
@@ -193,7 +171,7 @@ public class MapFragment extends Fragment {
 					}
 					
 					Intent intent = new Intent(getActivity(), PointsActivity.class);
-					intent.putExtra(POI_LIST_ID, (Serializable) points);
+					intent.putExtra(POINTS, (Serializable) points);
 					startActivity(intent);
 				}
 			});
@@ -208,44 +186,20 @@ public class MapFragment extends Fragment {
 	private void createPOIOverlay() {
 		Context context = getActivity();
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
-	    for (PointOfInterest point : points) {
-	    	items.add(new OverlayItem(point.getDesc().getName(), "", point.getDesc().toPoint()));
+	    for (PointDesc point : points) {
+	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
 	    }
+	    
 	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
 	    mapView.getOverlays().add(overlay);
-	}
-	
-	private void loadRoadGraph() {
-		Runnable runnable = new Runnable() {
-			@Override
-			public void run() {
-				final GraphHopper hopper = new GraphHopper().forMobile();
-				hopper.setCHShortcuts("fastest");
-				boolean res = hopper.load("/sdcard/graphhopper/maps/karelia-gh");
-				Log.d("qwe", "GH loaded " + res);
-				
-				MapFragment.this.getActivity().runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						MapFragment.this.hopper = hopper;
-
-						createPOIOverlay();
-					}
-				});
-			}
-		};
-		
-		roadGraphLoading = new FutureTask<Void>(runnable, null);
-		Utils.executor.execute(roadGraphLoading);
 	}
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		
 		Context context = getActivity();
 		
-		loadRoadGraph();
+		//loadRoadGraph();
 
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 	    mapView.setBuiltInZoomControls(true);
@@ -283,14 +237,13 @@ public class MapFragment extends Fragment {
 		};
 		
 		mapView.getOverlays().add(overlay);
+		createPOIOverlay();
 	}
 	
 	@Override
 	public void onDestroy() {
-		if (!roadGraphLoading.isDone()) {
-			roadGraphLoading.cancel(true);
-		}
-	
+		getActivity().stopService(new Intent(getActivity(), DirectionService.class));
+		
 		super.onDestroy();
 	}
 	
@@ -299,5 +252,10 @@ public class MapFragment extends Fragment {
 		outState.putInt("center-lat", mapView.getMapCenter().getLatitudeE6());
 		outState.putInt("center-lon", mapView.getMapCenter().getLongitudeE6());
 		outState.putInt("zoom", mapView.getZoomLevel());
+	}
+	
+	public void setCenter(IGeoPoint geoPoint) {
+		mapView.getController().setZoom(DEFAULT_ZOOM);
+		mapView.getController().animateTo(geoPoint);
 	}
 }

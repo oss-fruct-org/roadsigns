@@ -1,7 +1,6 @@
 package org.fruct.oss.ikm.fragment;
 
 import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.mylocation.IMyLocationConsumer;
 import org.osmdroid.views.overlay.mylocation.IMyLocationProvider;

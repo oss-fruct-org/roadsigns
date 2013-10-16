@@ -22,10 +22,10 @@
         android:theme="@style/Theme.AppCompat.Light" >
         <activity
             android:name="org.fruct.oss.ikm.MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:launchMode="singleTask" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -52,6 +52,12 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.fruct.oss.ikm.PointsActivity" />
         </activity>
+
+        <service
+            android:name="org.fruct.oss.ikm.service.DirectionService"
+            android:enabled="true"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>

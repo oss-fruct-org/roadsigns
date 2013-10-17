@@ -1,20 +1,25 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-	  xmlns:yourapp="http://schemas.android.com/apk/res-auto" >
-    
+    xmlns:yourapp="http://schemas.android.com/apk/res-auto" >
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
-        yourapp:showAsAction="never"
-        android:title="@string/action_settings"/>
-    
-    <item android:id="@+id/action_search"
-          android:icon="@drawable/ic_action_search"
-          android:title="@string/action_search"
-          yourapp:showAsAction="ifRoom" />
-    
-    <item android:id="@+id/action_place"
-          android:icon="@drawable/ic_action_place"
-          android:title="@string/action_place"
-          yourapp:showAsAction="ifRoom" />
-    
+        android:title="@string/action_settings"
+        yourapp:showAsAction="never"/>
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_action_search"
+        android:title="@string/action_search"
+        yourapp:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_track"
+        android:icon="@drawable/ic_action_location_found"
+        android:title="@string/action_track"
+        yourapp:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_place"
+        android:icon="@drawable/ic_action_place"
+        android:title="@string/action_place"
+        yourapp:showAsAction="ifRoom"/>
+
 </menu>

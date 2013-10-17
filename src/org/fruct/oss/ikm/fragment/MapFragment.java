@@ -60,7 +60,7 @@ public class MapFragment extends Fragment {
 	private MapView mapView;
 	
 	private BroadcastReceiver directionsReceiver;
-		
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -76,6 +76,7 @@ public class MapFragment extends Fragment {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
+				mapView.getController().animateTo(geoPoint);
 				
 				@SuppressWarnings("unchecked")
 				HashMap<GeoPoint, ArrayList<PointDesc>> directions = 
@@ -111,12 +112,16 @@ public class MapFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_search:			
-			updateDirections();
-						
-			return true;
+			//updateDirections();	
+			
+			Intent intent = new Intent(getActivity(), DirectionService.class);
+			intent.setAction(DirectionService.FAKE_LOCATION);
+			intent.putExtra(DirectionService.CENTER, (Parcelable) Utils.copyGeoPoint(mapView.getMapCenter()));
+			getActivity().startService(intent);
+			break;
 			
 		case R.id.action_place:
-			Intent intent = new Intent(getActivity(), PointsActivity.class);
+			intent = new Intent(getActivity(), PointsActivity.class);
 			intent.putExtra(POINTS, (Serializable) points);
 			startActivity(intent);
 			break;
@@ -124,6 +129,14 @@ public class MapFragment extends Fragment {
 		case R.id.action_settings:
 			intent = new Intent(getActivity(), SettingsActivity.class);
 			startActivity(intent);
+			break;
+			
+		case R.id.action_track:
+			Log.d("qwe", "action_track");
+			intent = new Intent(getActivity(), DirectionService.class);
+			intent.setAction(DirectionService.START_FOLLOWING);
+			intent.putParcelableArrayListExtra(DirectionService.POINTS, new ArrayList<PointDesc>(points));
+			getActivity().startService(intent);
 			break;
 			
 		default:
@@ -213,6 +226,7 @@ public class MapFragment extends Fragment {
 	    									savedInstanceState.getInt("center-lon"));
 	    	mapView.getController().setCenter(center);
 	    }
+	    
 	    //GpsMyLocationProvider provider = new GpsMyLocationProvider(context);
 	    //IMyLocationProvider provider2 = new StubMyLocationProvider(mapView);
 	    

@@ -8,5 +8,5 @@
     <string name="action_place">Show places</string>
     <string name="title_activity_points">Points of interest</string>
     <string name="title_activity_details">Details</string>
-
+	<string name="action_track">Follow location</string>
 </resources>

@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
@@ -34,20 +35,17 @@ import com.graphhopper.routing.util.AbstractFlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
+
 import static org.fruct.oss.ikm.Utils.log;
-public class DirectionService extends Service {
-	// Actions
-	public static final String GET_DIRECTIONS = "org.fruct.oss.ikm.GET_DIRECTIONS";
-	public static final String START_FOLLOWING = "org.fruct.oss.ikm.START_FOLLOWING";
-	public static final String FAKE_LOCATION = "org.fruct.oss.ikm.FAKE_LOCATION";
-	
+
+public class DirectionService extends Service {	
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
 	public static final String POINTS = "org.fruct.oss.ikm.POINTS";
 	
 	// Broadcats
-	public static final String GET_DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
+	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
@@ -56,30 +54,51 @@ public class DirectionService extends Service {
 	
 	private GraphHopper hopper;
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
+	private IBinder binder = new DirectionBinder();
 	
 	// Point of interest for location tracking
-	private ArrayList<PointDesc> storedPoints;
+	private List<PointDesc> storedPoints;
 	
 	private LocationManager locationManager;
 	private LocationListener locationListener;
 	private Location lastLocation;
 	
+	public class DirectionBinder extends android.os.Binder {
+		public DirectionService getService() {
+			return DirectionService.this;
+		}
+	}
+	
 	@Override
-	public int onStartCommand(final Intent intent, int flags, int startId) {
-		if (intent.getAction().equals(GET_DIRECTIONS))
-			processGetDirections(intent.getExtras());
-		else if (intent.getAction().equals(START_FOLLOWING))
-			processStartFollowing(intent.getExtras());
-		else if (intent.getAction().equals(FAKE_LOCATION))
-			processFakeLocation(intent.getExtras());
+	public IBinder onBind(Intent intent) {
+		return binder;
+	}
+	
+	@Override
+	public void onCreate() {
+		super.onCreate();
 		
-		return START_NOT_STICKY;
+		log("DirectionService created");
+	}
+	
+	@Override
+	public void onDestroy() {
+		log("DirectionService destroyed");
+		if (locationManager != null) {
+			locationManager.removeUpdates(locationListener);
+			
+			if (locationManager.isProviderEnabled(MOCK_PROVIDER)) {
+				locationManager.clearTestProviderEnabled(MOCK_PROVIDER);
+				locationManager.removeTestProvider(MOCK_PROVIDER);
+			}
+		}
 	}
 
-	private void processFakeLocation(Bundle extras) {
-		GeoPoint current = (GeoPoint) extras.getParcelable(CENTER);
+	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
+		
+		log("fakeLocation");
 		
 		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
 			Location location = new Location(MOCK_PROVIDER);
@@ -90,41 +109,24 @@ public class DirectionService extends Service {
 			locationManager.setTestProviderLocation(MOCK_PROVIDER, location);
 		}
 	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		return null;
-	}
 	
-	@Override
-	public void onDestroy() {
-		if (locationManager != null) {
-			locationManager.removeUpdates(locationListener);
-			
-			if (locationManager.isProviderEnabled(MOCK_PROVIDER)) {
-				locationManager.clearTestProviderEnabled(MOCK_PROVIDER);
-				locationManager.removeTestProvider(MOCK_PROVIDER);
-			}
-		}
-	}
-	
-	private synchronized void processGetDirections(final Bundle extras) {
+	private void getDirections(final GeoPoint current, final List<PointDesc> points) {
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
-				getDirections(extras);			
+				doGetDirections(current, points);			
 			}
 		};
 		executor.execute(run);
 	}
 	
-	private void processStartFollowing(Bundle extras) {		
+	public void startFollowing(List<PointDesc> points) {		
 		if (locationManager != null) {
 			notifyLocationChanged(lastLocation);
 			return;
 		}
 
-		storedPoints = extras.getParcelableArrayList(POINTS);
+		storedPoints = points;
 		if (storedPoints == null)
 			return;
 		
@@ -145,13 +147,8 @@ public class DirectionService extends Service {
 			@Override
 			public void onLocationChanged(Location location) {
 				lastLocation = location;
-				Bundle args = new Bundle();
-				args.putParcelable(CENTER, new GeoPoint(location));
-				args.putParcelableArrayList(POINTS, storedPoints);
-				
 				notifyLocationChanged(location);
-				
-				processGetDirections(args); 
+				getDirections(new GeoPoint(location), storedPoints); 
 			}
 		};
 		
@@ -180,10 +177,8 @@ public class DirectionService extends Service {
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
-	private void getDirections(Bundle extras) {
+	private void doGetDirections(GeoPoint current, List<PointDesc> points) {
 		initialize();
-		GeoPoint current = (GeoPoint) extras.getParcelable(CENTER);
-		ArrayList<PointDesc> points = extras.getParcelableArrayList(POINTS);
 		
 		if (current == null || points == null)
 			return;
@@ -240,7 +235,7 @@ public class DirectionService extends Service {
 		log("" + (curr - last) / 1e9);
 		
 		// Send result
-		Intent intent = new Intent(GET_DIRECTIONS_READY);
+		Intent intent = new Intent(DIRECTIONS_READY);
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, new ArrayList<Direction>(directions.values()));
 		intent.putExtra(CENTER, (Parcelable) current);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);

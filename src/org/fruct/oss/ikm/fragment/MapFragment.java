@@ -25,9 +25,11 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -35,6 +37,7 @@ import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
@@ -67,6 +70,19 @@ public class MapFragment extends Fragment {
 	
 	private GeoPoint myLocation;
 	private boolean isTracking = false;
+	
+	private DirectionService directionService;
+	private ServiceConnection serviceConnection = new ServiceConnection() {
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			directionService = null;
+		}
+		
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			directionService = ((DirectionService.DirectionBinder) service).getService();
+		}
+	};
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -79,15 +95,17 @@ public class MapFragment extends Fragment {
 	public void onResume() {
 		super.onResume();
 		
+		Intent intent = new Intent(getActivity(), DirectionService.class);
+		getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+		
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
-				@SuppressWarnings("unchecked")
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(geoPoint, directions);
 			}
-		}, new IntentFilter(DirectionService.GET_DIRECTIONS_READY));
+		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
 		
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationReceiver = new BroadcastReceiver() {
 			@Override
@@ -106,6 +124,9 @@ public class MapFragment extends Fragment {
 	public void onPause() {
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
+		
+		getActivity().unbindService(serviceConnection);
+		
 		super.onPause();
 	}
 	
@@ -128,14 +149,11 @@ public class MapFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_search:			
-			Intent intent = new Intent(getActivity(), DirectionService.class);
-			intent.setAction(DirectionService.FAKE_LOCATION);
-			intent.putExtra(DirectionService.CENTER, (Parcelable) Utils.copyGeoPoint(mapView.getMapCenter()));
-			getActivity().startService(intent);
+			directionService.fakeLocation(Utils.copyGeoPoint(mapView.getMapCenter()));
 			break;
 			
 		case R.id.action_place:
-			intent = new Intent(getActivity(), PointsActivity.class);
+			Intent intent = new Intent(getActivity(), PointsActivity.class);
 			intent.putExtra(POINTS, (Serializable) points);
 			startActivity(intent);
 			break;
@@ -160,21 +178,7 @@ public class MapFragment extends Fragment {
 
 		return true;
 	}
-		
-	/**
-	 * Update point-of-interest's directions and display them on screen
-	 */
-	private void updateDirections() {
-		Intent intent = new Intent(getActivity(), DirectionService.class);
-		intent.setAction(DirectionService.GET_DIRECTIONS);
-		intent.putExtra(DirectionService.CENTER,
-				(Parcelable) Utils.copyGeoPoint(mapView.getMapCenter()));
-		intent.putParcelableArrayListExtra(DirectionService.POINTS,
-				new ArrayList<PointDesc>(points));
 
-		getActivity().startService(intent);
-	}
-	
 	private void updateDirectionOverlay(GeoPoint center, ArrayList<Direction> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
@@ -282,10 +286,7 @@ public class MapFragment extends Fragment {
 		
 		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
 				
-		Intent intent = new Intent(getActivity(), DirectionService.class);
-		intent.setAction(DirectionService.START_FOLLOWING);
-		intent.putParcelableArrayListExtra(DirectionService.POINTS, new ArrayList<PointDesc>(points));
-		getActivity().startService(intent);
+		directionService.startFollowing(points);
 	}
 	
 	public void stopTracking() {
@@ -296,8 +297,6 @@ public class MapFragment extends Fragment {
 	
 	@Override
 	public void onDestroy() {
-		getActivity().stopService(new Intent(getActivity(), DirectionService.class));
-		
 		super.onDestroy();
 	}
 	

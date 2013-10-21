@@ -110,7 +110,7 @@ public class MapFragment extends Fragment {
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				Location location = intent.getParcelableExtra(DirectionService.CENTER);
+				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 
 				if (isTracking) {
 					myLocation = new GeoPoint(location);

@@ -42,6 +42,7 @@ public class DirectionService extends Service {
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
+	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
 	public static final String POINTS = "org.fruct.oss.ikm.POINTS";
 	
 	// Broadcats
@@ -101,20 +102,23 @@ public class DirectionService extends Service {
 		log("fakeLocation");
 		
 		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
+			GeoPoint last = new GeoPoint(lastLocation);
+			
 			Location location = new Location(MOCK_PROVIDER);
 			location.setLatitude(current.getLatitudeE6() / 1e6);
 			location.setLongitude(current.getLongitudeE6() / 1e6);
 			location.setTime(System.currentTimeMillis());
-			
+			location.setBearing((float) last.bearingTo(current)); 
+
 			locationManager.setTestProviderLocation(MOCK_PROVIDER, location);
 		}
 	}
 	
-	private void getDirections(final GeoPoint current, final List<PointDesc> points) {
+	private void getDirections(final Location location, final List<PointDesc> points) {
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
-				doGetDirections(current, points);			
+				doGetDirections(location, points);			
 			}
 		};
 		executor.execute(run);
@@ -148,7 +152,7 @@ public class DirectionService extends Service {
 			public void onLocationChanged(Location location) {
 				lastLocation = location;
 				notifyLocationChanged(location);
-				getDirections(new GeoPoint(location), storedPoints); 
+				getDirections(location, storedPoints); 
 			}
 		};
 		
@@ -173,15 +177,17 @@ public class DirectionService extends Service {
 			return;
 		
 		Intent intent = new Intent(LOCATION_CHANGED);
-		intent.putExtra(CENTER, (Parcelable) location);
+		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
-	private void doGetDirections(GeoPoint current, List<PointDesc> points) {
+	private void doGetDirections(Location location, List<PointDesc> points) {
 		initialize();
 		
-		if (current == null || points == null)
+		if (location == null || points == null)
 			return;
+		
+		GeoPoint current = new GeoPoint(location);
 		
 		long last = System.nanoTime();
 		
@@ -238,6 +244,7 @@ public class DirectionService extends Service {
 		Intent intent = new Intent(DIRECTIONS_READY);
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, new ArrayList<Direction>(directions.values()));
 		intent.putExtra(CENTER, (Parcelable) current);
+		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 		
 		/*NotificationCompat.Builder mBuilder =

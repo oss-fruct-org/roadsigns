@@ -1,7 +1,9 @@
 package org.fruct.oss.ikm.appwidget;
 
 import org.fruct.oss.ikm.R;
+
 import android.annotation.TargetApi;
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
@@ -9,7 +11,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.widget.RemoteViews;
-
 import static org.fruct.oss.ikm.Utils.log;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -41,6 +42,15 @@ public class RoadSignsWidgetProvider extends AppWidgetProvider {
 				rv.setRemoteAdapter(R.id.widget_list_view, intent);
 			
 			rv.setEmptyView(R.id.widget_list_view, android.R.id.empty);
+			
+			// Set up 'tracking button' callback
+			Intent buttonIntent = new Intent(context, UpdateService.class);
+			buttonIntent.setAction(UpdateService.TRACKING_BUTTON_CLICKED);
+			PendingIntent pendingIntent = PendingIntent.getService(context, 0,
+					buttonIntent, 0);
+			
+			rv.setOnClickPendingIntent(R.id.tracking_button, pendingIntent);
+
 			appWidgetManager.updateAppWidget(i, rv);
 		}
 		

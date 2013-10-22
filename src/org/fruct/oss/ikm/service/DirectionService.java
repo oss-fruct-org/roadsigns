@@ -280,7 +280,8 @@ public class DirectionService extends Service {
 		
 		try {
 			hopper.setCHShortcuts("shortest");
-			boolean res = hopper.load(Environment.getExternalStorageDirectory().getPath()  + "/graphhopper/maps/karelia-gh");
+			boolean res = hopper.load(Environment.getExternalStorageDirectory()
+					.getPath() + "/graphhopper/maps/karelia-gh");
 			log("GraphHopper loaded " + res);
 		} catch (Exception ex) {
 			ex.printStackTrace();

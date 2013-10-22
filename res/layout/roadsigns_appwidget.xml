@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:padding="@dimen/widget_margin" >
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/appwidget_back"
@@ -20,8 +20,21 @@
 
         <ListView
             android:id="@+id/widget_list_view"
+            android:layout_below="@id/textView1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </LinearLayout>
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/tracking_button"
+             />
+
+        <ImageButton
+            android:id="@id/tracking_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_action_location_found" 
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            />
+        
+    </RelativeLayout>
 
 </FrameLayout>

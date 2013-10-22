@@ -62,6 +62,12 @@ public class DirectionService extends Service {
 	
 	private LocationManager locationManager;
 	private LocationListener locationListener;
+	
+	// Last query result
+	private ArrayList<Direction> lastResultDirections;
+	private GeoPoint lastResultCenter;
+	private Location lastResultLocation;
+	
 	private Location lastLocation;
 	
 	public class DirectionBinder extends android.os.Binder {
@@ -92,23 +98,26 @@ public class DirectionService extends Service {
 				locationManager.clearTestProviderEnabled(MOCK_PROVIDER);
 				locationManager.removeTestProvider(MOCK_PROVIDER);
 			}
+			
+			locationManager = null;
 		}
 	}
 
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
-		
-		log("fakeLocation");
-		
+
 		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
 			GeoPoint last = new GeoPoint(lastLocation);
+			float bearing = (float) last.bearingTo(current);
+			
+			log("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
 			
 			Location location = new Location(MOCK_PROVIDER);
 			location.setLatitude(current.getLatitudeE6() / 1e6);
 			location.setLongitude(current.getLongitudeE6() / 1e6);
 			location.setTime(System.currentTimeMillis());
-			location.setBearing((float) last.bearingTo(current)); 
+			location.setBearing(bearing); 
 
 			locationManager.setTestProviderLocation(MOCK_PROVIDER, location);
 		}
@@ -124,9 +133,13 @@ public class DirectionService extends Service {
 		executor.execute(run);
 	}
 	
-	public void startFollowing(List<PointDesc> points) {		
+	public void startTracking(List<PointDesc> points) {		
 		if (locationManager != null) {
 			notifyLocationChanged(lastLocation);
+			
+			if (lastResultDirections != null)
+				sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
+		
 			return;
 		}
 
@@ -186,12 +199,12 @@ public class DirectionService extends Service {
 		
 		if (location == null || points == null)
 			return;
-		
+	
 		GeoPoint current = new GeoPoint(location);
 		
 		long last = System.nanoTime();
 		
-		// Find nearest node
+		// Find nearest road node
 		Location2IDIndex index = hopper.getLocationIndex();
 		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
 		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
@@ -208,6 +221,7 @@ public class DirectionService extends Service {
 		
 		current = nearestNode;
 		
+		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : points) {			
 			GHRequest request = new GHRequest(
@@ -227,7 +241,7 @@ public class DirectionService extends Service {
 				continue;
 			
 			GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
-						
+
 			Direction direction = directions.get(directionNode);
 			if (direction == null) {
 				direction = new Direction(current, directionNode);
@@ -240,25 +254,22 @@ public class DirectionService extends Service {
 		long curr = System.nanoTime();
 		log("" + (curr - last) / 1e9);
 		
+		lastResultDirections = new ArrayList<Direction>(directions.values());
+		lastResultCenter = current;
+		lastResultLocation = location;
+		
 		// Send result
-		Intent intent = new Intent(DIRECTIONS_READY);
-		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, new ArrayList<Direction>(directions.values()));
-		intent.putExtra(CENTER, (Parcelable) current);
-		intent.putExtra(LOCATION, (Parcelable) location);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-		
-		/*NotificationCompat.Builder mBuilder =
-			    new NotificationCompat.Builder(this)
-				.setSmallIcon(R.drawable.ic_launcher)
-			    .setContentTitle("My notification")
-			    .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(), 0))
-			    .setContentText("Hello World!");
-		
-		NotificationManager mNotifyMgr = 
-		        (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		mNotifyMgr.notify(1, mBuilder.build());*/
+		sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
 	}
 	
+	
+	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
+		Intent intent = new Intent(DIRECTIONS_READY);
+		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);
+		intent.putExtra(CENTER, (Parcelable) center);
+		intent.putExtra(LOCATION, (Parcelable) location);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+	}
 
 	private void initialize() {
 		if (isInitialized)

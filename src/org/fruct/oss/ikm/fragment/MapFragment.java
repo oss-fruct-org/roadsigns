@@ -111,6 +111,7 @@ public class MapFragment extends Fragment {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
+				log("location bearing = " + location.getBearing());
 
 				if (isTracking) {
 					myLocation = new GeoPoint(location);
@@ -286,7 +287,7 @@ public class MapFragment extends Fragment {
 		
 		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
 				
-		directionService.startFollowing(points);
+		directionService.startTracking(points);
 	}
 	
 	public void stopTracking() {

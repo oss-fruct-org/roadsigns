@@ -21,4 +21,8 @@ public class Utils {
 	public static void log(String format, Object... args) {
 		log(String.format(format, args));
 	}
+	
+	public static float normalizeAngle(float degree) {
+		return (float) (Math.IEEEremainder(degree, 360));
+	}
 }

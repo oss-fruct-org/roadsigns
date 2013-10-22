@@ -39,7 +39,7 @@ public class UpdateService extends Service {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			directionService = ((DirectionService.DirectionBinder) service).getService();
-			directionService.startFollowing(new StubPointProvider().getPoints(0, 0, 0));
+			directionService.startTracking(new StubPointProvider().getPoints(0, 0, 0));
 		}
 	};
 
@@ -73,7 +73,7 @@ public class UpdateService extends Service {
 				views.setTextViewText(R.id.textView1, "Size: " + directions.size());
 				manager.updateAppWidget(name, views);
 				
-				ListProvider.directions = directions;
+				ListProvider.sdirections = directions;
 				ListProvider.slocation = location;
 				
 				manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(name), R.id.widget_list_view);

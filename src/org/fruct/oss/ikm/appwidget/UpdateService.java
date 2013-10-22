@@ -11,6 +11,7 @@ import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 
 import android.annotation.TargetApi;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
@@ -20,6 +21,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -57,28 +59,17 @@ public class UpdateService extends Service {
 		@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			log("RoadSignsWidgetProvider: onReceive");
-			AppWidgetManager manager = AppWidgetManager.getInstance(context);
+			log("UpdateService: onReceive");
 
 			ArrayList<Direction> directions = intent
 					.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 			Location location = (Location) intent
 					.getParcelableExtra(DirectionService.LOCATION);
 
-			ComponentName name = new ComponentName(context,
-					RoadSignsWidgetProvider.class);
-
-			RemoteViews views = new RemoteViews(context.getPackageName(),
-					R.layout.roadsigns_appwidget);
-
-			views.setTextViewText(R.id.textView1, "Size: " + directions.size());
-			manager.updateAppWidget(name, views);
-
 			ListProvider.sdirections = directions;
 			ListProvider.slocation = location;
 
-			manager.notifyAppWidgetViewDataChanged(
-					manager.getAppWidgetIds(name), R.id.widget_list_view);
+			updateRemoteViews(context);
 		}
 	};
 
@@ -112,28 +103,56 @@ public class UpdateService extends Service {
 
 		unbindService(serviceConnection);
 	}
-
-	private void updateTrackingButtonIcon() {
-		int resId = isTracking ? R.drawable.ic_action_location_searching
-				: R.drawable.ic_action_location_found;
-
-		AppWidgetManager manager = AppWidgetManager.getInstance(this);
-		ComponentName name = new ComponentName(this,
+	
+	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+	private void updateRemoteViews(Context context) {
+		AppWidgetManager manager = AppWidgetManager.getInstance(context);
+		ComponentName name = new ComponentName(context,
 				RoadSignsWidgetProvider.class);
-		RemoteViews views = new RemoteViews(this.getPackageName(),
+		RemoteViews views = new RemoteViews(context.getPackageName(),
 				R.layout.roadsigns_appwidget);
 
-		views.setImageViewResource(R.id.tracking_button, resId);
+		// Update button icon
+		int imageId = isTracking ? R.drawable.ic_action_location_searching
+				: R.drawable.ic_action_location_found;
+		views.setImageViewResource(R.id.tracking_button, imageId);
+		
+		// Update list view
+		for (int i : manager.getAppWidgetIds(name)) {
+			manager.notifyAppWidgetViewDataChanged(
+					manager.getAppWidgetIds(name), R.id.widget_list_view);
+
+			Intent intent = new Intent(context, WidgetService.class);
+			intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, i);
+			intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
+						
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+				views.setRemoteAdapter(i, R.id.widget_list_view, intent);
+			else
+				views.setRemoteAdapter(R.id.widget_list_view, intent);
+
+			views.setEmptyView(R.id.widget_list_view, android.R.id.empty);
+		}
+		
+		// Set up 'tracking button' callback
+		Intent buttonIntent = new Intent(context, UpdateService.class);
+		buttonIntent.setAction(UpdateService.TRACKING_BUTTON_CLICKED);
+		PendingIntent pendingIntent = PendingIntent.getService(context, 0,
+				buttonIntent, 0);
+		
+		views.setOnClickPendingIntent(R.id.tracking_button, pendingIntent);
+		
 		manager.updateAppWidget(name, views);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		log("UpdateService.onStartCommand " + intent);
+		
 		if (intent != null && intent.getAction() != null
 				&& intent.getAction().equals(TRACKING_BUTTON_CLICKED)) {
 			isTracking = !isTracking;
-			updateTrackingButtonIcon();
+			updateRemoteViews(this);
 			
 			if (isTracking)
 				startTracking();

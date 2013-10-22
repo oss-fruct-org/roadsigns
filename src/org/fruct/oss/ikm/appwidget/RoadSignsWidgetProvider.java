@@ -29,19 +29,10 @@ public class RoadSignsWidgetProvider extends AppWidgetProvider {
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-		for (int i : appWidgetIds) {
-			Intent intent = new Intent(context, WidgetService.class);
-			intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, i);
-			intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
-			
+		log("RoadSignsWidget.onUpdate");
+		
+		for (int i : appWidgetIds) {			
 			RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.roadsigns_appwidget);
-			
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-				rv.setRemoteAdapter(i, R.id.widget_list_view, intent);
-			else
-				rv.setRemoteAdapter(R.id.widget_list_view, intent);
-			
-			rv.setEmptyView(R.id.widget_list_view, android.R.id.empty);
 			
 			// Set up 'tracking button' callback
 			Intent buttonIntent = new Intent(context, UpdateService.class);

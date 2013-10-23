@@ -1,8 +1,11 @@
 package org.fruct.oss.ikm.appwidget;
 
+import static org.fruct.oss.ikm.Utils.log;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -13,7 +16,9 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -91,9 +96,19 @@ public class ListProvider implements RemoteViewsService.RemoteViewsFactory {
 		
 		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.direction_list_item);
 		remoteViews.setTextViewText(android.R.id.text1, point.getName());
-		remoteViews.setTextViewText(android.R.id.text2, directionDescription + "   " + relativeBearing);
-		remoteViews.setImageViewResource(android.R.id.icon, resId);
-	
+		remoteViews.setTextViewText(android.R.id.text2, point.getDescription());
+		remoteViews.setImageViewResource(android.R.id.icon, resId);		
+		
+		// Set up intent for individual list item
+		Bundle bundle = new Bundle();
+		bundle.putInt(PointsActivity.DETAILS_INDEX, position);
+		// FIXME: listview doesn't pass this argument to PointActivity
+
+		Intent itemIntent = new Intent();
+		itemIntent.putExtras(bundle);
+
+		remoteViews.setOnClickFillInIntent(R.id.direction_list_item, itemIntent);
+		
 		return remoteViews;
 	}
 
@@ -127,9 +142,7 @@ public class ListProvider implements RemoteViewsService.RemoteViewsFactory {
 		
 		items.clear();
 
-		
 		this.location = location;
-
 		
 		for (Direction direction : directions) {
 			center = direction.getCenter();

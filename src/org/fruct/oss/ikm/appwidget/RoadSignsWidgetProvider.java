@@ -30,8 +30,8 @@ public class RoadSignsWidgetProvider extends AppWidgetProvider {
 	@Override
 	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		log("RoadSignsWidget.onUpdate");
-		
-		for (int i : appWidgetIds) {			
+
+		for (int i : appWidgetIds) {
 			RemoteViews rv = new RemoteViews(context.getPackageName(), R.layout.roadsigns_appwidget);
 			
 			// Set up 'tracking button' callback
@@ -46,5 +46,12 @@ public class RoadSignsWidgetProvider extends AppWidgetProvider {
 		}
 		
 		super.onUpdate(context, appWidgetManager, appWidgetIds);
+	}
+	
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		super.onReceive(context, intent);
+		
+		log(intent.getExtras() + "");
 	}
 }

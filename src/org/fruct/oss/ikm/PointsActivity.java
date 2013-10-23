@@ -8,6 +8,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class PointsActivity extends ActionBarActivity {	
+	// Actions
+	public static final String SHOW_DETAILS = "org.fruct.oss.ikm.SHOW_DETAILS";
+	
+	// Parameters
+	public static final String DETAILS_INDEX = "org.fruct.oss.ikm.DETAILS_INDEX";
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

@@ -3,9 +3,13 @@ package org.fruct.oss.ikm.appwidget;
 import static org.fruct.oss.ikm.Utils.log;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.fragment.MapFragment;
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.StubPointProvider;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
@@ -23,6 +27,7 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.RemoteViews;
@@ -34,6 +39,7 @@ public class UpdateService extends Service {
 	private BroadcastReceiver directionsReceiver;
 	private DirectionService directionService;
 	private boolean isTracking = false;
+	private List<PointDesc> points = new StubPointProvider().getPoints(0, 0, 0);
 
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
@@ -45,8 +51,7 @@ public class UpdateService extends Service {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			directionService = ((DirectionService.DirectionBinder) service)
 					.getService();
-			directionService.startTracking(new StubPointProvider().getPoints(0,
-					0, 0));
+			directionService.startTracking(points);
 		}
 	};
 
@@ -107,42 +112,63 @@ public class UpdateService extends Service {
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void updateRemoteViews(Context context) {
 		AppWidgetManager manager = AppWidgetManager.getInstance(context);
-		ComponentName name = new ComponentName(context,
-				RoadSignsWidgetProvider.class);
-		RemoteViews views = new RemoteViews(context.getPackageName(),
-				R.layout.roadsigns_appwidget);
+		ComponentName name = new ComponentName(context, RoadSignsWidgetProvider.class);
 
-		// Update button icon
-		int imageId = isTracking ? R.drawable.ic_action_location_searching
-				: R.drawable.ic_action_location_found;
-		views.setImageViewResource(R.id.tracking_button, imageId);
-		
 		// Update list view
+		manager.notifyAppWidgetViewDataChanged(manager.getAppWidgetIds(name),
+				R.id.widget_list_view);
+		
 		for (int i : manager.getAppWidgetIds(name)) {
-			manager.notifyAppWidgetViewDataChanged(
-					manager.getAppWidgetIds(name), R.id.widget_list_view);
+			RemoteViews views = new RemoteViews(context.getPackageName(),
+					R.layout.roadsigns_appwidget);
+
+			// Update button icon
+			int imageId = isTracking ? R.drawable.ic_action_location_searching
+					: R.drawable.ic_action_location_found;
+			views.setImageViewResource(R.id.tracking_button, imageId);
 
 			Intent intent = new Intent(context, WidgetService.class);
 			intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, i);
 			intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
-						
+
 			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 				views.setRemoteAdapter(i, R.id.widget_list_view, intent);
 			else
 				views.setRemoteAdapter(R.id.widget_list_view, intent);
 
 			views.setEmptyView(R.id.widget_list_view, android.R.id.empty);
+
+			// Set up list item callback
+			Intent processItemIntent = new Intent(context, PointsActivity.class);
+			processItemIntent.setAction(PointsActivity.SHOW_DETAILS);
+
+			processItemIntent.putParcelableArrayListExtra(MapFragment.POINTS,
+					new ArrayList<PointDesc>(points));
+
+			processItemIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, i);
+			processItemIntent.setData(Uri.parse(processItemIntent
+					.toUri(Intent.URI_INTENT_SCHEME)));
+			
+			PendingIntent pendingItemIntent = PendingIntent.getActivity(
+					context, 0, processItemIntent,
+					PendingIntent.FLAG_UPDATE_CURRENT);
+			
+			/*PendingIntent pendingItemIntent = PendingIntent.getBroadcast(
+					context, 0, processItemIntent, PendingIntent.FLAG_UPDATE_CURRENT);*/
+			
+			views.setPendingIntentTemplate(R.id.widget_list_view,
+					pendingItemIntent);
+			
+			// Set up 'tracking button' callback
+			Intent buttonIntent = new Intent(context, UpdateService.class);
+			buttonIntent.setAction(UpdateService.TRACKING_BUTTON_CLICKED);
+			PendingIntent pendingIntent = PendingIntent.getService(context, 0,
+					buttonIntent, 0);
+
+			views.setOnClickPendingIntent(R.id.tracking_button, pendingIntent);
+			
+			manager.updateAppWidget(i, views);
 		}
-		
-		// Set up 'tracking button' callback
-		Intent buttonIntent = new Intent(context, UpdateService.class);
-		buttonIntent.setAction(UpdateService.TRACKING_BUTTON_CLICKED);
-		PendingIntent pendingIntent = PendingIntent.getService(context, 0,
-				buttonIntent, 0);
-		
-		views.setOnClickPendingIntent(R.id.tracking_button, pendingIntent);
-		
-		manager.updateAppWidget(name, views);
 	}
 
 	@Override
@@ -161,7 +187,7 @@ public class UpdateService extends Service {
 			
 			return START_STICKY;
 		}
-
+		
 		return super.onStartCommand(intent, flags, startId);
 	}
 }

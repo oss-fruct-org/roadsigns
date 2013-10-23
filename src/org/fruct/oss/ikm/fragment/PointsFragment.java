@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.fragment;
 import java.util.ArrayList;
 
 import org.fruct.oss.ikm.DetailsActivity;
+import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
 
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import static org.fruct.oss.ikm.Utils.log;
 
 public class PointsFragment extends ListFragment {
 	private ArrayList<PointDesc> poiList;
@@ -31,8 +33,8 @@ public class PointsFragment extends ListFragment {
 		
 		try {
 			@SuppressWarnings("unchecked")
-			ArrayList<PointDesc> poiList = (ArrayList<PointDesc>) getActivity()
-					.getIntent().getSerializableExtra(MapFragment.POINTS);
+			ArrayList<PointDesc> poiList = getActivity().getIntent()
+					.getParcelableArrayListExtra(MapFragment.POINTS);
 			this.poiList = poiList;
 			
 			ArrayList<String> poiNames = new ArrayList<String>();
@@ -86,8 +88,6 @@ public class PointsFragment extends ListFragment {
 			intent.putExtra(DetailsActivity.POINT_ARG, (Parcelable) pointDesc);
 			startActivity(intent);
 		}
-		
-		
 	}
 	
 	@Override
@@ -113,6 +113,17 @@ public class PointsFragment extends ListFragment {
 		if (isDualPane) {
 			getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 			showDetails(selectedIndex);
+		}
+		
+		// If intent has action SHOW_DETAILS, show details activity immediately
+		if (PointsActivity.SHOW_DETAILS.equals(getActivity().getIntent().getAction())) {
+			int index = getActivity().getIntent().getIntExtra(PointsActivity.DETAILS_INDEX, -1);
+			log("PointsFragment receive action SHOW_DETAILS. extras = " + getActivity().getIntent().getExtras());
+			
+			if (-1 == index)
+				index = 0;
+			
+			showDetails(index);
 		}
 	}
 	

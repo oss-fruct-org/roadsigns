@@ -155,7 +155,7 @@ public class MapFragment extends Fragment {
 			
 		case R.id.action_place:
 			Intent intent = new Intent(getActivity(), PointsActivity.class);
-			intent.putExtra(POINTS, (Serializable) points);
+			intent.putParcelableArrayListExtra(POINTS, new ArrayList<PointDesc>(points));
 			startActivity(intent);
 			break;
 			

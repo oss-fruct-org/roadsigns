@@ -286,9 +286,7 @@ public class DirectionService extends Service {
 			InputStream input = this.getAssets().open("karelia.ghz.ghz");
 			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", "karelia.ghz.ghz");
 			filename = filename.substring(0, filename.length() - 4); // Cut last '.ghz'
-			input.close();
-			log("Filename = " + filename);
-			
+			input.close();			
 			boolean res = hopper.load(filename);
 			log("GraphHopper loaded " + res);
 		} catch (Exception ex) {

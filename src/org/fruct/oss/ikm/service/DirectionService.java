@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.service;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 
@@ -281,8 +283,13 @@ public class DirectionService extends Service {
 		
 		try {
 			hopper.setCHShortcuts("shortest");
-			boolean res = hopper.load(Environment.getExternalStorageDirectory()
-					.getPath() + "/graphhopper/maps/karelia-gh");
+			InputStream input = this.getAssets().open("karelia.ghz.ghz");
+			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", "karelia.ghz.ghz");
+			filename = filename.substring(0, filename.length() - 4); // Cut last '.ghz'
+			input.close();
+			log("Filename = " + filename);
+			
+			boolean res = hopper.load(filename);
 			log("GraphHopper loaded " + res);
 		} catch (Exception ex) {
 			ex.printStackTrace();

@@ -1,11 +1,19 @@
 package org.fruct.oss.ikm;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
+import android.content.Context;
 import android.util.Log;
 
 public class Utils {
@@ -24,5 +32,36 @@ public class Utils {
 	
 	public static float normalizeAngle(float degree) {
 		return (float) (Math.IEEEremainder(degree, 360));
+	}
+	
+	public static String copyToInternalStorage(Context context, InputStream inputStream,
+			String pathInStorage, String fileInStorage) throws IOException {
+		if (!pathInStorage.startsWith("/"))
+			pathInStorage = "/" + pathInStorage;
+		
+		final int bufferSize = 4096;
+		final String storageFolder = "/data/data/" + context.getPackageName() + pathInStorage;
+		final String storageFile = storageFolder + "/" + fileInStorage;
+		
+		File targetFile = new File(storageFile);
+		if (targetFile.exists())
+			return storageFile;
+		
+		File targetDirectory = new File(storageFolder);
+		targetDirectory.mkdirs();
+		
+		InputStream input = new BufferedInputStream(inputStream);
+		OutputStream output = new BufferedOutputStream(new FileOutputStream(targetFile));
+		
+		int length;
+		byte[] buffer = new byte[bufferSize];
+		while ((length = input.read(buffer)) > 0) {
+			output.write(buffer, 0, length);
+		}
+		
+		output.flush();
+		input.close();
+		
+		return storageFile;
 	}
 }

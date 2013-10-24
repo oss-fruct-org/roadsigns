@@ -142,9 +142,6 @@ public class UpdateService extends Service {
 			Intent processItemIntent = new Intent(context, PointsActivity.class);
 			processItemIntent.setAction(PointsActivity.SHOW_DETAILS);
 
-			processItemIntent.putParcelableArrayListExtra(MapFragment.POINTS,
-					new ArrayList<PointDesc>(points));
-
 			processItemIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, i);
 			processItemIntent.setData(Uri.parse(processItemIntent
 					.toUri(Intent.URI_INTENT_SCHEME)));

@@ -6,6 +6,7 @@ import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.StubPointProvider;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
@@ -31,10 +32,15 @@ public class PointsFragment extends ListFragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		
-		try {
-			@SuppressWarnings("unchecked")
-			ArrayList<PointDesc> poiList = getActivity().getIntent()
+		try {			
+			Intent intent = getActivity().getIntent();
+			ArrayList<PointDesc> poiList = intent
 					.getParcelableArrayListExtra(MapFragment.POINTS);
+			
+			if (poiList == null)
+				poiList = new ArrayList<PointDesc>(new StubPointProvider().getPoints(0, 0, 0));
+			
+			
 			this.poiList = poiList;
 			
 			ArrayList<String> poiNames = new ArrayList<String>();

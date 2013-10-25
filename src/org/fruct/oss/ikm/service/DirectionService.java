@@ -210,7 +210,7 @@ public class DirectionService extends Service {
 		
 		current = nearestNode;
 		
-		List<PointDesc> points = PointsManager.getInstance().getPoints();
+		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 		
 		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();

@@ -18,10 +18,15 @@ public class PointDesc implements Serializable, Parcelable {
 	private String category;
 	private String desc;
 	
+	private static int nextId = 0;
+	private int internalId;
+	
 	public PointDesc(String name, int latE6, int lonE6) {
 		this.name = name;
 		this.latE6 = latE6;
 		this.lonE6 = lonE6;
+		
+		internalId = nextId++;
 	}
 	
 	public PointDesc setCategory(String cat) {
@@ -53,6 +58,29 @@ public class PointDesc implements Serializable, Parcelable {
 	
 	
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + internalId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		PointDesc other = (PointDesc) obj;
+		if (internalId != other.internalId)
+			return false;
+		return true;
+	}
+
+	
+	@Override
 	public int describeContents() {
 		return 0;
 	}
@@ -64,6 +92,7 @@ public class PointDesc implements Serializable, Parcelable {
 		dest.writeString(name);
 		dest.writeString(desc);
 		dest.writeString(category);
+		dest.writeInt(internalId);
 	}
 	
 	public static final Parcelable.Creator<PointDesc> CREATOR = new Parcelable.Creator<PointDesc>() {
@@ -81,6 +110,8 @@ public class PointDesc implements Serializable, Parcelable {
 			PointDesc ret = new PointDesc(name, lat, lon)
 				.setDescription(source.readString())
 				.setCategory(source.readString());
+			
+			ret.internalId = source.readInt();
 			
 			return ret;
 		}

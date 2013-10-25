@@ -42,10 +42,10 @@ public class PointsFragment extends ListFragment {
 			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
 
 			if (poiList == null)
-				poiList = PointsManager.getInstance().getPoints();
+				poiList = PointsManager.getInstance().getAllPoints();
 			
 			this.poiList = poiList;
-			showList(poiList);
+			setList(poiList);
 		} catch (ClassCastException ex) {
 			ex.printStackTrace();
 		}
@@ -53,7 +53,8 @@ public class PointsFragment extends ListFragment {
 		return super.onCreateView(inflater, container, savedInstanceState);
 	}
 	
-	private void showList(List<PointDesc> points) {
+	private void setList(List<PointDesc> points) {
+		selectedIndex = 0;
 		ArrayList<String> poiNames = new ArrayList<String>();
 
 		for (PointDesc point : points) {
@@ -79,6 +80,31 @@ public class PointsFragment extends ListFragment {
 		showDetails(position);
 	}
 	
+	/**
+	 * Select item if it in list
+	 * 
+	 * @param point point of interest
+	 * @param alwaysSwitch switch to details window even in one-panel mode
+	 */
+	public void selectIfAvailable(PointDesc point, boolean alwaysSwitch) {
+		int c = -1;
+		for (int i = 0; i < poiList.size(); i++) {
+			if (poiList.get(i).equals(point)) {
+				c = i;
+			}
+		}
+		
+		
+		if (-1 != c) {
+			log("select " + c);
+			getListView().setItemChecked(c, true);
+
+			if ((alwaysSwitch || isDualPane)) {
+				showDetails(c);
+			}
+		}
+	}
+	
 	public void showDetails(int index) {
 		selectedIndex = index;
 		PointDesc pointDesc = poiList.get(index);
@@ -88,7 +114,7 @@ public class PointsFragment extends ListFragment {
 			
 			DetailsFragment fragment = new DetailsFragment();
 			Bundle args = new Bundle();
-			args.putSerializable(DetailsActivity.POINT_ARG, pointDesc);
+			args.putParcelable(DetailsActivity.POINT_ARG, pointDesc);
 			fragment.setArguments(args);
 			getActivity().getSupportFragmentManager().beginTransaction()
 				.replace(R.id.point_details, fragment, "details")
@@ -123,18 +149,16 @@ public class PointsFragment extends ListFragment {
 		
 		if (isDualPane) {
 			getListView().setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-			showDetails(selectedIndex);
 		}
 		
 		// If intent has action SHOW_DETAILS, show details activity immediately
 		if (PointsActivity.SHOW_DETAILS.equals(getActivity().getIntent().getAction())) {
-			int index = getActivity().getIntent().getIntExtra(PointsActivity.DETAILS_INDEX, -1);
-			log("PointsFragment receive action SHOW_DETAILS. extras = " + getActivity().getIntent().getExtras());
-			
-			if (-1 == index)
-				index = 0;
-			
-			showDetails(index);
+			Bundle bundle = getActivity().getIntent().getBundleExtra(PointsActivity.DETAILS_INDEX);
+			log("PointsFragment receive action SHOW_DETAILS. extras = " + bundle);
+			PointDesc point = bundle.getParcelable("pointdesc");
+			selectIfAvailable(point, true);
+		} else if (isDualPane) {
+			showDetails(selectedIndex);
 		}
 		
 		setupFilterBar();
@@ -144,8 +168,8 @@ public class PointsFragment extends ListFragment {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
 		
-		final String[] names = {"All", "Education", "Health", "Culture"};
-		final String[] filters = {"", "education", "health", "culture"};
+		final String[] names = {"All", "Education", "Health", "Culture", "Sport"};
+		final String[] filters = {"", "education", "health", "culture", "sport"};
 		final String currentFilter = PointsManager.getInstance().getFilter();
 		
 		for (int i = 0; i < names.length; i++) {
@@ -162,7 +186,7 @@ public class PointsFragment extends ListFragment {
 				@Override
 				public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
 					PointsManager.getInstance().setFilter(filters[idx]);
-					showList(PointsManager.getInstance().filterPoints(poiList));
+					setList(PointsManager.getInstance().filterPoints(poiList));
 				}
 				
 				@Override
@@ -173,7 +197,6 @@ public class PointsFragment extends ListFragment {
 			
 			actionBar.addTab(tab, currentFilter.equals(filters[i]));
 		}
-		
 		
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 		actionBar.setDisplayShowTitleEnabled(false);

@@ -16,9 +16,13 @@ public class PointsManager {
 		points = loader.getPoints();
 	}
 	
-	public List<PointDesc> getPoints() {
+	public List<PointDesc> getFilteredPoints() {
 		ensureValid(); 
 		return filteredPoints;
+	}
+	
+	public List<PointDesc> getAllPoints() {
+		return points;
 	}
 	
 	public List<PointDesc> filterPoints(List<PointDesc> list) {

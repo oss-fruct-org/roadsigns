@@ -215,7 +215,7 @@ public class MapFragment extends Fragment {
 		Context context = getActivity();
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
     	
-    	List<PointDesc> points = PointsManager.getInstance().getPoints();
+    	List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 	    for (PointDesc point : points) {
 	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
 	    }

@@ -32,7 +32,7 @@ public class DetailsFragment extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
-		final PointDesc desc = (PointDesc) getArguments().getSerializable(DetailsActivity.POINT_ARG);
+		final PointDesc desc = (PointDesc) getArguments().getParcelable(DetailsActivity.POINT_ARG);
 		TextView titleView = (TextView) getActivity().findViewById(R.id.title_text);
 		TextView descView = (TextView) getActivity().findViewById(R.id.details_text);
 		

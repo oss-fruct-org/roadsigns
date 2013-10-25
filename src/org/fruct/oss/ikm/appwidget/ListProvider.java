@@ -101,10 +101,11 @@ public class ListProvider implements RemoteViewsService.RemoteViewsFactory {
 		
 		// Set up intent for individual list item
 		Bundle bundle = new Bundle();
-		bundle.putInt(PointsActivity.DETAILS_INDEX, position);
+		bundle.putInt("index", position);
+		bundle.putParcelable("pointdesc", point);
 
 		Intent itemIntent = new Intent();
-		itemIntent.putExtras(bundle);
+		itemIntent.putExtra(PointsActivity.DETAILS_INDEX, bundle);
 
 		remoteViews.setOnClickFillInIntent(R.id.direction_list_item, itemIntent);
 		

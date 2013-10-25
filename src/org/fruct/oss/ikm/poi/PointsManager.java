@@ -12,8 +12,8 @@ public class PointsManager {
 	private List<PointDesc> points;
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 
-	private PointsManager() {
-		points = new StubPointLoader().getPoints();
+	private PointsManager(PointLoader loader) {
+		points = loader.getPoints();
 	}
 	
 	public List<PointDesc> getPoints() {
@@ -24,6 +24,10 @@ public class PointsManager {
 	public void setFilter(String categoryFilter) {
 		this.categoryFilter = categoryFilter;
 		needUpdate = true;
+	}
+	
+	public String getFilter() {
+		return categoryFilter;
 	}
 
 	public static PointsManager getInstance() {
@@ -46,7 +50,7 @@ public class PointsManager {
 	}
 
 	private static class Holder {
-		private static final PointsManager instance = new PointsManager();
+		private static final PointsManager instance = new PointsManager(new StubPointLoader());
 	}
 
 

@@ -251,13 +251,7 @@ public class MapFragment extends Fragment {
 	    	mapView.getController().setCenter(center);
 	    }
 	    
-	    //GpsMyLocationProvider provider = new GpsMyLocationProvider(context);
-	    //IMyLocationProvider provider2 = new StubMyLocationProvider(mapView);
-	    
-	    /*MyLocationNewOverlay myLocationOverlay = new MyLocationNewOverlay(context, provider2, mapView);
-	    mapView.getOverlays().add(myLocationOverlay);
-	    myLocationOverlay.enableMyLocation(provider2);*/
-	    
+	    // Setup device position overlay
 	    Overlay overlay = new Overlay(context) {
 	    	Paint paint = new Paint();
 	    	{

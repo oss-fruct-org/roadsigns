@@ -54,7 +54,6 @@ public class Direction implements Parcelable {
 		direction = source.readParcelable(null);
 	}
 
-	
 	public static Parcelable.Creator<Direction> CREATOR = new Creator<Direction>() {
 		@Override
 		public Direction[] newArray(int size) {

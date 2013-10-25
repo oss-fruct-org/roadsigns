@@ -19,6 +19,9 @@ import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBar.Tab;
+import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,24 +45,26 @@ public class PointsFragment extends ListFragment {
 				poiList = PointsManager.getInstance().getPoints();
 			
 			this.poiList = poiList;
-			
-			ArrayList<String> poiNames = new ArrayList<String>();
-
-			for (PointDesc point : poiList) {
-				poiNames.add(point.getName());
-			}
-			
-			ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-					getActivity(), 
-					getListItemlayout(),
-					poiNames);
-			setListAdapter(adapter);
-
+			resetList();
 		} catch (ClassCastException ex) {
 			ex.printStackTrace();
 		}
 		
 		return super.onCreateView(inflater, container, savedInstanceState);
+	}
+	
+	private void resetList() {
+		ArrayList<String> poiNames = new ArrayList<String>();
+
+		for (PointDesc point : poiList) {
+			poiNames.add(point.getName());
+		}
+		
+		ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+				getActivity(), 
+				getListItemlayout(),
+				poiNames);
+		setListAdapter(adapter);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -131,6 +136,48 @@ public class PointsFragment extends ListFragment {
 			
 			showDetails(index);
 		}
+		
+		setupFilterBar();
+	}
+	
+	private void setupFilterBar() {
+		ActionBarActivity activity = (ActionBarActivity) getActivity();
+		ActionBar actionBar = activity.getSupportActionBar();
+		
+		final String[] names = {"All", "Education", "Health"};
+		final String[] filters = {"", "education", "health"};
+		final String currentFilter = PointsManager.getInstance().getFilter();
+		
+		for (int i = 0; i < 3; i++) {
+			Tab tab = activity.getSupportActionBar().newTab();
+			tab.setText(names[i]);
+			
+			final int idx = i;
+			tab.setTabListener(new ActionBar.TabListener() {
+				@Override
+				public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
+					
+				}
+				
+				@Override
+				public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
+					PointsManager.getInstance().setFilter(filters[idx]);
+					poiList = PointsManager.getInstance().getPoints();
+					resetList();
+				}
+				
+				@Override
+				public void onTabReselected(Tab arg0, FragmentTransaction arg1) {
+					
+				}
+			});
+			
+			actionBar.addTab(tab, currentFilter.equals(filters[i]));
+		}
+		
+		
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+		actionBar.setDisplayShowTitleEnabled(false);
 	}
 	
 	@Override

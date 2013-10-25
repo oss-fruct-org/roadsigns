@@ -20,6 +20,23 @@ public class PointsManager {
 		ensureValid(); 
 		return filteredPoints;
 	}
+	
+	public List<PointDesc> filterPoints(List<PointDesc> list) {
+		ArrayList<PointDesc> ret = new ArrayList<PointDesc>();
+		filterPoints(list, ret);
+		return ret;
+	}
+	
+	private void filterPoints(List<PointDesc> in, List<PointDesc> out) {
+		out.clear();
+		Utils.select(in, out, new Utils.Predicate<PointDesc>() {
+			public boolean apply(PointDesc point) {
+				return categoryFilter == null 
+						|| categoryFilter.length() == 0 
+						|| categoryFilter.equals(point.getCategory());
+			};
+		});
+	}
 
 	public void setFilter(String categoryFilter) {
 		this.categoryFilter = categoryFilter;
@@ -37,15 +54,8 @@ public class PointsManager {
 	private void ensureValid() {
 		if (needUpdate) {
 			needUpdate = true;
-			
-			filteredPoints.clear();
-			Utils.select(points, filteredPoints, new Utils.Predicate<PointDesc>() {
-				public boolean apply(PointDesc point) {
-					return categoryFilter == null 
-							|| categoryFilter.length() == 0 
-							|| categoryFilter.equals(point.getCategory());
-				};
-			});
+			filterPoints(points, filteredPoints);
+
 		}
 	}
 

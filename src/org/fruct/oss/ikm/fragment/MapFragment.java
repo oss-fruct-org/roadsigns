@@ -199,7 +199,7 @@ public class MapFragment extends Fragment {
 					}
 					
 					Intent intent = new Intent(getActivity(), PointsActivity.class);
-					intent.putExtra(POINTS, (Serializable) points);
+					intent.putParcelableArrayListExtra(POINTS, new ArrayList<PointDesc>(points));
 					startActivity(intent);
 				}
 			});

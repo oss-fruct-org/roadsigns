@@ -40,12 +40,12 @@ public class PointsFragment extends ListFragment {
 		try {			
 			Intent intent = getActivity().getIntent();
 			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
-			
+
 			if (poiList == null)
 				poiList = PointsManager.getInstance().getPoints();
 			
 			this.poiList = poiList;
-			resetList();
+			showList(poiList);
 		} catch (ClassCastException ex) {
 			ex.printStackTrace();
 		}
@@ -53,10 +53,10 @@ public class PointsFragment extends ListFragment {
 		return super.onCreateView(inflater, container, savedInstanceState);
 	}
 	
-	private void resetList() {
+	private void showList(List<PointDesc> points) {
 		ArrayList<String> poiNames = new ArrayList<String>();
 
-		for (PointDesc point : poiList) {
+		for (PointDesc point : points) {
 			poiNames.add(point.getName());
 		}
 		
@@ -144,11 +144,11 @@ public class PointsFragment extends ListFragment {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
 		
-		final String[] names = {"All", "Education", "Health"};
-		final String[] filters = {"", "education", "health"};
+		final String[] names = {"All", "Education", "Health", "Culture"};
+		final String[] filters = {"", "education", "health", "culture"};
 		final String currentFilter = PointsManager.getInstance().getFilter();
 		
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < names.length; i++) {
 			Tab tab = activity.getSupportActionBar().newTab();
 			tab.setText(names[i]);
 			
@@ -162,8 +162,7 @@ public class PointsFragment extends ListFragment {
 				@Override
 				public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
 					PointsManager.getInstance().setFilter(filters[idx]);
-					poiList = PointsManager.getInstance().getPoints();
-					resetList();
+					showList(PointsManager.getInstance().filterPoints(poiList));
 				}
 				
 				@Override

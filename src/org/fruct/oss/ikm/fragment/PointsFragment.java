@@ -1,12 +1,15 @@
 package org.fruct.oss.ikm.fragment;
 
+import static org.fruct.oss.ikm.Utils.log;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.StubPointProvider;
+import org.fruct.oss.ikm.poi.PointsManager;
 
 import android.annotation.TargetApi;
 import android.content.Intent;
@@ -21,10 +24,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import static org.fruct.oss.ikm.Utils.log;
 
 public class PointsFragment extends ListFragment {
-	private ArrayList<PointDesc> poiList;
+	private List<PointDesc> poiList;
 	private boolean isDualPane;
 	private int selectedIndex = 0;
 	
@@ -34,12 +36,10 @@ public class PointsFragment extends ListFragment {
 		
 		try {			
 			Intent intent = getActivity().getIntent();
-			ArrayList<PointDesc> poiList = intent
-					.getParcelableArrayListExtra(MapFragment.POINTS);
+			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
 			
 			if (poiList == null)
-				poiList = new ArrayList<PointDesc>(new StubPointProvider().getPoints(0, 0, 0));
-			
+				poiList = PointsManager.getInstance().getPoints();
 			
 			this.poiList = poiList;
 			

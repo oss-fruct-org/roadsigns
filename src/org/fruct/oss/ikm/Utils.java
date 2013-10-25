@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -17,6 +18,10 @@ import android.content.Context;
 import android.util.Log;
 
 public class Utils {
+	public static interface Predicate<T> {
+		public boolean apply(T t);
+	}
+	
 	public final static Executor executor = Executors.newFixedThreadPool(1);
 	public static GeoPoint copyGeoPoint(IGeoPoint p) {
 		return new GeoPoint(p.getLatitudeE6(), p.getLongitudeE6());
@@ -38,9 +43,9 @@ public class Utils {
 			String pathInStorage, String fileInStorage) throws IOException {
 		if (!pathInStorage.startsWith("/"))
 			pathInStorage = "/" + pathInStorage;
-		
+
 		final int bufferSize = 4096;
-		final String storageFolder = "/data/data/" + context.getPackageName() + pathInStorage;
+		final String storageFolder = context.getFilesDir().getPath() + "/" + pathInStorage;
 		final String storageFile = storageFolder + "/" + fileInStorage;
 		
 		File targetFile = new File(storageFile);
@@ -60,8 +65,16 @@ public class Utils {
 		}
 		
 		output.flush();
-		input.close();
+		output.close();
 		
 		return storageFile;
+	}
+	
+
+	public static <T> void select(Collection<T> source, Collection<T> target, Predicate<T> pred) {
+		for (T t : source) {
+			if (pred.apply(t))
+				target.add(t);
+		}
 	}
 }

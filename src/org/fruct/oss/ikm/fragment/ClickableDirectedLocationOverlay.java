@@ -18,13 +18,11 @@ public class ClickableDirectedLocationOverlay extends DirectedLocationOverlay {
 	}
 	
 	private Point screenPoint;
-	private List<PointDesc> points;
 	
-	public ClickableDirectedLocationOverlay(Context ctx, MapView mapView, GeoPoint location, float bearing, List<PointDesc> points) {
+	public ClickableDirectedLocationOverlay(Context ctx, MapView mapView, GeoPoint location, float bearing) {
 		super(ctx);
 		setLocation(location);
 		setBearing(bearing);
-		this.points = points;
 	} 
 	
 	@Override

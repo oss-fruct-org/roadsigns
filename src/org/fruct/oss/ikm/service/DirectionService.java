@@ -1,34 +1,29 @@
 package org.fruct.oss.ikm.service;
 
+import static org.fruct.oss.ikm.Utils.log;
+
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointsManager;
 import org.osmdroid.util.GeoPoint;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Binder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcelable;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
@@ -37,8 +32,6 @@ import com.graphhopper.routing.util.AbstractFlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
-
-import static org.fruct.oss.ikm.Utils.log;
 
 public class DirectionService extends Service {	
 	// Extras
@@ -58,9 +51,6 @@ public class DirectionService extends Service {
 	private GraphHopper hopper;
 	private ExecutorService executor = Executors.newFixedThreadPool(1);
 	private IBinder binder = new DirectionBinder();
-	
-	// Point of interest for location tracking
-	private List<PointDesc> storedPoints;
 	
 	private LocationManager locationManager;
 	private LocationListener locationListener;
@@ -126,17 +116,17 @@ public class DirectionService extends Service {
 		}
 	}
 	
-	private void getDirections(final Location location, final List<PointDesc> points) {
+	private void getDirections(final Location location) {
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
-				doGetDirections(location, points);			
+				doGetDirections(location);			
 			}
 		};
 		executor.execute(run);
 	}
 	
-	public void startTracking(List<PointDesc> points) {		
+	public void startTracking() {		
 		if (locationManager != null) {
 			notifyLocationChanged(lastLocation);
 			
@@ -145,10 +135,6 @@ public class DirectionService extends Service {
 		
 			return;
 		}
-
-		storedPoints = points;
-		if (storedPoints == null)
-			return;
 		
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		locationListener = new LocationListener() {
@@ -168,7 +154,7 @@ public class DirectionService extends Service {
 			public void onLocationChanged(Location location) {
 				lastLocation = location;
 				notifyLocationChanged(location);
-				getDirections(location, storedPoints); 
+				getDirections(location); 
 			}
 		};
 		
@@ -197,10 +183,10 @@ public class DirectionService extends Service {
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
-	private void doGetDirections(Location location, List<PointDesc> points) {
+	private void doGetDirections(Location location) {
 		initialize();
 		
-		if (location == null || points == null)
+		if (location == null)
 			return;
 	
 		GeoPoint current = new GeoPoint(location);
@@ -223,6 +209,8 @@ public class DirectionService extends Service {
 			return;
 		
 		current = nearestNode;
+		
+		List<PointDesc> points = PointsManager.getInstance().getPoints();
 		
 		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();

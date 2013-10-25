@@ -14,10 +14,10 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_main);
 	}
 	
+	
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
-		
 		GeoPoint newCenter = intent.getParcelableExtra(MapFragment.MAP_CENTER);
 		if (newCenter != null) {
 			MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);

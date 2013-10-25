@@ -3,7 +3,7 @@ package org.fruct.oss.ikm.poi;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StubPointProvider implements PointProvider {
+public class StubPointLoader implements PointLoader {
 	private ArrayList<PointDesc> stubPoints = new ArrayList<PointDesc>();
 	{
 		stubPoints.add(new PointDesc("Voenkomat", 61781090, 34362360)
@@ -24,7 +24,7 @@ public class StubPointProvider implements PointProvider {
 	}
 	
 	@Override
-	public List<PointDesc> getPoints(int latE6, int lonE6, int radius) {
+	public List<PointDesc> getPoints() {
 		return stubPoints;
 	}
 }

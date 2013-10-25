@@ -11,8 +11,9 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointProvider;
-import org.fruct.oss.ikm.poi.StubPointProvider;
+import org.fruct.oss.ikm.poi.PointLoader;
+import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.poi.StubPointLoader;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
@@ -55,11 +56,7 @@ public class MapFragment extends Fragment {
 	
 	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
 	public static final String MAP_CENTER = "org.fruct.oss.ikm.fragment.MAP_CENTER";
-	
-	private PointProvider pointProvider = new StubPointProvider();
-	
-	private List<PointDesc> points = pointProvider.getPoints(0, 0, 0);
-		
+				
 	private List<DirectedLocationOverlay> crossDirections;
 	
 	private Menu menu;
@@ -155,7 +152,6 @@ public class MapFragment extends Fragment {
 			
 		case R.id.action_place:
 			Intent intent = new Intent(getActivity(), PointsActivity.class);
-			intent.putParcelableArrayListExtra(POINTS, new ArrayList<PointDesc>(points));
 			startActivity(intent);
 			break;
 			
@@ -193,7 +189,7 @@ public class MapFragment extends Fragment {
 			
 			double bearing = center.bearingTo(directionPoint);
 			GeoPoint markerPosition = center.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
-			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing, points);
+			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override
@@ -218,6 +214,8 @@ public class MapFragment extends Fragment {
 	private void createPOIOverlay() {
 		Context context = getActivity();
     	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
+    	
+    	List<PointDesc> points = PointsManager.getInstance().getPoints();
 	    for (PointDesc point : points) {
 	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
 	    }
@@ -236,6 +234,7 @@ public class MapFragment extends Fragment {
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 	    mapView.setBuiltInZoomControls(true);
 	    
+	    // Restore saved instance state
 	    if (savedInstanceState == null) {
 	    	mapView.getController().setZoom(DEFAULT_ZOOM);
 	    	mapView.getController().setCenter(PTZ);
@@ -243,6 +242,12 @@ public class MapFragment extends Fragment {
 	    	mapView.getController().setZoom(savedInstanceState.getInt("zoom"));
 	    	GeoPoint center = new GeoPoint(savedInstanceState.getInt("center-lat"),
 	    									savedInstanceState.getInt("center-lon"));
+	    	mapView.getController().setCenter(center);
+	    }
+	    
+	    Intent intent = getActivity().getIntent();
+	    GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
+	    if (center != null) {
 	    	mapView.getController().setCenter(center);
 	    }
 	    
@@ -287,7 +292,7 @@ public class MapFragment extends Fragment {
 		
 		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
 				
-		directionService.startTracking(points);
+		directionService.startTracking();
 	}
 	
 	public void stopTracking() {

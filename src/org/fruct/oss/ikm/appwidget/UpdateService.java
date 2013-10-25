@@ -3,14 +3,10 @@ package org.fruct.oss.ikm.appwidget;
 import static org.fruct.oss.ikm.Utils.log;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.fragment.MapFragment;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.StubPointProvider;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 
@@ -27,7 +23,6 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.RemoteViews;
@@ -39,7 +34,6 @@ public class UpdateService extends Service {
 	private BroadcastReceiver directionsReceiver;
 	private DirectionService directionService;
 	private boolean isTracking = false;
-	private List<PointDesc> points = new StubPointProvider().getPoints(0, 0, 0);
 
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
@@ -51,7 +45,7 @@ public class UpdateService extends Service {
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			directionService = ((DirectionService.DirectionBinder) service)
 					.getService();
-			directionService.startTracking(points);
+			directionService.startTracking();
 		}
 	};
 
@@ -109,6 +103,7 @@ public class UpdateService extends Service {
 		unbindService(serviceConnection);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 	private void updateRemoteViews(Context context) {
 		AppWidgetManager manager = AppWidgetManager.getInstance(context);

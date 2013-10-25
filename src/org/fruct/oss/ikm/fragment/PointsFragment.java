@@ -30,31 +30,24 @@ import android.widget.ListView;
 
 public class PointsFragment extends ListFragment {
 	private List<PointDesc> poiList;
+	private List<PointDesc> shownList;
+	
 	private boolean isDualPane;
-	private int selectedIndex = 0;
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		
-		try {			
-			Intent intent = getActivity().getIntent();
-			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
-
-			if (poiList == null)
-				poiList = PointsManager.getInstance().getAllPoints();
-			
-			this.poiList = poiList;
-			setList(poiList);
-		} catch (ClassCastException ex) {
-			ex.printStackTrace();
-		}
-		
 		return super.onCreateView(inflater, container, savedInstanceState);
 	}
 	
 	private void setList(List<PointDesc> points) {
-		selectedIndex = 0;
+		int index = getListView().getCheckedItemPosition();
+		PointDesc pointDesc = null;
+		if (index >= 0)
+			pointDesc = shownList.get(index);
+		
+		shownList = points;
 		ArrayList<String> poiNames = new ArrayList<String>();
 
 		for (PointDesc point : points) {
@@ -66,6 +59,9 @@ public class PointsFragment extends ListFragment {
 				getListItemlayout(),
 				poiNames);
 		setListAdapter(adapter);
+		
+		if (pointDesc != null)
+			selectIfAvailable(pointDesc, false);
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -88,8 +84,8 @@ public class PointsFragment extends ListFragment {
 	 */
 	public void selectIfAvailable(PointDesc point, boolean alwaysSwitch) {
 		int c = -1;
-		for (int i = 0; i < poiList.size(); i++) {
-			if (poiList.get(i).equals(point)) {
+		for (int i = 0; i < shownList.size(); i++) {
+			if (shownList.get(i).equals(point)) {
 				c = i;
 			}
 		}
@@ -106,8 +102,7 @@ public class PointsFragment extends ListFragment {
 	}
 	
 	public void showDetails(int index) {
-		selectedIndex = index;
-		PointDesc pointDesc = poiList.get(index);
+		PointDesc pointDesc = shownList.get(index);
 
 		if (isDualPane) {
 			getListView().setItemChecked(index, true);
@@ -130,6 +125,19 @@ public class PointsFragment extends ListFragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		
+		try {			
+			Intent intent = getActivity().getIntent();
+			List<PointDesc> poiList = intent.getParcelableArrayListExtra(MapFragment.POINTS);
+
+			if (poiList == null)
+				poiList = PointsManager.getInstance().getAllPoints();
+			
+			this.poiList = poiList;
+			setList(poiList);
+		} catch (ClassCastException ex) {
+			ex.printStackTrace();
+		}
 
 		View details = getActivity().findViewById(R.id.point_details);
 		if (details != null && details.getVisibility() == View.VISIBLE)
@@ -143,8 +151,9 @@ public class PointsFragment extends ListFragment {
 			getActivity().getSupportFragmentManager().beginTransaction().remove(detailFragment).commit();
 		}
 		
+		int index = ListView.INVALID_POSITION;
 		if (savedInstanceState != null) {
-			selectedIndex = savedInstanceState.getInt("index", 0);
+			index = savedInstanceState.getInt("index", 0);
 		}
 		
 		if (isDualPane) {
@@ -157,8 +166,8 @@ public class PointsFragment extends ListFragment {
 			log("PointsFragment receive action SHOW_DETAILS. extras = " + bundle);
 			PointDesc point = bundle.getParcelable("pointdesc");
 			selectIfAvailable(point, true);
-		} else if (isDualPane) {
-			showDetails(selectedIndex);
+		} else if (isDualPane && index != ListView.INVALID_POSITION) {
+			showDetails(index);
 		}
 		
 		setupFilterBar();
@@ -206,6 +215,6 @@ public class PointsFragment extends ListFragment {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 	
-		outState.putInt("index", selectedIndex);
+		outState.putInt("index", getListView().getCheckedItemPosition());
 	}
 }

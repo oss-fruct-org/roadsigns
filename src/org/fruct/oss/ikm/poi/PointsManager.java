@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.fruct.oss.ikm.Utils;
 
+import android.util.Log;
+
 public class PointsManager {
 	private boolean needUpdate = true;
 
@@ -13,6 +15,7 @@ public class PointsManager {
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 
 	private PointsManager(PointLoader loader) {
+		Log.d("roadsigns", "PointsManager");
 		points = loader.getPoints();
 	}
 	
@@ -51,8 +54,27 @@ public class PointsManager {
 		return categoryFilter;
 	}
 
-	public static PointsManager getInstance() {
-		return Holder.instance;
+	public synchronized static PointsManager getInstance(PointLoader loader) {
+		if (instance == null) {
+			instance = new PointsManager(loader);
+		}
+		
+		return instance;
+	}
+	
+	public synchronized static PointsManager getInstance() {
+		if (instance == null) {
+			instance = new PointsManager(new StubPointLoader());
+		}
+		
+		return instance;
+	}
+	
+	/**
+	 * For unit testing
+	 */
+	public static void resetInstance() {
+		instance = null;
 	}
 
 	private void ensureValid() {
@@ -63,9 +85,5 @@ public class PointsManager {
 		}
 	}
 
-	private static class Holder {
-		private static final PointsManager instance = new PointsManager(new StubPointLoader());
-	}
-
-
+	private static volatile PointsManager instance;
 }

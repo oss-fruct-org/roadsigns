@@ -1,30 +1,30 @@
 package org.fruct.oss.ikm.service;
 
 import static org.fruct.oss.ikm.Utils.log;
-
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.osmdroid.util.GeoPoint;
-
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
+import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
-
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
@@ -62,6 +62,9 @@ public class DirectionService extends Service {
 	
 	private Location lastLocation;
 	
+	
+	private boolean disableRealLocation = false;
+	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
 			return DirectionService.this;
@@ -96,21 +99,33 @@ public class DirectionService extends Service {
 		}
 	}
 
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
 
 		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
-			GeoPoint last = new GeoPoint(lastLocation);
-			float bearing = (float) last.bearingTo(current);
+			float bearing;
 			
-			log("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
+			if (lastLocation != null) {
+				GeoPoint last = new GeoPoint(lastLocation);
+				bearing = (float) last.bearingTo(current);
+				log("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
+			} else {
+				bearing = 0;
+				log("fakeLocation current = " + current + ", bearing = " + bearing);
+			}
 			
 			Location location = new Location(MOCK_PROVIDER);
 			location.setLatitude(current.getLatitudeE6() / 1e6);
 			location.setLongitude(current.getLongitudeE6() / 1e6);
 			location.setTime(System.currentTimeMillis());
 			location.setBearing(bearing); 
+			location.setAccuracy(1);
+			
+			if (Build.VERSION.SDK_INT > 17) {
+				location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+			}
 
 			locationManager.setTestProviderLocation(MOCK_PROVIDER, location);
 		}
@@ -158,13 +173,16 @@ public class DirectionService extends Service {
 			}
 		};
 		
-		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 50, locationListener);
-		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 50, locationListener);
+		if (!disableRealLocation) {
+			locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 50, locationListener);
+			locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 50, locationListener);
+		}
 		
 		try {
 			if (!locationManager.isProviderEnabled(MOCK_PROVIDER)) {
 				locationManager.addTestProvider(MOCK_PROVIDER, false, false,
-						false, false, false, false, false, 0, 5);
+						false, false, false, false, true, 0, 5);
+				
 				locationManager.setTestProviderEnabled(MOCK_PROVIDER, true);
 				locationManager.requestLocationUpdates(MOCK_PROVIDER, 1000, 5,
 						locationListener);
@@ -172,6 +190,38 @@ public class DirectionService extends Service {
 		} catch (SecurityException ex) {
 			ex.printStackTrace();
 		}
+	}
+	
+	
+	/**
+	 * Load road graph from stream
+	 * @param input stream containing graphhopper's zip archive
+	 * @param name identifier 
+	 * @return true if success, false otherwise
+	 */
+	public boolean initializeFrom(InputStream input, String name) {
+		hopper = new GraphHopper().forMobile();
+		
+		try {
+			hopper.setCHShortcuts("shortest");
+			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", name + ".ghz.ghz");
+			filename = filename.substring(0, filename.length() - 4); // Cut last ".ghz"
+			boolean res = hopper.load(filename);
+			log("GraphHopper loaded " + res);
+			isInitialized = true;
+
+			return res;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return false;
+		}
+	}
+	
+	/**
+	 * Disable network and gps location provider for testing purposes.
+	 */
+	public void disableRealLocation() {
+		disableRealLocation = true;
 	}
 	
 	private void notifyLocationChanged(Location location) {
@@ -185,6 +235,7 @@ public class DirectionService extends Service {
 
 	private void doGetDirections(Location location) {
 		initialize();
+		log("roadsigns", "doGetDirections " + location);
 		
 		if (location == null)
 			return;
@@ -265,21 +316,13 @@ public class DirectionService extends Service {
 	private void initialize() {
 		if (isInitialized)
 			return;
-		isInitialized = true;
-		
-		hopper = new GraphHopper().forMobile();
 		
 		try {
-			hopper.setCHShortcuts("shortest");
 			InputStream input = this.getAssets().open("karelia.ghz.ghz");
-			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", "karelia.ghz.ghz");
-			filename = filename.substring(0, filename.length() - 4); // Cut last '.ghz'
-			input.close();			
-			boolean res = hopper.load(filename);
-			log("GraphHopper loaded " + res);
-		} catch (Exception ex) {
+			initializeFrom(input, "karelia");
+			input.close();
+		} catch (IOException ex) {
 			ex.printStackTrace();
-			return;
 		}
 	}
 }

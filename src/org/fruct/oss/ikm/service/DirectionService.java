@@ -40,7 +40,7 @@ public class DirectionService extends Service {
 	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
 	public static final String POINTS = "org.fruct.oss.ikm.POINTS";
 	
-	// Broadcats
+	// Broadcasts
 	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
 	

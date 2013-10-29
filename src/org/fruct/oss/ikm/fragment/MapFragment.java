@@ -80,6 +80,9 @@ public class MapFragment extends Fragment {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			directionService = ((DirectionService.DirectionBinder) service).getService();
+			startTracking();
+			isTracking = true;
+			
 			
 		    // Process SHOW_PATH action
 			if (!pathShow && MainActivity.SHOW_PATH.equals(getActivity().getIntent().getAction())) {

@@ -1,5 +1,7 @@
 package org.fruct.oss.ikm;
 
+
+import static org.fruct.oss.ikm.Utils.log;
 import org.fruct.oss.ikm.fragment.MapFragment;
 import org.osmdroid.util.GeoPoint;
 
@@ -9,6 +11,13 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 
 public class MainActivity extends ActionBarActivity {
+	// Actions
+	public static final String CENTER_MAP = "org.fruct.oss.ikm.CENTER_MAP"; // arg MapFragment.MAP_CENTER
+	public static final String SHOW_PATH = "org.fruct.oss.ikm.SHOW_PATH";
+	
+	public static final String SHOW_PATH_TARGET = "org.fruct.oss.ikm.SHOW_PATH_TARGET";
+
+	
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
@@ -18,11 +27,20 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onNewIntent(Intent intent) {
 		super.onNewIntent(intent);
+		log("MainActivity.onNewIntent");
+		
+		MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
+		
 		GeoPoint newCenter = intent.getParcelableExtra(MapFragment.MAP_CENTER);
 		if (newCenter != null) {
-			MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
 			mapFragment.stopTracking();
 			mapFragment.setCenter(newCenter);
+		}
+		
+		
+		if (SHOW_PATH.equals(intent.getAction())) {
+			GeoPoint target = (GeoPoint) intent.getParcelableExtra(SHOW_PATH_TARGET);
+			mapFragment.showPath(target);
 		}
 	}
 

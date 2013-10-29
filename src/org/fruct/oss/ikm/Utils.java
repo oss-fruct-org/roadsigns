@@ -36,7 +36,7 @@ public class Utils {
 	}
 	
 	public static float normalizeAngle(float degree) {
-		return (float) (Math.IEEEremainder(degree, 360));
+		return (float) (StrictMath.IEEEremainder(degree, 360));
 	}
 	
 	public static String copyToInternalStorage(Context context, InputStream inputStream,

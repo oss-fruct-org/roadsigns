@@ -44,10 +44,25 @@ public class DetailsFragment extends Fragment {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(getActivity(), MainActivity.class);
+				
 				intent.putExtra(MapFragment.MAP_CENTER, (Parcelable) desc.toPoint());
 				startActivity(intent);
 			}
 		});
+		
+		ImageButton pathButton = (ImageButton) getActivity().findViewById(R.id.search_place_button);
+		pathButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(getActivity(), MainActivity.class);
+				intent.setAction(MainActivity.SHOW_PATH);
+				
+				intent.putExtra(MainActivity.SHOW_PATH_TARGET, (Parcelable) desc.toPoint());
+				startActivity(intent);
+			}
+		});
+
+		
 		
 		titleView.setText(desc.getName());
 		descView.setText(desc.getDescription());

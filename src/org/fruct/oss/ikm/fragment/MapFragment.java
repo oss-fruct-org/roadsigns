@@ -1,19 +1,17 @@
 package org.fruct.oss.ikm.fragment;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
+import static org.fruct.oss.ikm.Utils.log;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointLoader;
 import org.fruct.oss.ikm.poi.PointsManager;
-import org.fruct.oss.ikm.poi.StubPointLoader;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
@@ -24,6 +22,7 @@ import org.osmdroid.views.overlay.DirectedLocationOverlay;
 import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
+import org.osmdroid.views.overlay.PathOverlay;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -39,7 +38,6 @@ import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -49,7 +47,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import static org.fruct.oss.ikm.Utils.log;
+
+import com.graphhopper.util.PointList;
 public class MapFragment extends Fragment {
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
@@ -58,6 +57,7 @@ public class MapFragment extends Fragment {
 	public static final String MAP_CENTER = "org.fruct.oss.ikm.fragment.MAP_CENTER";
 				
 	private List<DirectedLocationOverlay> crossDirections;
+	private PathOverlay pathOverlay;
 	
 	private Menu menu;
 	private MapView mapView;
@@ -67,6 +67,8 @@ public class MapFragment extends Fragment {
 	
 	private GeoPoint myLocation;
 	private boolean isTracking = false;
+	
+	private boolean pathShow = false; // Show path only once on first fragment creating
 	
 	private DirectionService directionService;
 	private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -78,20 +80,25 @@ public class MapFragment extends Fragment {
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			directionService = ((DirectionService.DirectionBinder) service).getService();
+			
+		    // Process SHOW_PATH action
+			if (!pathShow && MainActivity.SHOW_PATH.equals(getActivity().getIntent().getAction())) {
+				log("MapFragment.onServiceConnected SHOW_PATH");
+				GeoPoint target = (GeoPoint) getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
+				showPath(target);
+				pathShow = true;
+			}
 		}
 	};
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
+		log("MapFragment.onCreate");
+
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
-
-	}
-	
-	@Override
-	public void onResume() {
-		super.onResume();
 		
+		// Bind DirectionService
 		Intent intent = new Intent(getActivity(), DirectionService.class);
 		getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 		
@@ -119,13 +126,14 @@ public class MapFragment extends Fragment {
 	}
 	
 	@Override
-	public void onPause() {
+	public void onDestroy() {
+		log("MapFragment.onDestroy");
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
 		
 		getActivity().unbindService(serviceConnection);
 		
-		super.onPause();
+		super.onDestroy();
 	}
 	
 	@Override
@@ -245,12 +253,14 @@ public class MapFragment extends Fragment {
 	    	mapView.getController().setCenter(center);
 	    }
 	    
+	    // Process MAP_CENTER parameter
 	    Intent intent = getActivity().getIntent();
 	    GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
 	    if (center != null) {
 	    	mapView.getController().setCenter(center);
 	    }
-	    
+	   
+	    	    
 	    // Setup device position overlay
 	    Overlay overlay = new Overlay(context) {
 	    	Paint paint = new Paint();
@@ -296,11 +306,6 @@ public class MapFragment extends Fragment {
 	}
 	
 	@Override
-	public void onDestroy() {
-		super.onDestroy();
-	}
-	
-	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		outState.putInt("center-lat", mapView.getMapCenter().getLatitudeE6());
 		outState.putInt("center-lon", mapView.getMapCenter().getLongitudeE6());
@@ -310,5 +315,41 @@ public class MapFragment extends Fragment {
 	public void setCenter(IGeoPoint geoPoint) {
 		mapView.getController().setZoom(DEFAULT_ZOOM);
 		mapView.getController().animateTo(geoPoint);
+	}
+	
+	public void showPath(GeoPoint target) {
+		log("MapFragment.showPath directionService " + directionService);
+		if (myLocation == null) {
+			Location lastLocation = directionService.getLastLocation();
+			if (lastLocation == null) {
+				Log.w("roadsigns", "MapFragment.showPath: myLocation == null");
+				return;
+			}
+			myLocation = new GeoPoint(lastLocation);
+		
+		}
+		
+		GeoPoint current = new GeoPoint(myLocation);
+		PointList list = directionService.findPath(current, target);
+		if (list.getSize() == 0)
+			return;
+		
+		
+		if (pathOverlay != null) {
+			mapView.getOverlays().remove(pathOverlay);
+		}
+		
+		pathOverlay = new PathOverlay(Color.BLUE, getActivity());
+		pathOverlay.setAlpha(127);
+		
+		for (int i = 0; i < list.getSize(); i++) {
+			GeoPoint p = new GeoPoint(list.getLatitude(i), list.getLongitude(i));
+			log("path " + p);
+			pathOverlay.addPoint(p);
+		}
+		
+		mapView.getOverlays().add(pathOverlay);
+		mapView.getController().setCenter(myLocation);
+		mapView.invalidate();
 	}
 }

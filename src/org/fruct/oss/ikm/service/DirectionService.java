@@ -232,6 +232,44 @@ public class DirectionService extends Service {
 		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
+	
+	private GeoPoint getNearestRoadNode(GeoPoint current) {
+		Location2IDIndex index = hopper.getLocationIndex();
+		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
+		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
+		
+		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
+				current.getLongitudeE6()/1e6, filter).getClosestNode();
+		
+		double lat = hopper.getGraph().getLatitude(nodeId);
+		double lon = hopper.getGraph().getLongitude(nodeId);
+		
+		GeoPoint nearestNode = new GeoPoint(lat, lon);		
+		return nearestNode;
+	}
+	
+	public PointList findPath(GeoPoint from, GeoPoint to) {
+		initialize();
+		
+		GHRequest request = new GHRequest(
+				from.getLatitudeE6() / 1e6,
+				from.getLongitudeE6() / 1e6,
+				to.getLatitudeE6() / 1e6,
+				to.getLongitudeE6() / 1e6);
+		
+		GHResponse response = hopper.route(request);
+		
+		for (Throwable thr : response.getErrors()) {
+			thr.printStackTrace();
+		}
+		
+		PointList path = response.getPoints();
+		return path;
+	}
+	
+	public Location getLastLocation() {
+		return lastLocation;
+	}
 
 	private void doGetDirections(Location location) {
 		initialize();
@@ -245,20 +283,9 @@ public class DirectionService extends Service {
 		long last = System.nanoTime();
 		
 		// Find nearest road node
-		Location2IDIndex index = hopper.getLocationIndex();
-		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
-		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
-		
-		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
-				current.getLongitudeE6()/1e6, filter).getClosestNode();
-		
-		double lat = hopper.getGraph().getLatitude(nodeId);
-		double lon = hopper.getGraph().getLongitude(nodeId);
-		
-		GeoPoint nearestNode = new GeoPoint(lat, lon);
+		GeoPoint nearestNode = getNearestRoadNode(current);
 		if (current.distanceTo(nearestNode) > 40)
 			return;
-		
 		current = nearestNode;
 		
 		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
@@ -266,19 +293,8 @@ public class DirectionService extends Service {
 		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : points) {			
-			GHRequest request = new GHRequest(
-					current.getLatitudeE6() / 1e6,
-					current.getLongitudeE6() / 1e6,
-					point.toPoint().getLatitudeE6() / 1e6,
-					point.toPoint().getLongitudeE6() / 1e6);
+			PointList path = findPath(current, point.toPoint());
 			
-			GHResponse response = hopper.route(request);
-			
-			for (Throwable thr : response.getErrors()) {
-				thr.printStackTrace();
-			}
-			
-			PointList path = response.getPoints();
 			if (path.getSize() < 2)
 				continue;
 			

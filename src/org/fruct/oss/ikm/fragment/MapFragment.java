@@ -27,6 +27,7 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.PathOverlay;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -39,6 +40,7 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
@@ -47,7 +49,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
+import android.view.Menu; 
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -166,6 +168,8 @@ public class MapFragment extends Fragment {
 			log("MapFragment.onServiceConnected");
 			directionService = ((DirectionService.DirectionBinder) service).getService();
 			
+			directionService.startTracking();
+			
 			state = State.DS_CREATED;
 			stateUpdated(state);
 		}
@@ -203,6 +207,7 @@ public class MapFragment extends Fragment {
 
 				if (isTracking) {
 					mapView.getController().animateTo(new GeoPoint(myLocation));
+					mapView.setMapOrientation(-location.getBearing());
 				}
 			}
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
@@ -217,7 +222,8 @@ public class MapFragment extends Fragment {
 
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 		mapView.setBuiltInZoomControls(true);
-
+		mapView.setMultiTouchControls(true);
+		
 		// Process MAP_CENTER parameter
 		Intent intent = getActivity().getIntent();
 		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
@@ -406,24 +412,16 @@ public class MapFragment extends Fragment {
 	}
 	
 	public void startTracking() {
-		Runnable runnable = new Runnable() {
-			@Override
-			public void run() {
-				isTracking = true;
-				
-				menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
-
-				directionService.startTracking();
-			}
-		};
-		
-		addPendingTask(runnable, State.DS_CREATED);
+		isTracking = true;
+		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
+		if (state.idx >= State.DS_CREATED.idx)
+			directionService.startTracking();
 	}
 	
 	public void stopTracking() {
 		isTracking = false;
-		
 		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
+		mapView.setMapOrientation(0);
 	}
 	
 	@Override
@@ -431,6 +429,7 @@ public class MapFragment extends Fragment {
 		mapState.center = Utils.copyGeoPoint(mapView.getMapCenter());
 		mapState.zoomLevel = mapView.getZoomLevel();
 		mapState.isTracking = isTracking;
+		//mapState.mapOrientation = mapView.getMapOrientation();
 		outState.putParcelable("map-state", mapState);
 	}
 	

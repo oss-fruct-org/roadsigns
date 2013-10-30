@@ -47,7 +47,7 @@ public class ListProvider implements RemoteViewsService.RemoteViewsFactory {
 	public ListProvider(Context context, Intent intent) {
 		this.context = context;
 		/*this.id = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
-                AppWidgetManager.INVALID_APPWIDGET_ID);*/
+				AppWidgetManager.INVALID_APPWIDGET_ID);*/
 	}
 	
 	@Override 

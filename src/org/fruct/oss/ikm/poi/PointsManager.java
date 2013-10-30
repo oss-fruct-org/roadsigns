@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.poi;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.fruct.oss.ikm.Utils;
@@ -16,7 +17,7 @@ public class PointsManager {
 
 	private PointsManager(PointLoader loader) {
 		Log.d("roadsigns", "PointsManager");
-		points = loader.getPoints();
+		points = Collections.unmodifiableList(loader.getPoints());
 	}
 	
 	public List<PointDesc> getFilteredPoints() {
@@ -31,7 +32,7 @@ public class PointsManager {
 	public List<PointDesc> filterPoints(List<PointDesc> list) {
 		ArrayList<PointDesc> ret = new ArrayList<PointDesc>();
 		filterPoints(list, ret);
-		return ret;
+		return Collections.unmodifiableList(ret);
 	}
 	
 	private void filterPoints(List<PointDesc> in, List<PointDesc> out) {
@@ -53,6 +54,16 @@ public class PointsManager {
 	public String getFilter() {
 		return categoryFilter;
 	}
+	
+	private void ensureValid() {
+		if (needUpdate) {
+			needUpdate = false;
+			ArrayList<PointDesc> newArray = new ArrayList<PointDesc>();
+			filterPoints(points, newArray);
+			filteredPoints = Collections.unmodifiableList(newArray);
+		}
+	}
+	
 
 	public synchronized static PointsManager getInstance(PointLoader loader) {
 		if (instance == null) {
@@ -75,14 +86,6 @@ public class PointsManager {
 	 */
 	public static void resetInstance() {
 		instance = null;
-	}
-
-	private void ensureValid() {
-		if (needUpdate) {
-			needUpdate = true;
-			filterPoints(points, filteredPoints);
-
-		}
 	}
 
 	private static volatile PointsManager instance;

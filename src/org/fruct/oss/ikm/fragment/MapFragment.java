@@ -3,7 +3,10 @@ package org.fruct.oss.ikm.fragment;
 import static org.fruct.oss.ikm.Utils.log;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.PointsActivity;
@@ -38,6 +41,8 @@ import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -49,7 +54,71 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.graphhopper.util.PointList;
+
+class MapState implements Parcelable {
+	GeoPoint center;
+	int zoomLevel;
+	List<GeoPoint> currentPath = Collections.emptyList();
+	List<Direction> directions = Collections.emptyList();
+	boolean isTracking;
+	
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+	
+	@Override
+	public void writeToParcel(Parcel dest, int flags) {
+		dest.writeParcelable(center, flags);
+		dest.writeInt(zoomLevel);
+		dest.writeTypedList(currentPath);
+		dest.writeTypedList(directions);
+		dest.writeValue(isTracking);
+	}
+	
+	public static final Parcelable.Creator<MapState> CREATOR = new Parcelable.Creator<MapState>() {
+		@Override
+		public MapState createFromParcel(Parcel source) {
+			MapState ret = new MapState();
+			ClassLoader loader = getClass().getClassLoader();
+			
+			ret.center = source.readParcelable(loader);
+			ret.zoomLevel = source.readInt();
+			
+			ret.currentPath = new ArrayList<GeoPoint>();
+			source.readTypedList(ret.currentPath, GeoPoint.CREATOR);
+			
+			ret.directions = new ArrayList<Direction>();
+			source.readTypedList(ret.directions, Direction.CREATOR);
+			
+			ret.isTracking = (Boolean) source.readValue(loader);
+			
+			return ret;
+		}
+		
+		@Override
+		public MapState[] newArray(int size) {
+			return new MapState[size];
+		}
+	};
+}
+
 public class MapFragment extends Fragment {
+	static enum State {
+		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
+		
+		State(int idx) {
+			this.idx = idx;
+		}
+		
+		public int getIdx() {
+			return idx;
+		}
+		
+		private int idx;
+	}
+	
+	
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
 	
@@ -66,11 +135,26 @@ public class MapFragment extends Fragment {
 	private BroadcastReceiver locationReceiver;
 	
 	private GeoPoint myLocation;
+	
+	// Camera follow updates from DirectionService
 	private boolean isTracking = false;
 	
-	private boolean pathShow = false; // Show path only once on first fragment creating
-	
 	private DirectionService directionService;
+	
+	private State state = State.NO_CREATED;
+	private EnumMap<State, List<Runnable>> pendingTasks = new EnumMap<MapFragment.State, List<Runnable>>(
+			State.class);
+	
+	// Current map state used to restore map view when rotating screen
+	private MapState mapState = new MapState();
+	
+	public MapFragment() {
+		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
+		pendingTasks.put(State.CREATED, new ArrayList<Runnable>());
+		pendingTasks.put(State.DS_CREATED, new ArrayList<Runnable>());
+		pendingTasks.put(State.DS_RECEIVED, new ArrayList<Runnable>());
+	}
+	
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
@@ -79,18 +163,11 @@ public class MapFragment extends Fragment {
 		
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
+			log("MapFragment.onServiceConnected");
 			directionService = ((DirectionService.DirectionBinder) service).getService();
-			startTracking();
-			isTracking = true;
 			
-			
-		    // Process SHOW_PATH action
-			if (!pathShow && MainActivity.SHOW_PATH.equals(getActivity().getIntent().getAction())) {
-				log("MapFragment.onServiceConnected SHOW_PATH");
-				GeoPoint target = (GeoPoint) getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
-				showPath(target);
-				pathShow = true;
-			}
+			state = State.DS_CREATED;
+			stateUpdated(state);
 		}
 	};
 
@@ -110,7 +187,10 @@ public class MapFragment extends Fragment {
 			public void onReceive(Context context, Intent intent) {
 				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
-				updateDirectionOverlay(geoPoint, directions);
+				updateDirectionOverlay(directions);
+				
+				state = State.DS_RECEIVED;
+				stateUpdated(state);
 			}
 		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
 		
@@ -119,13 +199,98 @@ public class MapFragment extends Fragment {
 			public void onReceive(Context context, Intent intent) {
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 				log("location bearing = " + location.getBearing());
+				myLocation = new GeoPoint(location);
 
 				if (isTracking) {
-					myLocation = new GeoPoint(location);
 					mapView.getController().animateTo(new GeoPoint(myLocation));
 				}
 			}
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
+		
+		log("MapFragment.onCreate EXIT");
+	}
+	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		Context context = getActivity();
+
+		mapView = (MapView) getView().findViewById(R.id.map_view);
+		mapView.setBuiltInZoomControls(true);
+
+		// Process MAP_CENTER parameter
+		Intent intent = getActivity().getIntent();
+		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
+		if (center != null && savedInstanceState == null) {
+			log("MapFragment.onActivityCreated setCenter = " + center);
+			setCenter(center);
+		}
+
+		// Process SHOW_PATH action
+		if (MainActivity.SHOW_PATH
+				.equals(getActivity().getIntent().getAction())
+				&& savedInstanceState == null) {
+			log("MapFragment.onActivityCreated SHOW_PATH");
+			GeoPoint target = (GeoPoint) getActivity().getIntent()
+					.getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
+			showPath(target);
+		}
+		
+		// Restore saved instance state
+		if (savedInstanceState == null) {
+			mapView.getController().setZoom(DEFAULT_ZOOM);
+			mapView.getController().setCenter(PTZ);
+		} else {
+			log("Restore mapCenter = " + mapState.center);
+			
+			MapState mapState = savedInstanceState.getParcelable("map-state");
+			mapView.getController().setZoom(mapState.zoomLevel);
+			mapView.getController().setCenter(mapState.center);
+
+			if (!mapState.directions.isEmpty())
+				updateDirectionOverlay(mapState.directions);
+			
+			if (!mapState.currentPath.isEmpty())
+				showPath(mapState.currentPath);
+			
+			if (mapState.isTracking)
+				startTracking();
+		}
+
+		// Setup device position overlay
+		Overlay overlay = new Overlay(context) {
+			Paint paint = new Paint();
+			{
+				paint.setColor(Color.GRAY);
+				paint.setStrokeWidth(2);
+				paint.setStyle(Style.FILL);
+			}
+
+			@Override
+			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
+				Projection proj = mapView.getProjection();
+
+				Point myLocation;
+				Point mapCenter = proj
+						.toMapPixels(mapView.getMapCenter(), null);
+
+				if (MapFragment.this.myLocation != null) {
+					myLocation = proj.toMapPixels(MapFragment.this.myLocation,
+							null);
+					canvas.drawRect(myLocation.x - 5, myLocation.y - 5,
+							myLocation.x + 5, myLocation.y + 5, paint);
+				}
+
+				canvas.drawRect(mapCenter.x - 5, mapCenter.y - 5,
+						mapCenter.x + 5, mapCenter.y + 5, paint);
+			}
+		};
+
+		mapView.getOverlays().add(overlay);
+		createPOIOverlay();
+
+		state = State.CREATED;
+		stateUpdated(state);
 	}
 	
 	@Override
@@ -144,16 +309,16 @@ public class MapFragment extends Fragment {
 			Bundle savedInstanceState) {
 		return inflater.inflate(R.layout.map_fragment, container, false);
 	}
-	
+
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-	    inflater.inflate(R.menu.main, menu);
-	    this.menu = menu;
-	    //mapView.getOverlayManager().onCreateOptionsMenu(menu, 4, mapView);
-	    
-	    super.onCreateOptionsMenu(menu, inflater);
+		inflater.inflate(R.menu.main, menu);
+		this.menu = menu;
+		// mapView.getOverlayManager().onCreateOptionsMenu(menu, 4, mapView);
+
+		super.onCreateOptionsMenu(menu, inflater);
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
@@ -187,19 +352,19 @@ public class MapFragment extends Fragment {
 		return true;
 	}
 
-	private void updateDirectionOverlay(GeoPoint center, ArrayList<Direction> directions) {
+	private void updateDirectionOverlay(List<Direction> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
 			mapView.getOverlays().removeAll(crossDirections);
 		}
-		
+				
 		crossDirections = new ArrayList<DirectedLocationOverlay>();
 		for (Direction direction : directions) {
 			final GeoPoint directionPoint = direction.getDirection();
 			final List<PointDesc> points = direction.getPoints();
 			
-			double bearing = center.bearingTo(directionPoint);
-			GeoPoint markerPosition = center.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
+			double bearing = direction.getCenter().bearingTo(directionPoint);
+			GeoPoint markerPosition = direction.getCenter().destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
 			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
@@ -220,86 +385,39 @@ public class MapFragment extends Fragment {
 		}
 		
 		mapView.invalidate();
+		mapState.directions = directions;
 	}
 	
 	private void createPOIOverlay() {
+		log("MapFragment.createPOIOverlay");
 		Context context = getActivity();
-    	ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
-    	
-    	List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
-	    for (PointDesc point : points) {
-	    	items.add(new OverlayItem(point.getName(), "", point.toPoint()));
-	    }
-	    
-	    ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(context, items, null);
-	    mapView.getOverlays().add(overlay);
-	}
-	
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		Context context = getActivity();
-		
-		//loadRoadGraph();
+		ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
 
-		mapView = (MapView) getView().findViewById(R.id.map_view);
-	    mapView.setBuiltInZoomControls(true);
-	    
-	    // Restore saved instance state
-	    if (savedInstanceState == null) {
-	    	mapView.getController().setZoom(DEFAULT_ZOOM);
-	    	mapView.getController().setCenter(PTZ);
-	    } else {
-	    	mapView.getController().setZoom(savedInstanceState.getInt("zoom"));
-	    	GeoPoint center = new GeoPoint(savedInstanceState.getInt("center-lat"),
-	    									savedInstanceState.getInt("center-lon"));
-	    	mapView.getController().setCenter(center);
-	    }
-	    
-	    // Process MAP_CENTER parameter
-	    Intent intent = getActivity().getIntent();
-	    GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
-	    if (center != null) {
-	    	mapView.getController().setCenter(center);
-	    }
-	   
-	    	    
-	    // Setup device position overlay
-	    Overlay overlay = new Overlay(context) {
-	    	Paint paint = new Paint();
-	    	{
-	    		paint.setColor(Color.GRAY);
-	    		paint.setStrokeWidth(2);
-	    		paint.setStyle(Style.FILL);
-	    	}
-	    	
-	    	@Override
-	    	protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
-	    		Projection proj = mapView.getProjection();
-	    		
-	    		Point myLocation;
-	    		Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
-	    		
-	    		if (MapFragment.this.myLocation != null) {
-	    			myLocation = proj.toMapPixels(MapFragment.this.myLocation, null);
-		    		canvas.drawRect(myLocation.x - 5, myLocation.y - 5, myLocation.x + 5, myLocation.y + 5, paint);
+		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 
-	    		}
-	    		
-	    		canvas.drawRect(mapCenter.x - 5, mapCenter.y - 5, mapCenter.x + 5, mapCenter.y + 5, paint);
-	    	}
-		};
-		
+		for (PointDesc point : points) {
+			items.add(new OverlayItem(point.getName(), "", point.toPoint()));
+		}
+
+		ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(
+				context, items, null);
 		mapView.getOverlays().add(overlay);
-		createPOIOverlay();
+		log("MapFragment.createPOIOverlay EXIT");
 	}
 	
 	public void startTracking() {
-		isTracking = true;
-		
-		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				isTracking = true;
 				
-		directionService.startTracking();
+				menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
+
+				directionService.startTracking();
+			}
+		};
+		
+		addPendingTask(runnable, State.DS_CREATED);
 	}
 	
 	public void stopTracking() {
@@ -310,34 +428,53 @@ public class MapFragment extends Fragment {
 	
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
-		outState.putInt("center-lat", mapView.getMapCenter().getLatitudeE6());
-		outState.putInt("center-lon", mapView.getMapCenter().getLongitudeE6());
-		outState.putInt("zoom", mapView.getZoomLevel());
+		mapState.center = Utils.copyGeoPoint(mapView.getMapCenter());
+		mapState.zoomLevel = mapView.getZoomLevel();
+		mapState.isTracking = isTracking;
+		outState.putParcelable("map-state", mapState);
 	}
 	
 	public void setCenter(IGeoPoint geoPoint) {
 		mapView.getController().setZoom(DEFAULT_ZOOM);
 		mapView.getController().animateTo(geoPoint);
+		stopTracking();
 	}
 	
-	public void showPath(GeoPoint target) {
-		log("MapFragment.showPath directionService " + directionService);
-		if (myLocation == null) {
-			Location lastLocation = directionService.getLastLocation();
-			if (lastLocation == null) {
-				Log.w("roadsigns", "MapFragment.showPath: myLocation == null");
-				return;
+	public void showPath(final GeoPoint target) {
+		Runnable task = new Runnable() {
+			@Override
+			public void run() {
+				log("MapFragment.showPath task start");
+
+				// Get last known location from DirectionService
+				Location lastLocation = directionService.getLastLocation();
+				if (lastLocation == null) {
+					Log.w("roadsigns", "MapFragment.showPath: myLocation == null");
+					return;
+				}
+				myLocation = new GeoPoint(lastLocation);
+				
+				GeoPoint current = new GeoPoint(myLocation);
+				
+				// Find path from current location to target location
+				PointList list = directionService.findPath(current, target);
+				if (list.getSize() == 0)
+					return;
+				
+				ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();
+				for (int i = 0; i < list.getSize(); i++)
+					pathArray.add(new GeoPoint(list.getLatitude(i), list.getLongitude(i)));
+				
+				showPath(pathArray);
+				mapView.getController().setCenter(myLocation);
 			}
-			myLocation = new GeoPoint(lastLocation);
+		};
 		
-		}
-		
-		GeoPoint current = new GeoPoint(myLocation);
-		PointList list = directionService.findPath(current, target);
-		if (list.getSize() == 0)
-			return;
-		
-		
+		addPendingTask(task, State.DS_RECEIVED);
+	}
+	
+	private void showPath(List<GeoPoint> path) {
+		// Remove existing path overlay
 		if (pathOverlay != null) {
 			mapView.getOverlays().remove(pathOverlay);
 		}
@@ -345,14 +482,35 @@ public class MapFragment extends Fragment {
 		pathOverlay = new PathOverlay(Color.BLUE, getActivity());
 		pathOverlay.setAlpha(127);
 		
-		for (int i = 0; i < list.getSize(); i++) {
-			GeoPoint p = new GeoPoint(list.getLatitude(i), list.getLongitude(i));
-			log("path " + p);
-			pathOverlay.addPoint(p);
+		for (GeoPoint geoPoint : path) {
+			log("path " + geoPoint);
+			pathOverlay.addPoint(geoPoint);
 		}
 		
 		mapView.getOverlays().add(pathOverlay);
-		mapView.getController().setCenter(myLocation);
 		mapView.invalidate();
+		
+		mapState.currentPath = path;
+	}
+	
+	private void addPendingTask(Runnable runnable, State state) {
+		pendingTasks.get(state).add(runnable);
+		
+		// Execute all task for current state
+		stateUpdated(this.state);
+	}
+	
+	private void stateUpdated(State newState) {
+		for (Entry<State, List<Runnable>> entry : pendingTasks.entrySet()) {
+			State state = entry.getKey();
+			List<Runnable> tasks = entry.getValue();
+			
+			if (state.idx <= newState.idx) {
+				for (Runnable runnable : tasks) {
+					runnable.run();
+				}
+				tasks.clear();
+			}
+		}
 	}
 }

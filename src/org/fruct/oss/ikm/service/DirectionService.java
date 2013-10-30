@@ -49,7 +49,7 @@ public class DirectionService extends Service {
 	private boolean isInitialized = false;
 	
 	private GraphHopper hopper;
-	private ExecutorService executor = Executors.newFixedThreadPool(1);
+	private ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	private IBinder binder = new DirectionBinder();
 	
 	private LocationManager locationManager;
@@ -80,7 +80,6 @@ public class DirectionService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		
 		log("DirectionService created");
 	}
 	
@@ -273,7 +272,7 @@ public class DirectionService extends Service {
 
 	private void doGetDirections(Location location) {
 		initialize();
-		log("roadsigns", "doGetDirections " + location);
+		log("doGetDirections " + location);
 		
 		if (location == null)
 			return;
@@ -318,6 +317,7 @@ public class DirectionService extends Service {
 		
 		// Send result
 		sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
+		log("doGetDirections EXIT");
 	}
 	
 	

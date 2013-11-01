@@ -49,7 +49,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu; 
+import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -129,14 +129,18 @@ public class MapFragment extends Fragment {
 				
 	private List<DirectedLocationOverlay> crossDirections;
 	private PathOverlay pathOverlay;
+	private MyPositionOverlay myPositionOverlay;
 	
 	private Menu menu;
 	private MapView mapView;
 	
+	private DirectionsListAdapter leftPanelAdapter;
+	private DirectionsListAdapter rightPanelAdapter;
+	
 	private BroadcastReceiver directionsReceiver;
 	private BroadcastReceiver locationReceiver;
 	
-	private GeoPoint myLocation;
+	private Location myLocation;
 	
 	// Camera follow updates from DirectionService
 	private boolean isTracking = false;
@@ -203,7 +207,9 @@ public class MapFragment extends Fragment {
 			public void onReceive(Context context, Intent intent) {
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 				log("location bearing = " + location.getBearing());
-				myLocation = new GeoPoint(location);
+				myLocation = location;
+				
+				myPositionOverlay.setLocation(myLocation);
 
 				if (isTracking) {
 					mapView.getController().animateTo(new GeoPoint(myLocation));
@@ -215,14 +221,34 @@ public class MapFragment extends Fragment {
 		log("MapFragment.onCreate EXIT");
 	}
 	
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void setHardwareAccelerationOff()
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+    }
+	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		Context context = getActivity();
 
+		// Initialize map
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
+		setHardwareAccelerationOff();
+
+		// Initialize views
+		/*leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
+		rightPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.RIGHT);
+		
+		ListView leftView = (ListView) getView().findViewById(R.id.left_map_panel);
+		leftView.setAdapter(leftPanelAdapter);
+		
+		ListView rightView = (ListView) getView().findViewById(R.id.right_map_panel);
+		rightView.setAdapter(rightPanelAdapter);*/
+		
 		
 		// Process MAP_CENTER parameter
 		Intent intent = getActivity().getIntent();
@@ -275,22 +301,17 @@ public class MapFragment extends Fragment {
 			@Override
 			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
 				Projection proj = mapView.getProjection();
-
-				Point myLocation;
-				Point mapCenter = proj
-						.toMapPixels(mapView.getMapCenter(), null);
-
-				if (MapFragment.this.myLocation != null) {
-					myLocation = proj.toMapPixels(MapFragment.this.myLocation,
-							null);
-					canvas.drawRect(myLocation.x - 5, myLocation.y - 5,
-							myLocation.x + 5, myLocation.y + 5, paint);
-				}
-
+				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
 				canvas.drawRect(mapCenter.x - 5, mapCenter.y - 5,
 						mapCenter.x + 5, mapCenter.y + 5, paint);
 			}
 		};
+		
+		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
+		mapView.getOverlays().add(myPositionOverlay);
+		
+		//TestOverlay testOverlay = new TestOverlay(getActivity(), mapView);
+		//mapView.getOverlays().add(testOverlay);
 
 		mapView.getOverlays().add(overlay);
 		createPOIOverlay();
@@ -392,6 +413,10 @@ public class MapFragment extends Fragment {
 		
 		mapView.invalidate();
 		mapState.directions = directions;
+		
+		// Update panels
+		//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
+		//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 	}
 	
 	private void createPOIOverlay() {
@@ -451,7 +476,7 @@ public class MapFragment extends Fragment {
 					Log.w("roadsigns", "MapFragment.showPath: myLocation == null");
 					return;
 				}
-				myLocation = new GeoPoint(lastLocation);
+				myLocation = lastLocation;
 				
 				GeoPoint current = new GeoPoint(myLocation);
 				
@@ -465,7 +490,7 @@ public class MapFragment extends Fragment {
 					pathArray.add(new GeoPoint(list.getLatitude(i), list.getLongitude(i)));
 				
 				showPath(pathArray);
-				mapView.getController().setCenter(myLocation);
+				mapView.getController().setCenter(new GeoPoint(myLocation));
 			}
 		};
 		

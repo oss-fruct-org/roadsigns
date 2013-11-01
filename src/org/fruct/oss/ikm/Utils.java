@@ -77,4 +77,13 @@ public class Utils {
 				target.add(t);
 		}
 	}
+	
+	public static <T> T find (Collection<T> source, Predicate<T> pred) {
+		for (T t : source) {
+			if (pred.apply(t))
+				return t;
+		}
+		
+		return null;
+	}
 }

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:layout_height="match_parent" >
     
     <org.osmdroid.views.MapView
         android:id="@+id/map_view"
@@ -10,4 +9,21 @@
         android:layout_height="match_parent"
         tilesource="Mapnik"
         />
-</LinearLayout>
+    <!-- 
+        <ListView 
+        android:id="@+id/left_map_panel"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        />
+    
+    <ListView 
+        android:id="@+id/right_map_panel"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        />
+-->
+</RelativeLayout>

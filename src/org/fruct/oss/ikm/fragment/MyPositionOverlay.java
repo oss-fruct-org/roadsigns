@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.fragment;
 
+import org.fruct.oss.ikm.Utils;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
@@ -33,7 +34,7 @@ public class MyPositionOverlay extends Overlay {
 		
 		paint = new Paint();
 		paint.setColor(0xff00ffff);
-		paint.setStyle(Style.FILL);
+		paint.setStyle(Style.STROKE);
 		
 		paintRed = new Paint();
 		paintRed.setColor(0xffff0000);
@@ -61,6 +62,10 @@ public class MyPositionOverlay extends Overlay {
 		canvas.translate(point.x, point.y);
 
 		drawArrow(canvas);
+		float pixels = 2 * proj.metersToEquatorPixels(100);
+		
+		canvas.drawCircle(0, 0, pixels, paint);
+		canvas.drawRect(0, 0, pixels, pixels, paint);
 		
 		//canvas.drawPicture(picture/*, new Rect(point.x, point.y, point.x + 16, point.y + 16)*/);
 		canvas.restore();

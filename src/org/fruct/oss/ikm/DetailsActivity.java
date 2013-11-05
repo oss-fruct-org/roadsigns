@@ -29,7 +29,8 @@ public class DetailsActivity extends ActionBarActivity {
 
 			DetailsFragment fragment = new DetailsFragment();
 			fragment.setArguments(getIntent().getExtras());
-			getSupportFragmentManager().beginTransaction().add(getContentViewCompat(), fragment).commit();
+
+			getSupportFragmentManager().beginTransaction().add(android.R.id.content, fragment).commit();
 		}
 	}
 
@@ -57,10 +58,5 @@ public class DetailsActivity extends ActionBarActivity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
-	}
-	
-	public static int getContentViewCompat() {
-		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ? android.R.id.content
-				: R.id.action_bar_activity_content;
 	}
 }

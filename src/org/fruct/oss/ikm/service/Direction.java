@@ -17,6 +17,7 @@ public class Direction implements Parcelable {
 	}
 	
 	private ArrayList<PointDesc> points = new ArrayList<PointDesc>();
+	
 	private GeoPoint center;
 	private GeoPoint direction;
 	
@@ -48,14 +49,13 @@ public class Direction implements Parcelable {
 	
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
-		dest.writeSerializable(points);
+		dest.writeTypedList(points);
 		dest.writeParcelable(center, 0);
 		dest.writeParcelable(direction, 0);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private Direction(Parcel source) {
-		points = (ArrayList<PointDesc>) source.readSerializable();
+		source.readTypedList(points, PointDesc.CREATOR);
 		center = source.readParcelable(null);
 		direction = source.readParcelable(null);
 	}

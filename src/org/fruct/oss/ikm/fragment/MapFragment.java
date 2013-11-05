@@ -345,6 +345,16 @@ public class MapFragment extends Fragment {
 
 		super.onCreateOptionsMenu(menu, inflater);
 	}
+	
+	@Override
+	public void onPrepareOptionsMenu(Menu menu) {
+		this.menu = menu;
+		
+		menu.findItem(R.id.action_track).setIcon(
+				isTracking ? R.drawable.ic_action_location_searching
+						: R.drawable.ic_action_location_found);
+		super.onPrepareOptionsMenu(menu);
+	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -388,10 +398,15 @@ public class MapFragment extends Fragment {
 		crossDirections = new ArrayList<DirectedLocationOverlay>();
 		for (Direction direction : directions) {
 			final GeoPoint directionPoint = direction.getDirection();
+			final GeoPoint centerPoint = direction.getCenter();
+			
 			final List<PointDesc> points = direction.getPoints();
 			
-			double bearing = direction.getCenter().bearingTo(directionPoint);
-			GeoPoint markerPosition = direction.getCenter().destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
+			double bearing = centerPoint.bearingTo(directionPoint);
+			GeoPoint markerPosition = centerPoint.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
+			
+			
+			//markerPosition = directionPoint;
 			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
@@ -438,14 +453,20 @@ public class MapFragment extends Fragment {
 	
 	public void startTracking() {
 		isTracking = true;
-		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
+		
+		if (menu != null)
+			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
+		
 		if (state.idx >= State.DS_CREATED.idx)
 			directionService.startTracking();
 	}
 	
 	public void stopTracking() {
 		isTracking = false;
-		menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
+		
+		if (menu != null)
+			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
+		
 		mapView.setMapOrientation(0);
 	}
 	

@@ -5,4 +5,5 @@
         android:key="offline_mode"
         android:summary="Offline mode"
         android:title="Offline mode" />
+    
 </PreferenceScreen>

@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.service;
 
 import static org.fruct.oss.ikm.Utils.log;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -8,10 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.osmdroid.util.GeoPoint;
+
 import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Context;
@@ -25,6 +28,8 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Pair;
+
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
@@ -131,6 +136,7 @@ public class DirectionService extends Service {
 	}
 	
 	private void getDirections(final Location location) {
+		log("DirectionService.getDirections");
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
@@ -140,7 +146,14 @@ public class DirectionService extends Service {
 		executor.execute(run);
 	}
 	
-	public void startTracking() {		
+	private void tryRegisterLocationProvider(String name, LocationListener listener) {
+		try {
+			locationManager.requestLocationUpdates(name, 5000, 50, locationListener);
+		} catch (Exception ex) {
+		}
+	}
+	
+	public void startTracking() {
 		if (locationManager != null) {
 			notifyLocationChanged(lastLocation);
 			
@@ -173,20 +186,20 @@ public class DirectionService extends Service {
 		};
 		
 		if (!disableRealLocation) {
-			locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 50, locationListener);
-			locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 50, locationListener);
+			tryRegisterLocationProvider(LocationManager.NETWORK_PROVIDER, locationListener);
+			tryRegisterLocationProvider(LocationManager.GPS_PROVIDER, locationListener);
 		}
 		
 		try {
-			if (!locationManager.isProviderEnabled(MOCK_PROVIDER)) {
-				locationManager.addTestProvider(MOCK_PROVIDER, false, false,
+			locationManager.addTestProvider(MOCK_PROVIDER, false, false,
 						false, false, false, false, true, 0, 5);
 				
-				locationManager.setTestProviderEnabled(MOCK_PROVIDER, true);
-				locationManager.requestLocationUpdates(MOCK_PROVIDER, 1000, 5,
+			locationManager.setTestProviderEnabled(MOCK_PROVIDER, true);
+			locationManager.requestLocationUpdates(MOCK_PROVIDER, 1000, 5,
 						locationListener);
-			}
 		} catch (SecurityException ex) {
+			ex.printStackTrace();
+		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
 	}
@@ -199,6 +212,7 @@ public class DirectionService extends Service {
 	 * @return true if success, false otherwise
 	 */
 	public boolean initializeFrom(InputStream input, String name) {
+		log("DirectionService.initializeFrom ENTER");
 		hopper = new GraphHopper().forMobile();
 		
 		try {
@@ -213,6 +227,8 @@ public class DirectionService extends Service {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return false;
+		} finally {
+			log("DirectionService.initializeFrom EXIT");
 		}
 	}
 	
@@ -291,18 +307,24 @@ public class DirectionService extends Service {
 		
 		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
-		for (PointDesc point : points) {			
+		for (PointDesc point : points) {	
+			
 			PointList path = findPath(current, point.toPoint());
 			
 			if (path.getSize() < 2)
 				continue;
 			
-			GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
-
-			Direction direction = directions.get(directionNode);
+			//GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
+			
+			Pair<GeoPoint, GeoPoint> directionPair = getDirectionNode(current, path);
+			
+			GeoPoint node1 = directionPair.first;
+			GeoPoint node2 = directionPair.second;
+			
+			Direction direction = directions.get(node2);
 			if (direction == null) {
-				direction = new Direction(current, directionNode);
-				directions.put(directionNode, direction);
+				direction = new Direction(node1, node2);
+				directions.put(node2, direction);
 			}
 			
 			direction.addPoint(point);
@@ -320,6 +342,40 @@ public class DirectionService extends Service {
 		log("doGetDirections EXIT");
 	}
 	
+	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {
+		if (false) {
+			return Pair.create(current, new GeoPoint((int) (path.getLatitude(1) * 1e6),
+					(int) (path.getLongitude(1) * 1e6)));
+			
+		}
+		
+		final int radius = 100;
+		final float bearingLimit = 10;
+		
+		GeoPoint point = new GeoPoint(0, 0);
+		
+		float prevBearing = 0;
+		GeoPoint prev = Utils.copyGeoPoint(current);
+		
+		for (int i = 1; i < path.getSize(); i++) {
+			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
+			
+			int dist = current.distanceTo(point);
+			if (dist > radius) {
+				return Pair.create(current, point);
+			}
+			
+			// Calculate accumulated bearing change
+			/*float bearingChange = Utils.normalizeAngle((float) prev.bearingTo(point) - prevBearing);
+			if (Math.abs(bearingChange) > bearingLimit) {
+				prevBearing = (float) prev.bearingTo(point);
+				prev = Utils.copyGeoPoint(point);
+			}*/
+			prev = Utils.copyGeoPoint(point);
+		}
+		
+		return Pair.create(current, prev);
+	}
 	
 	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
 		Intent intent = new Intent(DIRECTIONS_READY);
@@ -330,6 +386,7 @@ public class DirectionService extends Service {
 	}
 
 	private void initialize() {
+		log("DirectionService.initialize ENTER " + isInitialized);
 		if (isInitialized)
 			return;
 		
@@ -339,6 +396,10 @@ public class DirectionService extends Service {
 			input.close();
 		} catch (IOException ex) {
 			ex.printStackTrace();
+		} catch (Throwable th) {
+			th.printStackTrace();
 		}
+		
+		log("DirectionService.initialize EXIT");
 	}
 }

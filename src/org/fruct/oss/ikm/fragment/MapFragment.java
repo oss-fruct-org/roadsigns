@@ -18,6 +18,9 @@ import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
@@ -178,6 +181,7 @@ public class MapFragment extends Fragment {
 			stateUpdated(state);
 		}
 	};
+	private TestOverlay panelOverlay;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -300,18 +304,25 @@ public class MapFragment extends Fragment {
 
 			@Override
 			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
+				if (shadow == true)
+					return;
+					
 				Projection proj = mapView.getProjection();
 				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
 				canvas.drawRect(mapCenter.x - 5, mapCenter.y - 5,
 						mapCenter.x + 5, mapCenter.y + 5, paint);
+				
+				canvas.drawRect(0, 0, 64, 64, paint);
 			}
 		};
 		
 		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
 		mapView.getOverlays().add(myPositionOverlay);
 		
-		//TestOverlay testOverlay = new TestOverlay(getActivity(), mapView);
-		//mapView.getOverlays().add(testOverlay);
+		
+		panelOverlay = new TestOverlay(getActivity(), mapView);
+		mapView.getOverlays().add(panelOverlay);
+		
 
 		mapView.getOverlays().add(overlay);
 		createPOIOverlay();
@@ -389,7 +400,7 @@ public class MapFragment extends Fragment {
 		return true;
 	}
 
-	private void updateDirectionOverlay(List<Direction> directions) {
+	private void updateDirectionOverlay(final List<Direction> directions) {
 		Context context = getActivity();
 		if (crossDirections != null) {
 			mapView.getOverlays().removeAll(crossDirections);
@@ -426,9 +437,18 @@ public class MapFragment extends Fragment {
 			crossDirections.add(overlay);
 		}
 		
-		mapView.invalidate();
 		mapState.directions = directions;
 		
+		// Update panelOverlay after fragment loaded
+		addPendingTask(new Runnable() {
+			@Override
+			public void run() {
+				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+			}
+		},  State.CREATED);
+		
+		mapView.invalidate();
+
 		// Update panels
 		//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
 		//rightPanelAdapter.setPoints(directions, myLocation.getBearing());

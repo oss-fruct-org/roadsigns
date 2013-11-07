@@ -51,17 +51,17 @@ class Item {
 	}
 	
 	void draw(ISafeCanvas canvas) {
-		Button button = new Button(App.getContext());
+		/*Button button = new Button(App.getContext());
 		button.setText("Hello world");
 		
 		Bitmap bm = Bitmap.createBitmap(32, 32, Bitmap.Config.ARGB_8888);
 		Canvas bmCanvas = new Canvas(bm);
-		button.draw(bmCanvas);
+		button.draw(bmCanvas);*/
 		
-		//canvas.drawRect(MARGIN, MARGIN, width - MARGIN, height - MARGIN, paint);
+		canvas.drawRect(MARGIN, MARGIN, width - MARGIN, height - MARGIN, paint);
 		//canvas.getWrappedCanvas().drawBitmap(bm, 0, 0, new Paint());
-		canvas.getSafeCanvas().drawCircle(0, 0, 10, new Paint());
-		//canvas.drawText(pointDesc.getName(), MARGIN + PADDING, height / 2, paint2);
+		//canvas.getSafeCanvas().drawCircle(0, 0, 10, new Paint());
+		canvas.drawText(pointDesc.getName(), MARGIN + PADDING, height / 2, paint2);
 	}
 }
 

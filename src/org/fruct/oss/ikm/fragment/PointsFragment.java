@@ -103,7 +103,7 @@ public class PointsFragment extends ListFragment {
 	
 	public void showDetails(int index) {
 		PointDesc pointDesc = shownList.get(index);
-
+		log("PointsFragment.showDetails isDualPane = " + isDualPane);
 		if (isDualPane) {
 			getListView().setItemChecked(index, true);
 			
@@ -117,6 +117,7 @@ public class PointsFragment extends ListFragment {
 				.commit();
 		} else {
 			Intent intent = new Intent(getActivity(), DetailsActivity.class);
+			intent.setAction(DetailsActivity.POINT_ACTION);
 			intent.putExtra(DetailsActivity.POINT_ARG, (Parcelable) pointDesc);
 			startActivity(intent);
 		}

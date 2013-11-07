@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class DetailsActivity extends ActionBarActivity {
+	public static final String POINT_ACTION = "org.fruct.org.ikm.POINT_ACTION";
 	public static final String POINT_ARG = "org.fruct.oss.ikm.POINT_ARG";
 		
 	@Override
@@ -30,7 +31,7 @@ public class DetailsActivity extends ActionBarActivity {
 			DetailsFragment fragment = new DetailsFragment();
 			fragment.setArguments(getIntent().getExtras());
 
-			getSupportFragmentManager().beginTransaction().add(android.R.id.content, fragment).commit();
+			getSupportFragmentManager().beginTransaction().add(android.R.id.content, fragment, "details").commit();
 		}
 	}
 

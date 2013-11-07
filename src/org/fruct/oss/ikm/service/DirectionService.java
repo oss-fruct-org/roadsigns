@@ -179,6 +179,7 @@ public class DirectionService extends Service {
 			
 			@Override
 			public void onLocationChanged(Location location) {
+				log("DirectionService.onLocationChanged " + location);
 				lastLocation = location;
 				notifyLocationChanged(location);
 				getDirections(location); 

@@ -41,6 +41,11 @@
             android:name="org.fruct.oss.ikm.PointsActivity"
             android:label="@string/title_activity_points"
             android:parentActivityName="org.fruct.oss.ikm.MainActivity" >
+            
+            <intent-filter>
+                <action android:name="org.fruct.oss.ikm.POINT_ACTION" />
+            </intent-filter>
+            
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.fruct.oss.ikm.MainActivity" />

@@ -9,7 +9,7 @@
         android:layout_height="match_parent"
         tilesource="Mapnik"
         />
-     
+     <!--  
     <ListView 
         android:id="@+id/left_map_panel"
         android:layout_width="100dp"
@@ -25,5 +25,11 @@
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
         />
+        -->
+        
+    <org.fruct.oss.ikm.fragment.TestOverlay 
+        	android:id="@+id/directions_panel"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent" />
 
 </RelativeLayout>

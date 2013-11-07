@@ -135,6 +135,8 @@ public class MapFragment extends Fragment {
 	
 	private Menu menu;
 	private MapView mapView;
+	private TestOverlay panelOverlay;
+
 	
 	private DirectionsListAdapter leftPanelAdapter;
 	private DirectionsListAdapter rightPanelAdapter;
@@ -180,7 +182,6 @@ public class MapFragment extends Fragment {
 			stateUpdated(state);
 		}
 	};
-	private TestOverlay panelOverlay;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -242,15 +243,19 @@ public class MapFragment extends Fragment {
 		mapView.setMultiTouchControls(true);
 		setHardwareAccelerationOff();
 
-		// Initialize views
-		leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
-		rightPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.RIGHT);
 		
-		ListView leftView = (ListView) getView().findViewById(R.id.left_map_panel);
+		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
+		panelOverlay.initialize(mapView);
+		
+		// Initialize views
+		//leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
+		//rightPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.RIGHT);
+		
+		/*ListView leftView = (ListView) getView().findViewById(R.id.left_map_panel);
 		leftView.setAdapter(leftPanelAdapter);
 		
 		ListView rightView = (ListView) getView().findViewById(R.id.right_map_panel);
-		rightView.setAdapter(rightPanelAdapter);
+		rightView.setAdapter(rightPanelAdapter);*/
 		
 		
 		// Process MAP_CENTER parameter
@@ -442,9 +447,9 @@ public class MapFragment extends Fragment {
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
-				//panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
-				leftPanelAdapter.setPoints(directions, myLocation.getBearing());
-				rightPanelAdapter.setPoints(directions, myLocation.getBearing());
+				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+				//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
+				//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 			}
 		},  State.CREATED);
 		

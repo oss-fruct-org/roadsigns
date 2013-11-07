@@ -5,27 +5,20 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.MapView.Projection;
-import org.osmdroid.views.overlay.SafeDrawOverlay;
-import org.osmdroid.views.safecanvas.ISafeCanvas;
-import org.osmdroid.views.safecanvas.SafePaint;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Point;
-import android.graphics.Rect;
-import android.view.MotionEvent;
-import android.widget.Button;
+import android.util.AttributeSet;
+import android.view.View;
 
 class Item {
 	static final int MARGIN = 4;
@@ -34,8 +27,8 @@ class Item {
 	PointDesc pointDesc;
 	int width, height;
 	
-	public static SafePaint paint = new SafePaint();
-	public static SafePaint paint2 = new SafePaint();
+	public static Paint paint = new Paint();
+	public static Paint paint2 = new Paint();
 	
 	static {
 		paint.setColor(0x10000000);
@@ -52,7 +45,7 @@ class Item {
 		this.pointDesc = point;
 	}
 	
-	void draw(ISafeCanvas canvas) {
+	void draw(Canvas canvas) {
 		/*Button button = new Button(App.getContext());
 		button.setText("Hello world");
 		
@@ -76,7 +69,7 @@ class DirectionPanel {
 	private List<Direction> directions;
 	private List<Item> items;
 
-	private SafePaint borderPaint;
+	private Paint borderPaint;
 	
 	DirectionPanel(int x, int y, int width, int height) {
 		this.x = x;
@@ -85,7 +78,7 @@ class DirectionPanel {
 		this.height = height;
 		
 		
-		borderPaint = new SafePaint();
+		borderPaint = new Paint();
 		borderPaint.setColor(0x20080040);
 	}
 	
@@ -111,7 +104,7 @@ class DirectionPanel {
 		}
 	}
 
-	void draw(ISafeCanvas canvas) {
+	void draw(Canvas canvas) {
 		if (directions == null || directions.isEmpty())
 			return;
 		
@@ -142,7 +135,7 @@ class DirectionPanel {
 	}
 }
 
-public class TestOverlay extends SafeDrawOverlay {
+public class TestOverlay extends View {
 	public static final int PANEL_WIDTH = 128;
 	
 	private MapView mapView;
@@ -154,33 +147,24 @@ public class TestOverlay extends SafeDrawOverlay {
 	private EnumMap<Direction.RelativeDirection, DirectionPanel> panels = new EnumMap<Direction.RelativeDirection, DirectionPanel>(
 			Direction.RelativeDirection.class);
 
-	public TestOverlay(Context ctx, MapView mapView) {
-		super(ctx);
-
+	public TestOverlay(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		
+	
+	}
+	
+	public void initialize(MapView mapView) {
 		this.mapView = mapView;
 
 		panels.put(RelativeDirection.LEFT, new DirectionPanel(0, 40, 40, mapView.getHeight() - 80));
 		panels.put(RelativeDirection.RIGHT, new DirectionPanel(mapView.getWidth() - 40, 40, 40, mapView.getHeight() - 80));
 	}
-
+	
 	private Point point = new Point();
+	
+	
 	@Override
-	protected void drawSafe(ISafeCanvas canvas, MapView mapView, boolean shadow) {
-		if (shadow == true)
-			return;
-		
-		Projection proj = mapView.getProjection();
-		
-		matrix.setTranslate(0, 0);
-		matrix.postTranslate(0, 0);
-
-		canvas.save();
-
-		proj.toMapPixels(mapView.getMapCenter(), point);
-		canvas.translate(point.x, point.y);
-		canvas.rotate(-mapView.getMapOrientation());
-		canvas.translate(-mapView.getWidth() / 2, -mapView.getHeight() / 2);
-
+	protected void onDraw(Canvas canvas) {		
 		panels.get(RelativeDirection.LEFT).setSize(0, PANEL_WIDTH, PANEL_WIDTH, mapView.getHeight() - PANEL_WIDTH * 2);
 		panels.get(RelativeDirection.RIGHT).setSize(mapView.getWidth() - PANEL_WIDTH, PANEL_WIDTH, PANEL_WIDTH, mapView.getHeight() - PANEL_WIDTH * 2);
 		
@@ -213,8 +197,8 @@ public class TestOverlay extends SafeDrawOverlay {
 		}
 	}
 	
-	@Override
-	public boolean onSingleTapUp(MotionEvent event, MapView mapView) {
+	/*@Override
+	public boolean o(MotionEvent event, MapView mapView) {
 		Utils.log(""+ event.getX() + "  " + event.getY());
 		
 		Projection proj = mapView.getProjection();
@@ -228,5 +212,5 @@ public class TestOverlay extends SafeDrawOverlay {
 		}
 		
 		return super.onTouchEvent(event, mapView);
-	}
+	}*/
 }

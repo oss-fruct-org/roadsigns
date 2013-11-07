@@ -16,11 +16,9 @@ import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
+import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
@@ -57,6 +55,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.graphhopper.util.PointList;
 
@@ -244,14 +243,14 @@ public class MapFragment extends Fragment {
 		setHardwareAccelerationOff();
 
 		// Initialize views
-		/*leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
+		leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
 		rightPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.RIGHT);
 		
 		ListView leftView = (ListView) getView().findViewById(R.id.left_map_panel);
 		leftView.setAdapter(leftPanelAdapter);
 		
 		ListView rightView = (ListView) getView().findViewById(R.id.right_map_panel);
-		rightView.setAdapter(rightPanelAdapter);*/
+		rightView.setAdapter(rightPanelAdapter);
 		
 		
 		// Process MAP_CENTER parameter
@@ -320,8 +319,8 @@ public class MapFragment extends Fragment {
 		mapView.getOverlays().add(myPositionOverlay);
 		
 		
-		panelOverlay = new TestOverlay(getActivity(), mapView);
-		mapView.getOverlays().add(panelOverlay);
+		//panelOverlay = new TestOverlay(getActivity(), mapView);
+		//mapView.getOverlays().add(panelOverlay);
 		
 
 		mapView.getOverlays().add(overlay);
@@ -443,15 +442,14 @@ public class MapFragment extends Fragment {
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
-				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+				//panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+				leftPanelAdapter.setPoints(directions, myLocation.getBearing());
+				rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 			}
 		},  State.CREATED);
 		
 		mapView.invalidate();
 
-		// Update panels
-		//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
-		//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 	}
 	
 	private void createPOIOverlay() {

@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.poi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class StubPointLoader implements PointLoader {
 	private ArrayList<PointDesc> stubPoints = new ArrayList<PointDesc>();

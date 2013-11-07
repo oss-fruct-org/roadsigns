@@ -23,6 +23,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.view.MotionEvent;
 import android.widget.Button;
 
 class Item {
@@ -128,6 +130,16 @@ class DirectionPanel {
 			pos += 1 + item.height;
 		}
 	}
+
+	public boolean onSingleTapUp(int xx, int yy, MapView mapView) {
+		Utils.log("Overlay panel clicked xx=%d, yy=%d, x=%d, y=%d, width=%d, height=%d", xx, yy, x, y, width, height);
+		if (xx >= x && yy >= y && xx < width + x && yy < height + y) {
+			Utils.log("Hello world");
+			return true;
+		}
+		
+		return false;
+	}
 }
 
 public class TestOverlay extends SafeDrawOverlay {
@@ -199,5 +211,22 @@ public class TestOverlay extends SafeDrawOverlay {
 			
 			panel.setDirections(resultList);
 		}
+	}
+	
+	@Override
+	public boolean onSingleTapUp(MotionEvent event, MapView mapView) {
+		Utils.log(""+ event.getX() + "  " + event.getY());
+		
+		Projection proj = mapView.getProjection();
+		Rect rect = proj.getScreenRect();
+		Point p = proj.fromMapPixels((int) event.getX(), (int) event.getY(), null);
+		
+		for (DirectionPanel panel : panels.values()) {
+			if (panel.onSingleTapUp(p.x - rect.centerX() + rect.width() / 2,
+					                p.y - rect.centerY() + rect.height() / 2, mapView))
+				return true;
+		}
+		
+		return super.onTouchEvent(event, mapView);
 	}
 }

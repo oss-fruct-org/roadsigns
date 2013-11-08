@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -38,7 +39,25 @@ public class Utils {
 	public static float normalizeAngle(float degree) {
 		return (float) (StrictMath.IEEEremainder(degree, 360));
 	}
+
 	
+	{
+		MessageDigest md5 = MessageDigest.getInstance("MD5");
+		
+	}
+	
+	//private static boolean 
+	
+	/**
+	 * Copies or updates data from stream to internal storage
+	 * 
+	 * @param context
+	 * @param inputStream data stream
+	 * @param pathInStorage
+	 * @param fileInStorage
+	 * @return path to file
+	 * @throws IOException
+	 */
 	public static String copyToInternalStorage(Context context, InputStream inputStream,
 			String pathInStorage, String fileInStorage) throws IOException {
 		if (!pathInStorage.startsWith("/"))
@@ -51,6 +70,8 @@ public class Utils {
 		File targetFile = new File(storageFile);
 		if (targetFile.exists())
 			return storageFile;
+		
+		log("copyToInternalStorage copying file " + storageFile);
 	
 		File targetDirectory = new File(storageFolder);
 		targetDirectory.mkdirs();

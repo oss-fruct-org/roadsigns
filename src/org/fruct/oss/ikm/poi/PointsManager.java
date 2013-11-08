@@ -1,9 +1,11 @@
 package org.fruct.oss.ikm.poi;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 
 import android.util.Log;
@@ -75,7 +77,15 @@ public class PointsManager {
 	
 	public synchronized static PointsManager getInstance() {
 		if (instance == null) {
-			instance = new PointsManager(new StubPointLoader());
+			try {
+				JSONPointLoader loader = new JSONPointLoader(App.getContext()
+						.getAssets().open("karelia-poi.js"));
+
+				instance = new PointsManager(loader);
+			} catch (IOException ex) {
+
+				instance = new PointsManager(new StubPointLoader());
+			}
 		}
 		
 		return instance;

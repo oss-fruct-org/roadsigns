@@ -62,7 +62,7 @@ public class MyPositionOverlay extends Overlay {
 		canvas.translate(point.x, point.y);
 
 		drawArrow(canvas);
-		float pixels = 2 * proj.metersToEquatorPixels(100);
+		float pixels = 2 * proj.metersToEquatorPixels(150);
 		
 		canvas.drawCircle(0, 0, pixels, paint);
 		canvas.drawRect(0, 0, pixels, pixels, paint);

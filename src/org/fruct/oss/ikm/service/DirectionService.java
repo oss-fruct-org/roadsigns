@@ -350,7 +350,7 @@ public class DirectionService extends Service {
 			
 		}
 		
-		final int radius = 100;
+		final int radius = 150;
 		final float bearingLimit = 10;
 		
 		GeoPoint point = new GeoPoint(0, 0);

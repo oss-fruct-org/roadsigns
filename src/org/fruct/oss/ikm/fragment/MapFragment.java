@@ -447,7 +447,7 @@ public class MapFragment extends Fragment {
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
-				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+				//panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
 				//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
 				//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 			}

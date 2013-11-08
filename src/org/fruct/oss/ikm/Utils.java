@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -16,6 +17,7 @@ import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 public class Utils {
@@ -40,13 +42,72 @@ public class Utils {
 		return (float) (StrictMath.IEEEremainder(degree, 360));
 	}
 
-	
-	{
-		MessageDigest md5 = MessageDigest.getInstance("MD5");
-		
+	public static String toHex(byte[] arr) {
+		StringBuilder builder = new StringBuilder();
+		for (byte b : arr) {
+			builder.append(Integer.toHexString((b & 0xff) + 0x100).substring(1));
+		}
+		return builder.toString();
 	}
 	
-	//private static boolean 
+	public static String hashString(String input) {
+		MessageDigest md5 = null;
+		try {
+			md5 = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		md5.update(input.getBytes());
+		byte[] hash = md5.digest();
+		return toHex(hash);
+	}
+	
+	public static String hashStream(InputStream in) throws IOException {
+		MessageDigest md5 = null;
+		try {
+			md5 = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		
+		int bsize = 1024;
+		byte[] buffer = new byte[bsize];
+		int length = 0;
+		
+		while ((length = in.read(buffer, 0, bsize)) > 0) {
+			md5.update(buffer, 0, length);
+		}
+		
+		return toHex(md5.digest());
+	}
+	
+	private static boolean checkFileNeedsUpdate(String path, InputStream in) throws IOException {
+		if (!in.markSupported()) {
+			log("copyToInternalStorage in.markSupported == false");
+			return true;
+		}
+		
+		String fileId = hashString(path);
+		
+		SharedPreferences pref = App.getContext().getSharedPreferences("stored-files", Context.MODE_PRIVATE);
+		String oldFileHash = pref.getString(fileId, null);
+		
+		log("copyToInternalStorage oldFileHash = " + oldFileHash);
+		
+		// XXX: handle any file size
+		in.mark(50 * 1024 * 1024);
+		String fileHash = hashStream(in);
+		in.reset();
+		
+		log("copyToInternalStorage fileHash = " + fileHash);
+		
+		boolean needUpdate = !fileHash.equals(oldFileHash);
+		
+		if (needUpdate)
+			pref.edit().putString(fileId, fileHash).commit();
+		
+		return needUpdate;
+	}
 	
 	/**
 	 * Copies or updates data from stream to internal storage
@@ -58,7 +119,7 @@ public class Utils {
 	 * @return path to file
 	 * @throws IOException
 	 */
-	public static String copyToInternalStorage(Context context, InputStream inputStream,
+	public static String copyToInternalStorage(Context context, InputStream input,
 			String pathInStorage, String fileInStorage) throws IOException {
 		if (!pathInStorage.startsWith("/"))
 			pathInStorage = "/" + pathInStorage;
@@ -68,7 +129,7 @@ public class Utils {
 		final String storageFile = storageFolder + "/" + fileInStorage;
 		
 		File targetFile = new File(storageFile);
-		if (targetFile.exists())
+		if (targetFile.exists() || !checkFileNeedsUpdate(storageFile, input))
 			return storageFile;
 		
 		log("copyToInternalStorage copying file " + storageFile);
@@ -76,14 +137,13 @@ public class Utils {
 		File targetDirectory = new File(storageFolder);
 		targetDirectory.mkdirs();
 		
-		InputStream input = new BufferedInputStream(inputStream);
 		OutputStream output = new BufferedOutputStream(new FileOutputStream(targetFile));
 		
 		int length;
 		byte[] buffer = new byte[bufferSize];
 		while ((length = input.read(buffer)) > 0) {
 			output.write(buffer, 0, length);
-		}
+		} 
 		
 		output.flush();
 		output.close();

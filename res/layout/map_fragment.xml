@@ -30,6 +30,28 @@
     <org.fruct.oss.ikm.fragment.TestOverlay 
         	android:id="@+id/directions_panel"
             android:layout_height="match_parent"
-            android:layout_width="match_parent" />
+            android:layout_width="match_parent" >
+            
+        <org.fruct.oss.ikm.fragment.DirectionsPanel 
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            
+            android:background="#11000000"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            
+            android:id="@+id/directions_panel_left"/>
+        
+        <org.fruct.oss.ikm.fragment.DirectionsPanel 
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            
+            android:background="#11000000"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            
+            android:id="@+id/directions_panel_right"/>
+        
+    </org.fruct.oss.ikm.fragment.TestOverlay>
 
 </RelativeLayout>

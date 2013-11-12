@@ -8,7 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -23,6 +25,11 @@ import android.util.TypedValue;
 public class Utils {
 	public static interface Predicate<T> {
 		public boolean apply(T t);
+	}
+	
+	@SuppressWarnings("hiding")
+	public static interface Function<R, T> {
+		public R apply(T t);
 	}
 	
 	public final static Executor executor = Executors.newFixedThreadPool(1);
@@ -166,6 +173,16 @@ public class Utils {
 		}
 		
 		return null;
+	}
+	
+	@SuppressWarnings("hiding")
+	public static <R,T> List<R> map(List<T> source, Function<R, T> fun) {
+		List<R> list = new ArrayList<R>(source.size());
+		for (T t : source) {
+			list.add(fun.apply(t));
+		}
+		
+		return list;
 	}
 	
 	public static int getDP(int px) {

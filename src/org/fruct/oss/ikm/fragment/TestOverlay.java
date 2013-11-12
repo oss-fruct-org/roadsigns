@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.service.Direction;
@@ -35,7 +36,7 @@ class Item {
 		
 		paint2.setColor(0xffffffff);
 		paint2.setTextAlign(Align.LEFT);
-		paint2.setTextSize(16);
+		paint2.setTextSize(Utils.getSP(8));
 		paint2.setAntiAlias(true);
 	}
 	
@@ -155,9 +156,11 @@ public class TestOverlay extends View {
 	
 	public void initialize(MapView mapView) {
 		this.mapView = mapView;
+		
+		int offset = Utils.getDP(20);
 
-		panels.put(RelativeDirection.LEFT, new DirectionPanel(0, 40, 40, mapView.getHeight() - 80));
-		panels.put(RelativeDirection.RIGHT, new DirectionPanel(mapView.getWidth() - 40, 40, 40, mapView.getHeight() - 80));
+		panels.put(RelativeDirection.LEFT, new DirectionPanel(0,offset , offset, mapView.getHeight() - 2 * offset));
+		panels.put(RelativeDirection.RIGHT, new DirectionPanel(mapView.getWidth() - offset, offset, offset, mapView.getHeight() - 2 * offset));
 	}
 	
 	private Point point = new Point();

@@ -1,6 +1,5 @@
 package org.fruct.oss.ikm;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,6 +18,7 @@ import org.osmdroid.util.GeoPoint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.util.TypedValue;
 
 public class Utils {
 	public static interface Predicate<T> {
@@ -166,5 +166,15 @@ public class Utils {
 		}
 		
 		return null;
+	}
+	
+	public static int getDP(int px) {
+		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, px,
+				App.getContext().getResources().getDisplayMetrics());
+	}
+
+	public static float getSP(int px) {
+		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, px,
+				App.getContext().getResources().getDisplayMetrics());
 	}
 }

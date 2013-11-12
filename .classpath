@@ -11,6 +11,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="libs/slf4j-android-1.6.1-RC1.jar"/>
-	<classpathentry kind="lib" path="libs/graphhopper-0.2-SNAPSHOT-android.jar"/>
+	<classpathentry kind="lib" path="libs/graphhopper-0.2-SNAPSHOT-android.jar" sourcepath="/home/ivashov/projects/osm/graphhopper/core/src/main/java"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -30,11 +31,17 @@ import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.DijkstraOneToMany;
+import com.graphhopper.routing.Path;
 import com.graphhopper.routing.util.AbstractFlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
+import com.graphhopper.routing.util.EdgeFilter;
+import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.routing.util.FlagEncoder;
+import com.graphhopper.routing.util.ShortestCalc;
+import com.graphhopper.routing.util.WeightCalculation;
+import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
@@ -54,6 +61,7 @@ public class DirectionService extends Service {
 	private boolean isInitialized = false;
 	
 	private GraphHopper hopper;
+	private Routing routing;
 	private ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	private IBinder binder = new DirectionBinder();
 	
@@ -140,7 +148,11 @@ public class DirectionService extends Service {
 		Runnable run = new Runnable() {
 			@Override
 			public void run() {
-				doGetDirections(location);			
+				try {
+					doGetDirections(location);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 		};
 		executor.execute(run);
@@ -217,7 +229,9 @@ public class DirectionService extends Service {
 		hopper = new GraphHopper().forMobile();
 		
 		try {
-			hopper.setCHShortcuts("shortest");
+			//hopper.set
+			hopper.disableCHShortcuts();
+			//hopper.setCHShortcuts("shortest");
 			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", name + ".ghz.ghz");
 			filename = filename.substring(0, filename.length() - 4); // Cut last ".ghz"
 			boolean res = hopper.load(filename);
@@ -265,22 +279,21 @@ public class DirectionService extends Service {
 	}
 	
 	public PointList findPath(GeoPoint from, GeoPoint to) {
+		log("findPath enter");
+		try {
 		initialize();
 		
-		GHRequest request = new GHRequest(
-				from.getLatitudeE6() / 1e6,
-				from.getLongitudeE6() / 1e6,
-				to.getLatitudeE6() / 1e6,
-				to.getLongitudeE6() / 1e6);
+		Routing routing = new OneToManyRouting(hopper);
+		routing.prepare(from);
+		PointList list = routing.route(to);
 		
-		GHResponse response = hopper.route(request);
-		
-		for (Throwable thr : response.getErrors()) {
-			thr.printStackTrace();
+		return list;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		} finally {
+			log("findPath exit");
 		}
-		
-		PointList path = response.getPoints();
-		return path;
 	}
 	
 	public Location getLastLocation() {
@@ -295,9 +308,7 @@ public class DirectionService extends Service {
 			return;
 	
 		GeoPoint current = new GeoPoint(location);
-		
-		long last = System.nanoTime();
-		
+				
 		// Find nearest road node
 		GeoPoint nearestNode = getNearestRoadNode(current);
 		if (current.distanceTo(nearestNode) > 40)
@@ -306,11 +317,20 @@ public class DirectionService extends Service {
 		
 		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 		
+		routing = new OneToManyRouting(hopper);
+		routing.prepare(current);
+		
+		long last = System.nanoTime();
+		int success = 0;
+		
 		// Hash table mapping road direction to POI list
 		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : points) {	
-			
-			PointList path = findPath(current, point.toPoint());
+			log("Processing POI");
+
+			PointList path = routing.route(point.toPoint());
+			if (path == null)
+				continue;
 			
 			if (path.getSize() < 2)
 				continue;
@@ -328,11 +348,12 @@ public class DirectionService extends Service {
 				directions.put(node2, direction);
 			}
 			
+			success++;
 			direction.addPoint(point);
 		}
 		
 		long curr = System.nanoTime();
-		log("" + (curr - last) / 1e9);
+		log("Routing time " + (curr - last) / 1e9 + " success " + success);
 		
 		lastResultDirections = new ArrayList<Direction>(directions.values());
 		lastResultCenter = current;
@@ -387,7 +408,6 @@ public class DirectionService extends Service {
 	}
 
 	private void initialize() {
-		log("DirectionService.initialize ENTER " + isInitialized);
 		if (isInitialized)
 			return;
 		
@@ -400,7 +420,5 @@ public class DirectionService extends Service {
 		} catch (Throwable th) {
 			th.printStackTrace();
 		}
-		
-		log("DirectionService.initialize EXIT");
 	}
 }

@@ -447,14 +447,13 @@ public class MapFragment extends Fragment {
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
-				//panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
 				//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
 				//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 			}
 		},  State.CREATED);
 		
 		mapView.invalidate();
-
 	}
 	
 	private void createPOIOverlay() {
@@ -526,7 +525,7 @@ public class MapFragment extends Fragment {
 				
 				// Find path from current location to target location
 				PointList list = directionService.findPath(current, target);
-				if (list.getSize() == 0)
+				if (list == null || list.isEmpty())
 					return;
 				
 				ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();

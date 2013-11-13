@@ -39,9 +39,14 @@ public class TestOverlay extends RelativeLayout {
 
 	    DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
 	    DirectionsPanel rightPanel = (DirectionsPanel) findViewById(R.id.directions_panel_right);
-	
+	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);
+	    DirectionsPanel bottomPanel = (DirectionsPanel) findViewById(R.id.directions_panel_bottom);
+
+	    
 	    panels.put(RelativeDirection.LEFT, leftPanel);
 	    panels.put(RelativeDirection.RIGHT, rightPanel);
+	    panels.put(RelativeDirection.FORWARD, topPanel);
+	    panels.put(RelativeDirection.BACK, bottomPanel);
 
 	}
 
@@ -49,17 +54,29 @@ public class TestOverlay extends RelativeLayout {
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 	    DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
 	    DirectionsPanel rightPanel = (DirectionsPanel) findViewById(R.id.directions_panel_right);
+	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);
+	    DirectionsPanel bottomPanel = (DirectionsPanel) findViewById(R.id.directions_panel_bottom);
 
 		
 	    setSidePanelSize(leftPanel);
 	    setSidePanelSize(rightPanel);
+	    
+	    setTopPanelSize(topPanel);
+	    setTopPanelSize(bottomPanel);
 	    
 		super.onSizeChanged(w, h, oldw, oldh);
 	}
 	
 	private void setSidePanelSize(DirectionsPanel panel) {
 		android.view.ViewGroup.LayoutParams params = panel.getLayoutParams();
-		params.height = getHeight() - Utils.getDP(30);
+		params.height = getHeight() - Utils.getDP(169);
+		
+		panel.setLayoutParams(params);
+	}
+	
+	private void setTopPanelSize(DirectionsPanel panel) {
+		android.view.ViewGroup.LayoutParams params = panel.getLayoutParams();
+		params.width = getWidth() - Utils.getDP(80);
 		
 		panel.setLayoutParams(params);
 	}

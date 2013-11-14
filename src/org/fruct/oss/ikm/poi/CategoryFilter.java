@@ -2,7 +2,7 @@ package org.fruct.oss.ikm.poi;
 
 public class CategoryFilter implements Filter {
 	private String category;
-	private boolean active;
+	private boolean active = true;
 	private String name;
 
 	public CategoryFilter(String category, String name) {

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
 import org.osmdroid.util.GeoPoint;
 
 import android.annotation.TargetApi;
@@ -45,7 +46,7 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
-public class DirectionService extends Service {	
+public class DirectionService extends Service implements PointsListener {	
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
@@ -94,6 +95,8 @@ public class DirectionService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		log("DirectionService created");
+		
+		PointsManager.getInstance().addListener(this);
 	}
 	
 	@Override
@@ -109,6 +112,8 @@ public class DirectionService extends Service {
 			
 			locationManager = null;
 		}
+		
+		PointsManager.getInstance().removeListener(this);
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -299,6 +304,14 @@ public class DirectionService extends Service {
 	public Location getLastLocation() {
 		return lastLocation;
 	}
+	
+	@Override
+	public void filterStateChanged(List<PointDesc> newList,
+			List<PointDesc> added, List<PointDesc> removed) {
+		Utils.log("Added " + added);
+		Utils.log("Removed " + removed);
+
+	}
 
 	private void doGetDirections(Location location) {
 		initialize();
@@ -420,5 +433,12 @@ public class DirectionService extends Service {
 		} catch (Throwable th) {
 			th.printStackTrace();
 		}
+	}
+
+	/**
+	 * Update existing direction with new filter settings
+	 */
+	public void updateDirections() {
+		
 	}
 }

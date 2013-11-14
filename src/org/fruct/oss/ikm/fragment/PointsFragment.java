@@ -8,6 +8,7 @@ import java.util.List;
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 
@@ -179,13 +180,14 @@ public class PointsFragment extends ListFragment {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
 		
-		final String[] names = {"All", "Education", "Health", "Culture", "Sport"};
-		final String[] filters = {"", "education", "health", "culture", "sport"};
 		final String currentFilter = PointsManager.getInstance().getFilter();
+
+		List<Filter> filters = PointsManager.getInstance().getFilters();
 		
-		for (int i = 0; i < names.length; i++) {
+		for (int i = 0; i < filters.size(); i++) {
 			Tab tab = activity.getSupportActionBar().newTab();
-			tab.setText(names[i]);
+			Filter filter = filters.get(i);
+			tab.setText(filter.getString());
 			
 			final int idx = i;
 			tab.setTabListener(new ActionBar.TabListener() {
@@ -196,7 +198,6 @@ public class PointsFragment extends ListFragment {
 				
 				@Override
 				public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
-					PointsManager.getInstance().setFilter(filters[idx]);
 					setList(PointsManager.getInstance().filterPoints(poiList));
 				}
 				
@@ -206,7 +207,7 @@ public class PointsFragment extends ListFragment {
 				}
 			});
 			
-			actionBar.addTab(tab, currentFilter.equals(filters[i]));
+			actionBar.addTab(tab, false);
 		}
 		
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);

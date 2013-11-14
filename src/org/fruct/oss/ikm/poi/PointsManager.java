@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.WeakHashMap;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
@@ -11,13 +12,20 @@ import org.fruct.oss.ikm.Utils;
 import android.util.Log;
 
 public class PointsManager {
+	public interface PointsListener {
+		void filterStateChanged(List<PointDesc> newList, List<PointDesc> added,
+				List<PointDesc> removed);
+	}
+	
 	private boolean needUpdate = true;
 
 	private List<PointDesc> points;
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 	
-	private List<Filter> filters = new ArrayList<Filter>();
-
+	private List<Filter> filters = new ArrayList<Filter>();	
+	
+	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
+	
 	private PointsManager(PointLoader loader) {
 		points = Collections.unmodifiableList(loader.getPoints());
 		
@@ -28,6 +36,15 @@ public class PointsManager {
 			this.filters.add(new CategoryFilter(filters[i], names[i]));
 		}
 	}
+	
+	public void addListener(PointsListener listener) {
+		listeners.add(listener);
+	}
+	
+	public void removeListener(PointsListener listener) {
+		listeners.remove(listener);
+	}
+	
 	
 	public List<PointDesc> getFilteredPoints() {
 		ensureValid(); 
@@ -57,12 +74,6 @@ public class PointsManager {
 			};
 		});
 	}
-
-	public void setFilter(String category) {
-		filters.add(new CategoryFilter(category, category));
-		
-		needUpdate = true;
-	}
 	
 	public String getFilter() {
 		return "";
@@ -70,6 +81,24 @@ public class PointsManager {
 	
 	public List<Filter> getFilters() {
 		return Collections.unmodifiableList(filters);
+	}
+	
+	public void notifyFiltersUpdated() {
+		List<PointDesc> oldFilteredPoints = filteredPoints;
+		List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
+		filterPoints(points, filteredPoints);
+		
+		List<PointDesc> addedPoints = new ArrayList<PointDesc>(filteredPoints);
+		List<PointDesc> removedPoints = new ArrayList<PointDesc>(oldFilteredPoints);
+		
+		addedPoints.removeAll(oldFilteredPoints);
+		removedPoints.removeAll(filteredPoints);
+		
+		this.filteredPoints = filteredPoints;
+		
+		for (PointsListener listener : listeners) {
+			listener.filterStateChanged(filteredPoints, addedPoints, removedPoints);
+		}
 	}
 	
 	private void ensureValid() {

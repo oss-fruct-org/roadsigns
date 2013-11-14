@@ -78,8 +78,12 @@ public class PointDesc implements Serializable, Parcelable {
 			return false;
 		return true;
 	}
-
 	
+	@Override
+	public String toString() {
+		return "PointDesc [name=" + name + "]";
+	}
+
 	@Override
 	public int describeContents() {
 		return 0;

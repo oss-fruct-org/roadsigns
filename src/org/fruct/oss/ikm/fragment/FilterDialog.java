@@ -11,14 +11,18 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
 public class FilterDialog extends DialogFragment {
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		final List<Filter> filters = PointsManager.getInstance().getFilters();
+		
+		// List stores user selection
 		final List<Pair<Integer, Boolean>> checkedItems = new ArrayList<Pair<Integer,Boolean>>();
 		
+		// Fill list data
 		String[] filterNames = new String[filters.size()];
 		boolean[] filterChecked = new boolean[filters.size()];
 
@@ -45,7 +49,9 @@ public class FilterDialog extends DialogFragment {
 					filter.setActive(item.second);
 				}
 				
-				// TODO: notify filter state changed
+				if (!checkedItems.isEmpty()) {
+					PointsManager.getInstance().notifyFiltersUpdated();
+				}
 			}
 		});
 		

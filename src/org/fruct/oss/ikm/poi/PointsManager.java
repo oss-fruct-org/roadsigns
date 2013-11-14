@@ -13,13 +13,20 @@ import android.util.Log;
 public class PointsManager {
 	private boolean needUpdate = true;
 
-	private String categoryFilter = "";
 	private List<PointDesc> points;
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
+	
+	private List<Filter> filters = new ArrayList<Filter>();
 
 	private PointsManager(PointLoader loader) {
-		Log.d("roadsigns", "PointsManager");
 		points = Collections.unmodifiableList(loader.getPoints());
+		
+		final String[] names = {"Education", "Health", "Culture", "Sport"};
+		final String[] filters = {"education", "health", "culture", "sport"};
+
+		for (int i = 0; i < names.length; i++) {
+			this.filters.add(new CategoryFilter(filters[i], names[i]));
+		}
 	}
 	
 	public List<PointDesc> getFilteredPoints() {
@@ -41,20 +48,28 @@ public class PointsManager {
 		out.clear();
 		Utils.select(in, out, new Utils.Predicate<PointDesc>() {
 			public boolean apply(PointDesc point) {
-				return categoryFilter == null 
-						|| categoryFilter.length() == 0 
-						|| categoryFilter.equals(point.getCategory());
+				for (Filter filter : filters) {
+					if (filter.isActive() && filter.accepts(point))
+						return true;
+				}
+				
+				return false;
 			};
 		});
 	}
 
-	public void setFilter(String categoryFilter) {
-		this.categoryFilter = categoryFilter;
+	public void setFilter(String category) {
+		filters.add(new CategoryFilter(category, category));
+		
 		needUpdate = true;
 	}
 	
 	public String getFilter() {
-		return categoryFilter;
+		return "";
+	}
+	
+	public List<Filter> getFilters() {
+		return Collections.unmodifiableList(filters);
 	}
 	
 	private void ensureValid() {

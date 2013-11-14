@@ -9,13 +9,18 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
+import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.views.MapView;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 
-public class TestOverlay extends RelativeLayout {
+public class TestOverlay extends RelativeLayout  {
 	public int panel_width = 0;
 	
 	private MapView mapView;
@@ -28,9 +33,9 @@ public class TestOverlay extends RelativeLayout {
 
 	public TestOverlay(Context context, AttributeSet attrs) {
 		super(context, attrs);
-		
-		
 	}
+	
+
 	
 	public void initialize(MapView mapView) {
 		this.mapView = mapView;

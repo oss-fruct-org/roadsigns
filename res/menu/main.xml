@@ -21,5 +21,9 @@
         android:icon="@drawable/ic_action_place"
         android:title="@string/action_place"
         yourapp:showAsAction="ifRoom"/>
-
+    <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/ic_action_place"
+        android:title="@string/filter"
+        yourapp:showAsAction="ifRoom"/>
 </menu>

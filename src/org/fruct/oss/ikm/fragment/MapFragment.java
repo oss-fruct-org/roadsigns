@@ -13,10 +13,10 @@ import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
-import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
@@ -29,6 +29,7 @@ import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.PathOverlay;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -55,7 +56,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 
 import com.graphhopper.util.PointList;
 
@@ -396,12 +396,21 @@ public class MapFragment extends Fragment {
 		
 			break;
 			
+		case R.id.action_filter:
+			showFilterDialog();
+			break;
+			
 		default:
 			//mapView.getOverlayManager().onOptionsItemSelected(item, 4, mapView);
 			return super.onOptionsItemSelected(item);
 		}
 
 		return true;
+	}
+
+	private void showFilterDialog() {
+		FilterDialog dialog = new FilterDialog();
+		dialog.show(getFragmentManager(), "filter-dialog");
 	}
 
 	private void updateDirectionOverlay(final List<Direction> directions) {
@@ -475,6 +484,7 @@ public class MapFragment extends Fragment {
 	
 	public void startTracking() {
 		isTracking = true;
+		panelOverlay.setVisibility(View.GONE);
 		
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
@@ -485,6 +495,7 @@ public class MapFragment extends Fragment {
 	
 	public void stopTracking() {
 		isTracking = false;
+		panelOverlay.setVisibility(View.VISIBLE);
 		
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);

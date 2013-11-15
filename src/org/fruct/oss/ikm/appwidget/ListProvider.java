@@ -73,32 +73,7 @@ public class ListProvider implements RemoteViewsService.RemoteViewsFactory {
 		Direction.RelativeDirection dir = direction.getRelativeDirection(location.getBearing());
 		
 		
-		String directionDescription = "";
-		int resId = R.drawable.ic_action_place;
-		
-		switch (dir) {
-		case RIGHT:
-			resId = R.drawable.arrow_90;
-			directionDescription = "right";
-			break;
-			
-		case LEFT:
-			resId = R.drawable.arrow_270;
-			directionDescription = "left";
-			break;
-
-		case FORWARD:
-			resId = R.drawable.arrow;
-			directionDescription = "forward";
-			break;
-
-		case BACK:
-			resId = R.drawable.arrow_180;
-			directionDescription = "back";
-			
-		default:
-			break;
-		}
+		int resId = dir.getIconId();
 		
 		RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.direction_list_item);
 		remoteViews.setTextViewText(android.R.id.text1, point.getName());

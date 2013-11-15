@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.fruct.oss.ikm.Utils;
 import org.json.*;
 
 public class JSONPointLoader implements PointLoader {
@@ -61,11 +62,13 @@ public class JSONPointLoader implements PointLoader {
 		double lon = point.getDouble(1);
 		
 		PointDesc poi = new PointDesc(name, (int) (lon * 1e6), (int) (lat * 1e6));
+		poi.setCategory("culture");
 		list.add(poi);
 	}
 	
 	@Override
 	public List<PointDesc> getPoints() {
+		Utils.log("" + list.size());
 		return list;
 	}
 

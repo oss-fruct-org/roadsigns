@@ -17,8 +17,8 @@ import org.osmdroid.util.GeoPoint;
 
 import android.location.Location;
 import android.util.Pair;
-import android.util.TimingLogger;
 
+import com.graphhopper.util.DistanceCalc3D;
 import com.graphhopper.util.PointList;
 
 public class DirectionManager {
@@ -35,6 +35,7 @@ public class DirectionManager {
 	private Routing routing;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
+	private Location location;
 	private ArrayList<Direction> lastResultDirections;
 	
 	//private HashMap<GeoPoint, Direction> readyDirections = new HashMap<GeoPoint, Direction>();
@@ -64,6 +65,7 @@ public class DirectionManager {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
+				DirectionManager.this.location = location;
 				GeoPoint current = new GeoPoint(location);
 				
 				// Find nearest road node
@@ -108,6 +110,9 @@ public class DirectionManager {
 			
 			Pair<GeoPoint, GeoPoint> directionPair = getDirectionNode(userPosition, path);
 			readyPoints.put(point, directionPair);
+			
+			int dist = (int) path.calculateDistance(new DistanceCalc3D());
+			point.setDistance(dist);
 		}
 		
 		long curr = System.nanoTime();
@@ -121,14 +126,17 @@ public class DirectionManager {
 				GeoPoint node2 = dirPair.second;
 				
 				Direction direction = directions.get(node2);
+				
 				if (direction == null) {
 					direction = new Direction(node1, node2);
 					directions.put(node2, direction);
 				}
 				direction.addPoint(point);
+				point.setRelativeDirection(direction.getRelativeDirection(location.getBearing()));
 			}
 		}
 		
+		// XXX: reset relative direction to non-active POI
 		lastResultDirections = new ArrayList<Direction>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);

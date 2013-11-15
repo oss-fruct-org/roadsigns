@@ -13,6 +13,8 @@ import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,7 +22,6 @@ import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
-import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBarActivity;
@@ -28,7 +29,51 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
+
+class PointAdapter extends ArrayAdapter<PointDesc> {
+	private int resource;
+	private List<PointDesc> points;
+
+	public PointAdapter(Context context, int resource, List<PointDesc> points) {
+		super(context, resource, points);
+
+		this.resource = resource;
+		this.points = points;
+	}
+	
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		// TODO: reuse convertView
+		
+		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
+		View view = inflater.inflate(resource, parent, false);
+		
+		ImageView imageView = (ImageView) view.findViewById(android.R.id.icon1);
+		
+		TextView textView = (TextView) view.findViewById(android.R.id.text1);
+		TextView distanceView = (TextView) view.findViewById(android.R.id.text2);
+		
+		PointDesc point = points.get(position);
+		
+		textView.setText(point.getName());
+		if (point.getRelativeDirection() != null) {
+			log("qweqweasdasd " + point.getRelativeDirection().getIconId());
+			imageView.setImageResource(point.getRelativeDirection().getIconId());
+		}
+		
+		if (point.getDistance() > 0) {
+			distanceView.setText("Distance " + point.getDistance() + " meters");
+			distanceView.setVisibility(View.VISIBLE);
+		} else {
+			distanceView.setVisibility(View.GONE);
+		}
+		
+		return view;
+	}
+}
 
 public class PointsFragment extends ListFragment {
 	private List<PointDesc> poiList;
@@ -50,16 +95,11 @@ public class PointsFragment extends ListFragment {
 			pointDesc = shownList.get(index);
 		
 		shownList = points;
-		ArrayList<String> poiNames = new ArrayList<String>();
-
-		for (PointDesc point : points) {
-			poiNames.add(point.getName());
-		}
 		
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+		PointAdapter adapter = new PointAdapter(
 				getActivity(), 
 				getListItemlayout(),
-				poiNames);
+				points);
 		setListAdapter(adapter);
 		
 		if (pointDesc != null)
@@ -68,9 +108,11 @@ public class PointsFragment extends ListFragment {
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	public static int getListItemlayout() {
-		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
+		/*return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
 				? android.R.layout.simple_list_item_activated_1
-				: android.R.layout.simple_list_item_1;
+				: android.R.layout.simple_list_item_1;*/
+		
+		return R.layout.point_list_item;
 	}
 	
 	@Override

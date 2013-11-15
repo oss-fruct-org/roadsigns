@@ -2,6 +2,8 @@ package org.fruct.oss.ikm.poi;
 
 import java.io.Serializable;
 
+import org.fruct.oss.ikm.service.Direction;
+import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.util.GeoPoint;
 
 import android.os.Parcel;
@@ -20,6 +22,10 @@ public class PointDesc implements Serializable, Parcelable {
 	
 	private static int nextId = 0;
 	private int internalId;
+
+	private RelativeDirection dir;
+
+	private int distance;
 	
 	public PointDesc(String name, int latE6, int lonE6) {
 		this.name = name;
@@ -56,6 +62,24 @@ public class PointDesc implements Serializable, Parcelable {
 								: geoPoint;
 	}
 	
+	
+	
+	public RelativeDirection getRelativeDirection() {
+		return dir;
+	}
+	
+	public void setRelativeDirection(RelativeDirection dir) {
+		this.dir = dir;
+	}
+	
+	
+	public int getDistance() {
+		return distance;
+	}
+	
+	public void setDistance(int distance) {
+		this.distance = distance;
+	}
 	
 	@Override
 	public int hashCode() {
@@ -97,6 +121,9 @@ public class PointDesc implements Serializable, Parcelable {
 		dest.writeString(desc);
 		dest.writeString(category);
 		dest.writeInt(internalId);
+		
+		dest.writeInt(dir.ordinal());
+		dest.writeInt(distance);
 	}
 	
 	public static final Parcelable.Creator<PointDesc> CREATOR = new Parcelable.Creator<PointDesc>() {
@@ -116,6 +143,8 @@ public class PointDesc implements Serializable, Parcelable {
 				.setCategory(source.readString());
 			
 			ret.internalId = source.readInt();
+			ret.dir = RelativeDirection.values()[source.readInt()];
+			ret.distance = source.readInt();
 			
 			return ret;
 		}

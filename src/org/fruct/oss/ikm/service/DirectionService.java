@@ -15,6 +15,7 @@ import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
+import org.fruct.oss.ikm.service.DirectionManager.Listener;
 import org.osmdroid.util.GeoPoint;
 
 import android.annotation.TargetApi;
@@ -46,7 +47,7 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
-public class DirectionService extends Service implements PointsListener {	
+public class DirectionService extends Service implements PointsListener, Listener {	
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
@@ -58,12 +59,9 @@ public class DirectionService extends Service implements PointsListener {
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
-	
-	private boolean isInitialized = false;
-	
-	private GraphHopper hopper;
+		
+	private DirectionManager dirManager;
 	private Routing routing;
-	private ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	private IBinder binder = new DirectionBinder();
 	
 	private LocationManager locationManager;
@@ -97,6 +95,12 @@ public class DirectionService extends Service implements PointsListener {
 		log("DirectionService created");
 		
 		PointsManager.getInstance().addListener(this);
+		
+		routing = new OneToManyRouting();
+		dirManager = new DirectionManager(routing);
+		dirManager.setListener(this);
+		dirManager.calculateForPoints(PointsManager.getInstance()
+				.getFilteredPoints());
 	}
 	
 	@Override
@@ -148,21 +152,6 @@ public class DirectionService extends Service implements PointsListener {
 		}
 	}
 	
-	private void getDirections(final Location location) {
-		log("DirectionService.getDirections");
-		Runnable run = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					doGetDirections(location);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-		};
-		executor.execute(run);
-	}
-	
 	private void tryRegisterLocationProvider(String name, LocationListener listener) {
 		try {
 			locationManager.requestLocationUpdates(name, 5000, 50, locationListener);
@@ -199,7 +188,9 @@ public class DirectionService extends Service implements PointsListener {
 				log("DirectionService.onLocationChanged " + location);
 				lastLocation = location;
 				notifyLocationChanged(location);
-				getDirections(location); 
+								
+				//List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
+				dirManager.updateLocation(lastLocation);
 			}
 		};
 		
@@ -222,36 +213,6 @@ public class DirectionService extends Service implements PointsListener {
 		}
 	}
 	
-	
-	/**
-	 * Load road graph from stream
-	 * @param input stream containing graphhopper's zip archive
-	 * @param name identifier 
-	 * @return true if success, false otherwise
-	 */
-	public boolean initializeFrom(InputStream input, String name) {
-		log("DirectionService.initializeFrom ENTER");
-		hopper = new GraphHopper().forMobile();
-		
-		try {
-			//hopper.set
-			hopper.disableCHShortcuts();
-			//hopper.setCHShortcuts("shortest");
-			String filename = Utils.copyToInternalStorage(this, input, "graphhopper", name + ".ghz.ghz");
-			filename = filename.substring(0, filename.length() - 4); // Cut last ".ghz"
-			boolean res = hopper.load(filename);
-			log("GraphHopper loaded " + res);
-			isInitialized = true;
-
-			return res;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			return false;
-		} finally {
-			log("DirectionService.initializeFrom EXIT");
-		}
-	}
-	
 	/**
 	 * Disable network and gps location provider for testing purposes.
 	 */
@@ -267,38 +228,9 @@ public class DirectionService extends Service implements PointsListener {
 		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
-	
-	private GeoPoint getNearestRoadNode(GeoPoint current) {
-		Location2IDIndex index = hopper.getLocationIndex();
-		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
-		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
 		
-		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
-				current.getLongitudeE6()/1e6, filter).getClosestNode();
-		
-		double lat = hopper.getGraph().getLatitude(nodeId);
-		double lon = hopper.getGraph().getLongitude(nodeId);
-		
-		GeoPoint nearestNode = new GeoPoint(lat, lon);		
-		return nearestNode;
-	}
-	
 	public PointList findPath(GeoPoint from, GeoPoint to) {
-		log("findPath enter");
-		try {
-		initialize();
-		
-		Routing routing = new OneToManyRouting(hopper);
-		routing.prepare(from);
-		PointList list = routing.route(to);
-		
-		return list;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			return null;
-		} finally {
-			log("findPath exit");
-		}
+		return routing.findPath(from, to);
 	}
 	
 	public Location getLastLocation() {
@@ -311,108 +243,15 @@ public class DirectionService extends Service implements PointsListener {
 		Utils.log("Added " + added);
 		Utils.log("Removed " + removed);
 
-	}
-
-	private void doGetDirections(Location location) {
-		initialize();
-		log("doGetDirections " + location);
-		
-		if (location == null)
-			return;
-	
-		GeoPoint current = new GeoPoint(location);
-				
-		// Find nearest road node
-		GeoPoint nearestNode = getNearestRoadNode(current);
-		if (current.distanceTo(nearestNode) > 40)
-			return;
-		current = nearestNode;
-		
-		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
-		
-		// TODO: move to constructor
-		if (routing == null) {
-			routing = new OneToManyRouting(hopper);
-		}
-		routing.prepare(current);
-		
-		long last = System.nanoTime();
-		int success = 0;
-		
-		// Hash table mapping road direction to POI list
-		final HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
-		for (PointDesc point : points) {	
-			log("Processing POI");
-
-			PointList path = routing.route(point.toPoint());
-			if (path == null)
-				continue;
-			
-			if (path.getSize() < 2)
-				continue;
-			
-			//GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
-			
-			Pair<GeoPoint, GeoPoint> directionPair = getDirectionNode(current, path);
-			
-			GeoPoint node1 = directionPair.first;
-			GeoPoint node2 = directionPair.second;
-			
-			Direction direction = directions.get(node2);
-			if (direction == null) {
-				direction = new Direction(node1, node2);
-				directions.put(node2, direction);
-			}
-			
-			success++;
-			direction.addPoint(point);
-		}
-		
-		long curr = System.nanoTime();
-		log("Routing time " + (curr - last) / 1e9 + " success " + success);
-		
-		lastResultDirections = new ArrayList<Direction>(directions.values());
-		lastResultCenter = current;
-		lastResultLocation = location;
-		
-		// Send result
-		sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
-		log("doGetDirections EXIT");
+		dirManager.calculateForPoints(newList);
 	}
 	
-	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {
-		if (false) {
-			return Pair.create(current, new GeoPoint((int) (path.getLatitude(1) * 1e6),
-					(int) (path.getLongitude(1) * 1e6)));
-			
-		}
+	@Override
+	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
+		this.lastResultDirections = new ArrayList<Direction>(directions);
+		this.lastResultCenter = center;
 		
-		final int radius = 150;
-		final float bearingLimit = 10;
-		
-		GeoPoint point = new GeoPoint(0, 0);
-		
-		float prevBearing = 0;
-		GeoPoint prev = Utils.copyGeoPoint(current);
-		
-		for (int i = 1; i < path.getSize(); i++) {
-			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
-			
-			int dist = current.distanceTo(point);
-			if (dist > radius) {
-				return Pair.create(current, point);
-			}
-			
-			// Calculate accumulated bearing change
-			/*float bearingChange = Utils.normalizeAngle((float) prev.bearingTo(point) - prevBearing);
-			if (Math.abs(bearingChange) > bearingLimit) {
-				prevBearing = (float) prev.bearingTo(point);
-				prev = Utils.copyGeoPoint(point);
-			}*/
-			prev = Utils.copyGeoPoint(point);
-		}
-		
-		return Pair.create(current, prev);
+		sendResult(lastResultDirections, lastResultCenter, lastLocation);
 	}
 	
 	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
@@ -422,20 +261,4 @@ public class DirectionService extends Service implements PointsListener {
 		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
-
-	private void initialize() {
-		if (isInitialized)
-			return;
-		
-		try {
-			InputStream input = this.getAssets().open("karelia.ghz.ghz");
-			initializeFrom(input, "karelia");
-			input.close();
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		} catch (Throwable th) {
-			th.printStackTrace();
-		}
-	}
-
 }

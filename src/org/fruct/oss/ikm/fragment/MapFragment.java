@@ -482,8 +482,8 @@ public class MapFragment extends Fragment {
 	
 	public void startTracking() {
 		isTracking = true;
-		panelOverlay.setVisibility(View.GONE);
-		
+		panelOverlay.setVisibility(View.VISIBLE);
+
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
 		
@@ -493,8 +493,8 @@ public class MapFragment extends Fragment {
 	
 	public void stopTracking() {
 		isTracking = false;
-		panelOverlay.setVisibility(View.VISIBLE);
-		
+		panelOverlay.setVisibility(View.GONE);
+
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
 		

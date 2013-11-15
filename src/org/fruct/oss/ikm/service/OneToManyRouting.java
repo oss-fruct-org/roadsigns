@@ -25,13 +25,6 @@ public class OneToManyRouting extends Routing {
 	
 	private Location2IDIndex index;
 	private com.graphhopper.routing.DijkstraOneToMany algo;
-	private GraphHopper hopper;
-
-	public OneToManyRouting(GraphHopper hopper) {
-		this.hopper = hopper;
-		
-		
-	}
 	
 	@Override
 	public void prepare(GeoPoint from) {

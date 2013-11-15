@@ -8,12 +8,7 @@ import com.graphhopper.routing.Path;
 import com.graphhopper.util.PointList;
 
 public class GHRouting extends Routing {
-	private GeoPoint from;
-	private GraphHopper hopper;
-	
-	public GHRouting(GraphHopper hopper) {
-		this.hopper = hopper;
-	}
+	private GeoPoint from;	
 	
 	@Override
 	public void prepare(GeoPoint from) {

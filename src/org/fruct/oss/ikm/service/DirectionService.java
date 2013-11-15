@@ -330,7 +330,10 @@ public class DirectionService extends Service implements PointsListener {
 		
 		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 		
-		routing = new OneToManyRouting(hopper);
+		// TODO: move to constructor
+		if (routing == null) {
+			routing = new OneToManyRouting(hopper);
+		}
 		routing.prepare(current);
 		
 		long last = System.nanoTime();
@@ -435,10 +438,4 @@ public class DirectionService extends Service implements PointsListener {
 		}
 	}
 
-	/**
-	 * Update existing direction with new filter settings
-	 */
-	public void updateDirections() {
-		
-	}
 }

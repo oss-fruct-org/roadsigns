@@ -2,10 +2,16 @@ package org.fruct.oss.ikm.service;
 
 import org.osmdroid.util.GeoPoint;
 
-import com.graphhopper.routing.Path;
 import com.graphhopper.util.PointList;
 
-public interface Routing {
-	void prepare(GeoPoint from);
-	PointList route(GeoPoint to);
+public abstract class Routing {
+	private GeoPoint oldGeoPoint = null;
+	
+	protected abstract void prepare(GeoPoint from);
+	public abstract PointList route(GeoPoint to);
+	
+	public void reset(GeoPoint from) {
+		if (!from.equals(oldGeoPoint))
+			prepare(from);
+	}
 }

@@ -15,7 +15,7 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
-public class OneToManyRouting implements Routing {
+public class OneToManyRouting extends Routing {
 	private int fromId;
 	private EncodingManager encodingManager;
 	private FlagEncoder encoder;

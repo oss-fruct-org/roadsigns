@@ -48,7 +48,7 @@ public class FilterDialog extends DialogFragment {
 					Filter filter = filters.get(item.first);
 					filter.setActive(item.second);
 				}
-				
+
 				if (!checkedItems.isEmpty()) {
 					PointsManager.getInstance().notifyFiltersUpdated();
 				}

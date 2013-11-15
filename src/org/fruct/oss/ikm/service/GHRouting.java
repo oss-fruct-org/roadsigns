@@ -7,7 +7,7 @@ import com.graphhopper.GraphHopper;
 import com.graphhopper.routing.Path;
 import com.graphhopper.util.PointList;
 
-public class GHRouting implements Routing {
+public class GHRouting extends Routing {
 	private GeoPoint from;
 	private GraphHopper hopper;
 	

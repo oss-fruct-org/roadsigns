@@ -89,8 +89,8 @@ public class DirectionManager {
 				GeoPoint current = new GeoPoint(location);
 				
 				// Find nearest road node
-				GeoPoint nearestNode = routing.getNearestRoadNode(current);
-				if (current.distanceTo(nearestNode) > 40)
+				GeoPoint nearestNode = routing.getNearestRoadNode(current);				
+				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
 					return;
 				current = nearestNode;
 				

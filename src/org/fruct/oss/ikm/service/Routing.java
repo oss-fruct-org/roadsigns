@@ -85,6 +85,9 @@ public abstract class Routing {
 		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
 				current.getLongitudeE6()/1e6, filter).getClosestNode();
 		
+		if (nodeId < 0)
+			return null;
+		
 		double lat = hopper.getGraph().getLatitude(nodeId);
 		double lon = hopper.getGraph().getLongitude(nodeId);
 		

@@ -3,6 +3,8 @@ package org.fruct.oss.ikm.service;
 import static org.fruct.oss.ikm.Utils.log;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,11 +13,14 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 
 import android.location.Location;
+import android.preference.PreferenceManager;
 import android.util.Pair;
 
 import com.graphhopper.util.DistanceCalc3D;
@@ -32,6 +37,8 @@ public class DirectionManager {
 		this.listener = listener;
 	}
 
+	public final int BATCH_SIZE = 10;
+	
 	private Routing routing;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
@@ -44,18 +51,31 @@ public class DirectionManager {
 	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
 	
 	// POI, that pass filters
-	private Set<PointDesc> activePoints = new HashSet<PointDesc>();
+	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
 	
 	public DirectionManager(Routing routing) {
 		this.routing = routing;
 	}
 	
-	public void calculateForPoints(final List<PointDesc> points) {		
+	private Comparator<PointDesc> distanceComparator = new Comparator<PointDesc>() {
+		private GeoPoint point = new GeoPoint(0, 0);
+		
+		@Override
+		public int compare(PointDesc lhs, PointDesc rhs) {
+			point.setCoordsE6((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
+			
+			int d1 = lhs.toPoint().distanceTo(point);
+			int d2 = rhs.toPoint().distanceTo(point);
+			
+			return d1 - d2;
+		}
+	};
+	
+	public void calculateForPoints(final List<PointDesc> points) {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				activePoints = new HashSet<PointDesc>(points);
-				
+				activePoints = new ArrayList<PointDesc>(points);
 				doCalculateForPoints();
 			}
 		});
@@ -83,11 +103,35 @@ public class DirectionManager {
 		});
 	}
 	
+	// Trip points to user-defined value (SettingsActivity.NEAREST_POINTS preference)
+	private void preparePoints() {
+		int nearest;
+		
+		try {
+			String nearestStr = PreferenceManager.getDefaultSharedPreferences(App.getContext()).getString(SettingsActivity.NEAREST_POINTS, "");
+			nearest = Integer.parseInt(nearestStr);
+		} catch (NumberFormatException ex) {
+			nearest = 0;
+		}
+		
+		// Retaing only ${nearest} POI's 		
+		if (nearest > 0 && activePoints.size() > nearest) {
+			Collections.sort(activePoints, distanceComparator);
+			activePoints = activePoints.subList(0, nearest);
+		}
+	}
+	
 	private void doCalculateForPoints() {
 		if (activePoints == null || userPosition == null)
 			return;
 		
+		preparePoints();
+		
 		long last = System.nanoTime();
+		
+		// Process no more than BATCH_SIZE points at once
+		int pointsProcessed = 0;
+		boolean needContinue = false;
 		
 		// Hash table mapping road direction to POI list
 		for (PointDesc point : activePoints) {	
@@ -108,11 +152,18 @@ public class DirectionManager {
 			
 			//GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
 			
+			// Store data in PointDesc
 			Pair<GeoPoint, GeoPoint> directionPair = getDirectionNode(userPosition, path);
 			readyPoints.put(point, directionPair);
 			
 			int dist = (int) path.calculateDistance(new DistanceCalc3D());
 			point.setDistance(dist);
+			
+			pointsProcessed++;
+			if (pointsProcessed >= BATCH_SIZE) {
+				needContinue = true;
+				break;
+			}
 		}
 		
 		long curr = System.nanoTime();
@@ -140,6 +191,15 @@ public class DirectionManager {
 		lastResultDirections = new ArrayList<Direction>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);
+		
+		if (needContinue) {
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					doCalculateForPoints();
+				}
+			});
+		}
 	}
 	
 	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {		

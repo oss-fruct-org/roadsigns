@@ -122,8 +122,8 @@ public class PointsManager {
 	public synchronized static PointsManager getInstance() {
 		if (instance == null) {
 			try {
-				//if (true)
-				//throw new IOException();
+				if (true)
+				throw new IOException();
 				
 				JSONPointLoader loader = new JSONPointLoader(App.getContext()
 						.getAssets().open("karelia-poi.js"));
@@ -131,7 +131,7 @@ public class PointsManager {
 				instance = new PointsManager(loader);
 			} catch (IOException ex) {
 
-				instance = new PointsManager(new StubPointLoader2());
+				instance = new PointsManager(new StubPointLoader());
 			}
 		}
 		

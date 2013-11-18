@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
     <CheckBoxPreference
         android:defaultValue="false"
         android:key="offline_mode"
         android:summary="Offline mode"
         android:title="Offline mode" />
-    
+
+    <EditTextPreference
+        android:defaultValue="0"
+        android:inputType="number"
+        android:key="nearest_points"
+        android:summary="Show all"
+        android:title="Nearest points" />
+
 </PreferenceScreen>

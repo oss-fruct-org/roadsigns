@@ -11,6 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -22,6 +24,8 @@ import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -30,6 +34,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
@@ -47,7 +52,8 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
-public class DirectionService extends Service implements PointsListener, Listener {	
+public class DirectionService extends Service implements PointsListener,
+		DirectionManager.Listener, OnSharedPreferenceChangeListener {
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
@@ -95,6 +101,8 @@ public class DirectionService extends Service implements PointsListener, Listene
 		log("DirectionService created");
 		
 		PointsManager.getInstance().addListener(this);
+		PreferenceManager.getDefaultSharedPreferences(App.getContext())
+				.registerOnSharedPreferenceChangeListener(this);
 		
 		routing = new OneToManyRouting();
 		dirManager = new DirectionManager(routing);
@@ -117,6 +125,9 @@ public class DirectionService extends Service implements PointsListener, Listene
 			locationManager = null;
 		}
 		
+		PreferenceManager.getDefaultSharedPreferences(App.getContext())
+				.unregisterOnSharedPreferenceChangeListener(this);
+
 		PointsManager.getInstance().removeListener(this);
 	}
 
@@ -240,11 +251,18 @@ public class DirectionService extends Service implements PointsListener, Listene
 	@Override
 	public void filterStateChanged(List<PointDesc> newList,
 			List<PointDesc> added, List<PointDesc> removed) {
-		Utils.log("Added " + added);
-		Utils.log("Removed " + removed);
-
 		dirManager.calculateForPoints(newList);
 	}
+	
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
+			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
+			dirManager.calculateForPoints(points);
+		}
+	}
+
 	
 	@Override
 	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
@@ -253,7 +271,7 @@ public class DirectionService extends Service implements PointsListener, Listene
 		
 		sendResult(lastResultDirections, lastResultCenter, lastLocation);
 	}
-	
+		
 	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
 		Intent intent = new Intent(DIRECTIONS_READY);
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);

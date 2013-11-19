@@ -39,6 +39,7 @@ public class MyPositionOverlay extends Overlay {
 		paintRed = new Paint();
 		paintRed.setColor(0xffff0000);
 		paintRed.setStyle(Style.FILL);
+		paintRed.setAntiAlias(true);
 	}
 	
 	

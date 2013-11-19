@@ -12,10 +12,10 @@ import android.preference.PreferenceActivity;
 
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
-	public static final String OFFLINE_MODE = "offline_mode";
+	public static final String STORE_LOCATION = "store_location";
 	public static final String NEAREST_POINTS = "nearest_points";
 		
-	private CheckBoxPreference offlineModePref;
+	private CheckBoxPreference storeLocationsPref;
 	private EditTextPreference nearestPointsPref;
 	
 	
@@ -24,7 +24,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
 		
-		offlineModePref = (CheckBoxPreference) findPreference(OFFLINE_MODE);
+		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (EditTextPreference) findPreference(NEAREST_POINTS);
 	}
 	
@@ -47,7 +47,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		if (key.equals(OFFLINE_MODE)) {
+		if (key.equals(STORE_LOCATION)) {
 			
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);

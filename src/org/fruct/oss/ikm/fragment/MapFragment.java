@@ -135,10 +135,6 @@ public class MapFragment extends Fragment {
 	private MapView mapView;
 	private TestOverlay panelOverlay;
 
-	
-	private DirectionsListAdapter leftPanelAdapter;
-	private DirectionsListAdapter rightPanelAdapter;
-	
 	private BroadcastReceiver directionsReceiver;
 	private BroadcastReceiver locationReceiver;
 	
@@ -229,7 +225,7 @@ public class MapFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
             mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
-	
+    
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);

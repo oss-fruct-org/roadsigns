@@ -2,22 +2,19 @@ package org.fruct.oss.ikm.service;
 
 import static org.fruct.oss.ikm.Utils.log;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
-import org.fruct.oss.ikm.service.DirectionManager.Listener;
 import org.osmdroid.util.GeoPoint;
 
 import android.annotation.TargetApi;
@@ -36,20 +33,8 @@ import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Pair;
+import android.util.Log;
 
-import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.DijkstraOneToMany;
-import com.graphhopper.routing.Path;
-import com.graphhopper.routing.util.AbstractFlagEncoder;
-import com.graphhopper.routing.util.DefaultEdgeFilter;
-import com.graphhopper.routing.util.EdgeFilter;
-import com.graphhopper.routing.util.EncodingManager;
-import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.routing.util.ShortestCalc;
-import com.graphhopper.routing.util.WeightCalculation;
-import com.graphhopper.storage.Graph;
-import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
 
 public class DirectionService extends Service implements PointsListener,
@@ -109,6 +94,9 @@ public class DirectionService extends Service implements PointsListener,
 		dirManager.setListener(this);
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
+		
+		// Restore last location
+		tryRestoreLocation();
 	}
 	
 	@Override
@@ -129,8 +117,73 @@ public class DirectionService extends Service implements PointsListener,
 				.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
+		
+		try {
+			storeLocation();
+		} catch (IOException ex) {
+			Log.w("roadsigns", "Can't save current location");
+		}
 	}
 
+	private void storeLocation() throws IOException {
+		if (lastLocation == null)
+			return;
+		
+		// Store current location anyway (despite of "store_location" setting)
+		FileOutputStream out = openFileOutput("location-store", Context.MODE_PRIVATE);
+		ObjectOutputStream oout = new ObjectOutputStream(out);
+		
+		oout.writeObject(lastLocation.getProvider());
+		oout.writeDouble(lastLocation.getLatitude());
+		oout.writeDouble(lastLocation.getLongitude());
+		oout.writeFloat(lastLocation.getBearing());
+		oout.writeLong(lastLocation.getTime());
+		oout.writeFloat(lastLocation.getAccuracy());
+		oout.close();
+	}
+	
+	private void tryRestoreLocation() {
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean store = pref.getBoolean(SettingsActivity.STORE_LOCATION, false);
+		if (!store)
+			return;
+		
+		log("Restoring previous location");
+		
+		try {
+			Location loc = restoreLocation();
+			if (loc != null) {
+				onNewLocation(loc);
+				log("Successfully restored: " + loc);
+			}
+		} catch (IOException ex) {
+			log("Can't restore previous location");
+			ex.printStackTrace();
+		}
+	}
+	
+	private Location restoreLocation() throws IOException {
+		FileInputStream in = openFileInput("location-store");
+		ObjectInputStream oin = new ObjectInputStream(in);
+		Location loc = null;
+		
+		try {
+			loc = new Location((String) oin.readObject());
+		} catch (ClassNotFoundException e) {
+			throw new IOException("Corrupted stream");
+		}
+		
+		loc.setLatitude(oin.readDouble());
+		loc.setLongitude(oin.readDouble());
+		loc.setBearing(oin.readFloat());
+		loc.setTime(oin.readLong());
+		loc.setAccuracy(oin.readFloat());
+		oin.close();
+		
+		return loc;
+	}
+	
+	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
@@ -197,11 +250,7 @@ public class DirectionService extends Service implements PointsListener,
 			@Override
 			public void onLocationChanged(Location location) {
 				log("DirectionService.onLocationChanged " + location);
-				lastLocation = location;
-				notifyLocationChanged(location);
-								
-				//List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
-				dirManager.updateLocation(lastLocation);
+				onNewLocation(location);
 			}
 		};
 		
@@ -222,6 +271,13 @@ public class DirectionService extends Service implements PointsListener,
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
+	}
+	
+	private void onNewLocation(Location location) {
+		lastLocation = location;
+		notifyLocationChanged(location);
+						
+		dirManager.updateLocation(lastLocation);
 	}
 	
 	/**

@@ -9,6 +9,7 @@ import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.AllFilter;
 import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -79,7 +80,8 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 
 public class PointsFragment extends ListFragment {
 	private List<PointDesc> poiList;
-	private List<PointDesc> shownList;
+	private List<PointDesc> shownList = new ArrayList<PointDesc>();
+	private Filter currentFilter = null;
 	
 	private boolean isDualPane;
 	
@@ -90,18 +92,24 @@ public class PointsFragment extends ListFragment {
 		return super.onCreateView(inflater, container, savedInstanceState);
 	}
 	
-	private void setList(List<PointDesc> points) {
+	private void updateList() {
 		int index = getListView().getCheckedItemPosition();
 		PointDesc pointDesc = null;
 		if (index >= 0)
 			pointDesc = shownList.get(index);
 		
-		shownList = points;
+		shownList.clear();
+		Utils.select(poiList, shownList, new Utils.Predicate<PointDesc>() {
+			@Override
+			public boolean apply(PointDesc t) {
+				return currentFilter == null || currentFilter.accepts(t);
+			}
+		});
 		
 		PointAdapter adapter = new PointAdapter(
 				getActivity(), 
 				getListItemlayout(),
-				points);
+				shownList);
 		setListAdapter(adapter);
 		
 		if (pointDesc != null)
@@ -181,7 +189,7 @@ public class PointsFragment extends ListFragment {
 				poiList = PointsManager.getInstance().getAllPoints();
 			
 			this.poiList = poiList;
-			setList(poiList);
+			updateList();
 		} catch (ClassCastException ex) {
 			ex.printStackTrace();
 		}
@@ -197,7 +205,7 @@ public class PointsFragment extends ListFragment {
 		if (detailFragment != null && !isDualPane) {
 			getActivity().getSupportFragmentManager().beginTransaction().remove(detailFragment).commit();
 		}
-		
+		 
 		int index = ListView.INVALID_POSITION;
 		if (savedInstanceState != null) {
 			index = savedInstanceState.getInt("index", 0);
@@ -220,38 +228,42 @@ public class PointsFragment extends ListFragment {
 		setupFilterBar();
 	}
 	
+	private void setupTab(final Filter filter) {
+		ActionBarActivity activity = (ActionBarActivity) getActivity();
+		ActionBar actionBar = activity.getSupportActionBar();
+
+		Tab tab = activity.getSupportActionBar().newTab();
+		tab.setText(filter.getString());
+		
+		tab.setTabListener(new ActionBar.TabListener() {
+			@Override
+			public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
+				
+			}
+			
+			@Override
+			public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
+				currentFilter = filter;
+				updateList();
+			}
+			
+			@Override
+			public void onTabReselected(Tab arg0, FragmentTransaction arg1) {
+				
+			}
+		});
+		
+		actionBar.addTab(tab, false);
+	}
+	
 	private void setupFilterBar() {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
-		
-		final String currentFilter = PointsManager.getInstance().getFilter();
-
 		List<Filter> filters = PointsManager.getInstance().getFilters();
 		
-		for (int i = 0; i < filters.size(); i++) {
-			Tab tab = activity.getSupportActionBar().newTab();
-			Filter filter = filters.get(i);
-			tab.setText(filter.getString());
-			
-			final int idx = i;
-			tab.setTabListener(new ActionBar.TabListener() {
-				@Override
-				public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
-					
-				}
-				
-				@Override
-				public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
-					setList(PointsManager.getInstance().filterPoints(poiList));
-				}
-				
-				@Override
-				public void onTabReselected(Tab arg0, FragmentTransaction arg1) {
-					
-				}
-			});
-			
-			actionBar.addTab(tab, false);
+		setupTab(new AllFilter());
+		for (final Filter filter : filters) {
+			setupTab(filter);
 		}
 		
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);

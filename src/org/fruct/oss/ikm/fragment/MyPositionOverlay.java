@@ -42,8 +42,6 @@ public class MyPositionOverlay extends Overlay {
 		paintRed.setAntiAlias(true);
 	}
 	
-	
-	
 	@Override
 	protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
 		if (location == null) {

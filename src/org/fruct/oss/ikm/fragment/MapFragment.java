@@ -191,6 +191,7 @@ public class MapFragment extends Fragment {
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
+				log("MapFragment DIRECTIONS_READY");
 				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
@@ -203,8 +204,9 @@ public class MapFragment extends Fragment {
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
+				log("MapFragment LOCATION_CHANGED");
+
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
-				log("location bearing = " + location.getBearing());
 				myLocation = location;
 				
 				myPositionOverlay.setLocation(myLocation);

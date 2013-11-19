@@ -122,7 +122,8 @@ public class PointDesc implements Serializable, Parcelable {
 		dest.writeString(category);
 		dest.writeInt(internalId);
 		
-		dest.writeInt(dir.ordinal());
+		dest.writeInt(dir != null ? dir.ordinal() : -1);
+		
 		dest.writeInt(distance);
 	}
 	
@@ -143,7 +144,11 @@ public class PointDesc implements Serializable, Parcelable {
 				.setCategory(source.readString());
 			
 			ret.internalId = source.readInt();
-			ret.dir = RelativeDirection.values()[source.readInt()];
+			
+			int dirOrd = source.readInt();
+			if (dirOrd >= 0)
+				ret.dir = RelativeDirection.values()[dirOrd];
+			
 			ret.distance = source.readInt();
 			
 			return ret;

@@ -23,17 +23,28 @@ public class DirectionsPanel extends GridView implements OnItemClickListener {
 	private List<Direction> directions;
 	private List<PointDesc> points;
 	
+	private boolean isOverlayHidden = true;
+	
 	public DirectionsPanel(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		
 		setOnItemClickListener(this);
 	}
 	
+	public void setOverlayHidden(boolean isHidden) {
+		this.isOverlayHidden = isHidden;
+		
+		if (isOverlayHidden)
+			setVisibility(View.GONE);
+		else if (directions != null && !directions.isEmpty())
+			setVisibility(View.VISIBLE);
+	}
+	
 	public void setDirections(ArrayList<Direction> directions) {
 		this.directions = directions;
 
-		// Hide panel of no points in direction
-		if (directions == null || directions.isEmpty()) {
+		// Hide panel of no points in direction or parent view hidden
+		if (isOverlayHidden || directions == null || directions.isEmpty()) {
 			setVisibility(View.GONE);
 			return;
 		} else {
@@ -52,7 +63,6 @@ public class DirectionsPanel extends GridView implements OnItemClickListener {
 		
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), R.layout.direction_panel_list_item, R.id.direction_panel_list_item, strings);
 		setAdapter(adapter);
-	
 	}
 
 	@Override

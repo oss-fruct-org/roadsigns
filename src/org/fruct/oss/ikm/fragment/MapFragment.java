@@ -245,17 +245,6 @@ public class MapFragment extends Fragment {
 		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
 		panelOverlay.initialize(mapView);
 		
-		// Initialize views
-		//leftPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.LEFT);
-		//rightPanelAdapter = new DirectionsListAdapter(getActivity(), RelativeDirection.RIGHT);
-		
-		/*ListView leftView = (ListView) getView().findViewById(R.id.left_map_panel);
-		leftView.setAdapter(leftPanelAdapter);
-		
-		ListView rightView = (ListView) getView().findViewById(R.id.right_map_panel);
-		rightView.setAdapter(rightPanelAdapter);*/
-		
-		
 		// Process MAP_CENTER parameter
 		Intent intent = getActivity().getIntent();
 		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
@@ -321,11 +310,6 @@ public class MapFragment extends Fragment {
 		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
 		mapView.getOverlays().add(myPositionOverlay);
 		
-		
-		//panelOverlay = new TestOverlay(getActivity(), mapView);
-		//mapView.getOverlays().add(panelOverlay);
-		
-
 		mapView.getOverlays().add(overlay);
 		createPOIOverlay();
 
@@ -455,8 +439,6 @@ public class MapFragment extends Fragment {
 			@Override
 			public void run() {
 				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
-				//leftPanelAdapter.setPoints(directions, myLocation.getBearing());
-				//rightPanelAdapter.setPoints(directions, myLocation.getBearing());
 			}
 		},  State.CREATED);
 		
@@ -483,6 +465,7 @@ public class MapFragment extends Fragment {
 	public void startTracking() {
 		isTracking = true;
 		panelOverlay.setVisibility(View.VISIBLE);
+		panelOverlay.setHidden(false);
 
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
@@ -494,7 +477,8 @@ public class MapFragment extends Fragment {
 	public void stopTracking() {
 		isTracking = false;
 		panelOverlay.setVisibility(View.GONE);
-
+		panelOverlay.setHidden(true);
+		
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
 		

@@ -8,6 +8,7 @@ import java.util.List;
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -60,12 +61,13 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 		
 		textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
-			log("qweqweasdasd " + point.getRelativeDirection().getIconId());
 			imageView.setImageResource(point.getRelativeDirection().getIconId());
+			distanceView.setVisibility(View.VISIBLE);
+		} else {
+			imageView.setVisibility(View.GONE);
 		}
-		
 		if (point.getDistance() > 0) {
-			distanceView.setText("Distance " + point.getDistance() + " meters");
+			distanceView.setText(Utils.stringMeters(point.getDistance()));
 			distanceView.setVisibility(View.VISIBLE);
 		} else {
 			distanceView.setVisibility(View.GONE);

@@ -23,6 +23,8 @@ import android.widget.RelativeLayout;
 public class TestOverlay extends RelativeLayout  {
 	public int panel_width = 0;
 	
+	private boolean isHidden = false;
+	
 	private MapView mapView;
 
 	private List<Direction> directions;
@@ -35,6 +37,12 @@ public class TestOverlay extends RelativeLayout  {
 		super(context, attrs);
 	}
 	
+	public void setHidden(boolean isHidden) {
+		this.isHidden = isHidden;
+		
+		for (DirectionsPanel panel : panels.values())
+			panel.setOverlayHidden(isHidden);
+	}
 
 	
 	public void initialize(MapView mapView) {
@@ -104,21 +112,4 @@ public class TestOverlay extends RelativeLayout  {
 			panel.setDirections(resultList);
 		}
 	}
-	
-	/*@Override
-	public boolean o(MotionEvent event, MapView mapView) {
-		Utils.log(""+ event.getX() + "  " + event.getY());
-		
-		Projection proj = mapView.getProjection();
-		Rect rect = proj.getScreenRect();
-		Point p = proj.fromMapPixels((int) event.getX(), (int) event.getY(), null);
-		
-		for (DirectionPanel panel : panels.values()) {
-			if (panel.onSingleTapUp(p.x - rect.centerX() + rect.width() / 2,
-					                p.y - rect.centerY() + rect.height() / 2, mapView))
-				return true;
-		}
-		
-		return super.onTouchEvent(event, mapView);
-	}*/
 }

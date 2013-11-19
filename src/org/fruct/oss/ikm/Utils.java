@@ -194,4 +194,25 @@ public class Utils {
 		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, px,
 				App.getContext().getResources().getDisplayMetrics());
 	}
+		
+	public static String stringMeters(int meters) {
+		String str;
+		
+		if (meters > 1000) {
+			double v = (meters / 100) / 10.0;
+			str = tr(R.plurals.distance_kilometers, (int) (v * 10), v);
+		} else {
+			str = tr(R.plurals.distance_meters, meters, meters);
+		}
+		
+		return str;
+	}
+	
+	public static String tr(int resId) {
+		return App.getContext().getResources().getString(resId);
+	}
+	
+	public static String tr(int resId, int count, Object... args) {
+		return App.getContext().getResources().getQuantityString(resId, count, args);
+	}
 }

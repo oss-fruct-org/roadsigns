@@ -1,14 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
     <CheckBoxPreference
         android:defaultValue="false"
         android:key="store_location"
         android:summary="@string/pref_store_location_sum"
         android:title="@string/pref_store_location" />
 
-    <EditTextPreference
+    <!-- <EditTextPreference -->
+    <!-- android:defaultValue="0" -->
+    <!-- android:inputType="number" -->
+    <!-- android:key="nearest_points" -->
+    <!-- android:summary="Show all" -->
+    <!-- android:title="Nearest points" /> -->
+
+    <ListPreference
         android:defaultValue="0"
-        android:inputType="number"
+        android:entries="@array/pref_nearest_points_str"
+        android:entryValues="@array/pref_nearest_points_values"
         android:key="nearest_points"
         android:summary="Show all"
         android:title="Nearest points" />

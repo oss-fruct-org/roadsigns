@@ -2,12 +2,12 @@ package org.fruct.oss.ikm;
 
 import java.util.Locale;
 
-
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
+import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
 
 @SuppressWarnings("deprecation")
@@ -16,7 +16,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String NEAREST_POINTS = "nearest_points";
 		
 	private CheckBoxPreference storeLocationsPref;
-	private EditTextPreference nearestPointsPref;
+	private ListPreference nearestPointsPref;
 	
 	
 	@Override
@@ -25,7 +25,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		addPreferencesFromResource(R.xml.preferences);
 		
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
-		nearestPointsPref = (EditTextPreference) findPreference(NEAREST_POINTS);
+		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 	}
 	
 	@Override

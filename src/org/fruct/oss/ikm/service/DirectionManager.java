@@ -95,12 +95,11 @@ public class DirectionManager {
 				routing.reset(userPosition);
 				
 				readyPoints.clear();
-				doCalculateForPoints();
+				// doCalculateForPoints();
 			}
 		});
 	}
 	
-	// Trip points to user-defined value (SettingsActivity.NEAREST_POINTS preference)
 	private void preparePoints() {
 		int nearest;
 		
@@ -113,7 +112,7 @@ public class DirectionManager {
 		
 		// Retaing only ${nearest} POI's 		
 		if (nearest > 0 && activePoints.size() > nearest) {
-			Collections.sort(activePoints, distanceComparator);
+			Collections.sort(activePoints, distanceComparator);			
 			activePoints = activePoints.subList(0, nearest);
 		}
 	}
@@ -141,10 +140,7 @@ public class DirectionManager {
 			}
 
 			PointList path = routing.route(point.toPoint());
-			if (path == null)
-				continue;
-			
-			if (path.getSize() < 2)
+			if (path == null || path.getSize() < 2)
 				continue;
 			
 			readyPoints.put(point, path);
@@ -181,9 +177,10 @@ public class DirectionManager {
 		HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : activePoints) {
 			PointList path = readyPoints.get(point);
-			Pair<GeoPoint, GeoPoint> dirPair = getDirectionNode(userPosition, path);
 			
-			if (dirPair != null) {
+			if (path != null) {
+				Pair<GeoPoint, GeoPoint> dirPair = getDirectionNode(userPosition, path);
+
 				GeoPoint node1 = dirPair.first;
 				GeoPoint node2 = dirPair.second;
 				

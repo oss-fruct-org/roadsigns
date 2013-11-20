@@ -278,6 +278,7 @@ public class DirectionService extends Service implements PointsListener,
 		notifyLocationChanged(location);
 						
 		dirManager.updateLocation(lastLocation);
+		dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 	}
 	
 	/**

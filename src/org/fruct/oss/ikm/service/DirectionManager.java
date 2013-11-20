@@ -6,10 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,16 +37,15 @@ public class DirectionManager {
 
 	public final int BATCH_SIZE = 10;
 	
+	private int radius = 45;
 	private Routing routing;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
 	private Location location;
 	private ArrayList<Direction> lastResultDirections;
 	
-	//private HashMap<GeoPoint, Direction> readyDirections = new HashMap<GeoPoint, Direction>();
-	
 	// POI, for that directions ready
-	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
+	private Map<PointDesc, PointList> readyPoints = new HashMap<PointDesc, PointList>();
 	
 	// POI, that pass filters
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
@@ -150,11 +147,7 @@ public class DirectionManager {
 			if (path.getSize() < 2)
 				continue;
 			
-			//GeoPoint directionNode = new GeoPoint(path.getLatitude(1), path.getLongitude(1));
-			
-			// Store data in PointDesc
-			Pair<GeoPoint, GeoPoint> directionPair = getDirectionNode(userPosition, path);
-			readyPoints.put(point, directionPair);
+			readyPoints.put(point, path);
 			
 			int dist = (int) path.calculateDistance(new DistanceCalc3D());
 			point.setDistance(dist);
@@ -169,9 +162,27 @@ public class DirectionManager {
 		long curr = System.nanoTime();
 		log("Routing time " + (curr - last) / 1e9);
 		
+		sendResult();
+		
+		if (needContinue) {
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					doCalculateForPoints();
+				}
+			});
+		}
+	}
+	
+	private void sendResult() {
+		if (readyPoints.isEmpty())
+			return;
+		
 		HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : activePoints) {
-			Pair<GeoPoint, GeoPoint> dirPair = readyPoints.get(point);
+			PointList path = readyPoints.get(point);
+			Pair<GeoPoint, GeoPoint> dirPair = getDirectionNode(userPosition, path);
+			
 			if (dirPair != null) {
 				GeoPoint node1 = dirPair.first;
 				GeoPoint node2 = dirPair.second;
@@ -191,20 +202,9 @@ public class DirectionManager {
 		lastResultDirections = new ArrayList<Direction>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);
-		
-		if (needContinue) {
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					doCalculateForPoints();
-				}
-			});
-		}
 	}
 	
-	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {		
-		final int radius = 150;
-		
+	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {				
 		GeoPoint point = new GeoPoint(0, 0);
 		GeoPoint prev = Utils.copyGeoPoint(current);
 		
@@ -213,7 +213,10 @@ public class DirectionManager {
 			
 			int dist = current.distanceTo(point);
 			if (dist > radius) {
-				return Pair.create(current, point);
+				if (current != prev)
+					return Pair.create(current, prev);
+				else
+					return Pair.create(current, point);
 			}
 			prev = Utils.copyGeoPoint(point);
 		}
@@ -221,4 +224,10 @@ public class DirectionManager {
 		return Pair.create(current, prev);
 	}
 
+	public void setRadius(int radius) {
+		if (this.radius != radius) {
+			this.radius = radius;
+			sendResult();
+		}
+	}
 }

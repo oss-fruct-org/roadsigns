@@ -3,8 +3,6 @@ package org.fruct.oss.ikm.service;
 import org.osmdroid.util.GeoPoint;
 
 import com.graphhopper.GHRequest;
-import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.Path;
 import com.graphhopper.util.PointList;
 
 public class GHRouting extends Routing {

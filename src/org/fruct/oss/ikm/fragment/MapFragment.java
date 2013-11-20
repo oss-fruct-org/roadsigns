@@ -18,6 +18,9 @@ import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
@@ -105,7 +108,7 @@ class MapState implements Parcelable {
 	};
 }
 
-public class MapFragment extends Fragment {
+public class MapFragment extends Fragment implements MapListener {
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
 		
@@ -192,7 +195,7 @@ public class MapFragment extends Fragment {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				log("MapFragment DIRECTIONS_READY");
-				GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
+				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
 				
@@ -237,8 +240,30 @@ public class MapFragment extends Fragment {
 		mapView = (MapView) getView().findViewById(R.id.map_view);
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
+		mapView.setMapListener(this);
 		setHardwareAccelerationOff();
 
+		/*new Thread() {
+			public void run() {
+				for (int i = 0; i < 40; i++) {
+				Projection proj = mapView.getProjection();
+				
+				GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
+				IGeoPoint p2 = proj.fromPixels(mapView.getWidth(), 0);
+				IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
+				
+				log("+Size " + mapView.getWidth() + " " + mapView.getHeight());
+				log("+Dist " + p1.distanceTo(p2) + " " + p1.distanceTo(p3));
+				log("+Zoom level " + mapView.getZoomLevel());
+				
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				}
+			};
+		}.start();*/
 		
 		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
 		panelOverlay.initialize(mapView);
@@ -289,6 +314,7 @@ public class MapFragment extends Fragment {
 				paint.setColor(Color.GRAY);
 				paint.setStrokeWidth(2);
 				paint.setStyle(Style.FILL);
+				paint.setAntiAlias(true);
 			}
 
 			@Override
@@ -407,8 +433,8 @@ public class MapFragment extends Fragment {
 			final List<PointDesc> points = direction.getPoints();
 			
 			double bearing = centerPoint.bearingTo(directionPoint);
-			GeoPoint markerPosition = centerPoint.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
-			
+			//GeoPoint markerPosition = centerPoint.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
+			GeoPoint markerPosition = directionPoint;
 			
 			//markerPosition = directionPoint;
 			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
@@ -554,21 +580,57 @@ public class MapFragment extends Fragment {
 	private void addPendingTask(Runnable runnable, State state) {
 		pendingTasks.get(state).add(runnable);
 		
-		// Execute all task for current state
+		// Execute all tasks for current state
 		stateUpdated(this.state);
 	}
 	
 	private void stateUpdated(State newState) {
 		for (Entry<State, List<Runnable>> entry : pendingTasks.entrySet()) {
 			State state = entry.getKey();
-			List<Runnable> tasks = entry.getValue();
 			
 			if (state.idx <= newState.idx) {
+				List<Runnable> tasks = new ArrayList<Runnable>(entry.getValue());
+				entry.getValue().clear();
+				
 				for (Runnable runnable : tasks) {
 					runnable.run();
 				}
-				tasks.clear();
 			}
 		}
+	}
+
+	@Override
+	public boolean onScroll(ScrollEvent event) {
+		return false;
+	}
+
+	private void updateRadius() {
+		Projection proj = mapView.getProjection();
+		
+		GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
+		IGeoPoint p2 = proj.fromPixels(mapView.getWidth(), 0);
+		IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
+		
+		final int dist = Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
+		log("Size " + mapView.getWidth() + " " + mapView.getHeight());
+		log("Dist " + p1.distanceTo(p2) + " " + p1.distanceTo(p3));
+		log("Zoom level " + mapView.getZoomLevel());
+		
+		if (dist == 0)
+			return;
+		
+		addPendingTask(new Runnable() {
+			@Override
+			public void run() {
+				directionService.setRadius(dist);
+			}
+		}, State.DS_CREATED);
+	}
+	
+	@Override
+	public boolean onZoom(ZoomEvent event) {
+		log("MapFragment.onZoom");
+		updateRadius();
+		return false;
 	}
 }

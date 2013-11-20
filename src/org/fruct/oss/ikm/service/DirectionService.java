@@ -335,4 +335,8 @@ public class DirectionService extends Service implements PointsListener,
 		intent.putExtra(LOCATION, (Parcelable) location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
+
+	public void setRadius(int dist) {
+		dirManager.setRadius(dist);
+	}
 }

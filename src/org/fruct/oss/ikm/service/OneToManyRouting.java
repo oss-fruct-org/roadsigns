@@ -2,7 +2,6 @@ package org.fruct.oss.ikm.service;
 
 import org.osmdroid.util.GeoPoint;
 
-import com.graphhopper.GraphHopper;
 import com.graphhopper.routing.DijkstraOneToMany;
 import com.graphhopper.routing.Path;
 import com.graphhopper.routing.util.DefaultEdgeFilter;

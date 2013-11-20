@@ -51,7 +51,12 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 		// TODO: reuse convertView
 		
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
-		View view = inflater.inflate(resource, parent, false);
+		View view = null;
+		
+		if (convertView != null)
+			view = convertView;
+		else
+			view = inflater.inflate(resource, parent, false);
 		
 		ImageView imageView = (ImageView) view.findViewById(android.R.id.icon1);
 		

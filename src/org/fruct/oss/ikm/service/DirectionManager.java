@@ -214,7 +214,8 @@ public class DirectionManager {
 			int dist = current.distanceTo(point);
 			if (dist > radius) {
 				if (current != prev)
-					return Pair.create(current, prev);
+					// XXX: fix
+					return Pair.create(current, point);
 				else
 					return Pair.create(current, point);
 			}

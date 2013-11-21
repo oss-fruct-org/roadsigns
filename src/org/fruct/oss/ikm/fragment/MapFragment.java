@@ -38,6 +38,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -116,7 +117,7 @@ class MapState implements Parcelable {
 	};
 }
 
-public class MapFragment extends Fragment implements MapListener {
+public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener {
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
 		
@@ -217,10 +218,12 @@ public class MapFragment extends Fragment implements MapListener {
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				log("MapFragment LOCATION_CHANGED");
-
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 				myLocation = location;
 				
+				log("New location provider " + location.getProvider());
+				log("New location accuracy " + location.getAccuracy());
+
 				myPositionOverlay.setLocation(myLocation);
 
 				if (isTracking) {
@@ -229,6 +232,8 @@ public class MapFragment extends Fragment implements MapListener {
 				}
 			}
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
+		
+		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 		
 		log("MapFragment.onCreate EXIT");
 	}
@@ -334,15 +339,16 @@ public class MapFragment extends Fragment implements MapListener {
 					
 				Projection proj = mapView.getProjection();
 				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
-				canvas.drawRect(mapCenter.x - 5, mapCenter.y - 5,
-						mapCenter.x + 5, mapCenter.y + 5, paint);
-				
-				canvas.drawRect(0, 0, 64, 64, paint);
+				canvas.drawCircle(mapCenter.x, mapCenter.y, 5, paint);
 			}
 		};
 		
 		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
 		mapView.getOverlays().add(myPositionOverlay);
+		
+		// Apply SHOW_ACCURACY preference
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 		
 		mapView.getOverlays().add(overlay);
 		createPOIOverlay();
@@ -385,6 +391,8 @@ public class MapFragment extends Fragment implements MapListener {
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
 		
 		getActivity().unbindService(serviceConnection);
+		
+		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
 		
 		super.onDestroy();
 	}
@@ -670,5 +678,15 @@ public class MapFragment extends Fragment implements MapListener {
 		log("MapFragment.onZoom");
 		updateRadius();
 		return false;
+	}
+	
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
+			if (myPositionOverlay != null)
+				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
+			mapView.invalidate();
+		}
 	}
 }

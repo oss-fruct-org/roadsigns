@@ -26,6 +26,9 @@ public class MyPositionOverlay extends Overlay {
 	
 	private Paint paint;
 	private Paint paintRed;
+	private Paint paintAccuracy;
+	
+	private boolean isPaintAccuracy;
 	
 	public MyPositionOverlay(Context ctx, MapView mapView) {
 		super(ctx);
@@ -40,6 +43,11 @@ public class MyPositionOverlay extends Overlay {
 		paintRed.setColor(0xffff0000);
 		paintRed.setStyle(Style.FILL);
 		paintRed.setAntiAlias(true);
+		
+		paintAccuracy = new Paint();
+		paintAccuracy.setColor(0x1162A4B6);
+		paintAccuracy.setStyle(Style.FILL_AND_STROKE);
+		paintAccuracy.setAntiAlias(true);
 	}
 	
 	@Override
@@ -60,13 +68,13 @@ public class MyPositionOverlay extends Overlay {
 		canvas.rotate(location.getBearing(), point.x, point.y);
 		canvas.translate(point.x, point.y);
 
+		if (isPaintAccuracy) {
+			float pixels = 2 * proj.metersToEquatorPixels(location.getAccuracy());
+			canvas.drawCircle(0, 0, pixels, paintAccuracy);
+		}
+		
 		drawArrow(canvas);
-		float pixels = 2 * proj.metersToEquatorPixels(150);
 		
-		/*canvas.drawCircle(0, 0, pixels, paint);
-		canvas.drawRect(0, 0, pixels, pixels, paint);*/
-		
-		//canvas.drawPicture(picture/*, new Rect(point.x, point.y, point.x + 16, point.y + 16)*/);
 		canvas.restore();
 	}
 	
@@ -84,5 +92,9 @@ public class MyPositionOverlay extends Overlay {
 
 	public void setLocation(Location myLocation) {
 		this.location = myLocation;
+	}
+	
+	public void setShowAccuracy(boolean isShow) {
+		this.isPaintAccuracy = isShow;
 	}
 }

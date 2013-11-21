@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -34,6 +35,7 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
 
@@ -66,6 +68,8 @@ public class DirectionService extends Service implements PointsListener,
 	private Location lastLocation;
 	
 	private boolean disableRealLocation = false;
+	private boolean toastShown = false;
+	
 	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -146,7 +150,7 @@ public class DirectionService extends Service implements PointsListener,
 		boolean store = pref.getBoolean(SettingsActivity.STORE_LOCATION, false);
 		if (!store)
 			return;
-		
+				
 		log("Restoring previous location");
 		
 		try {
@@ -187,7 +191,7 @@ public class DirectionService extends Service implements PointsListener,
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
-
+		
 		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
 			float bearing;
 			
@@ -269,6 +273,14 @@ public class DirectionService extends Service implements PointsListener,
 			ex.printStackTrace();
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
+		}
+		
+		// Check if all providers disabled and show warning
+		if (!toastShown && !locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+				&& !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			Toast toast = Toast.makeText(this, R.string.warn_no_providers, Toast.LENGTH_SHORT);
+			toast.show();
+			toastShown = true;
 		}
 	}
 	

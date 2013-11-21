@@ -3,7 +3,10 @@
 
     <string name="pref_store_location">Store location</string>
     <string name="pref_store_location_sum">Store location between application launches</string>
-    <string name="pref_all">All</string>
+    <string name="pref_disable_warn_providers">Disabled providers</string>
+    <string name="pref_disable_warn_providers_sum">Don\'t warn about disabled location providers</string>
+    
+	<string name="pref_all">All</string>
 
     <string-array name="pref_nearest_points_str">
         <item>@string/pref_all</item>

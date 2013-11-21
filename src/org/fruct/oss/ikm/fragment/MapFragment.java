@@ -37,17 +37,20 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -57,6 +60,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
 
@@ -66,6 +70,8 @@ class MapState implements Parcelable {
 	List<GeoPoint> currentPath = Collections.emptyList();
 	List<Direction> directions = Collections.emptyList();
 	boolean isTracking;
+	
+	boolean providerWarningShown;
 	
 	@Override
 	public int describeContents() {
@@ -79,6 +85,7 @@ class MapState implements Parcelable {
 		dest.writeTypedList(currentPath);
 		dest.writeTypedList(directions);
 		dest.writeValue(isTracking);
+		dest.writeValue(providerWarningShown);
 	}
 	
 	public static final Parcelable.Creator<MapState> CREATOR = new Parcelable.Creator<MapState>() {
@@ -97,6 +104,7 @@ class MapState implements Parcelable {
 			source.readTypedList(ret.directions, Direction.CREATOR);
 			
 			ret.isTracking = (Boolean) source.readValue(loader);
+			ret.providerWarningShown = (Boolean) source.readValue(loader);
 			
 			return ret;
 		}
@@ -179,6 +187,7 @@ public class MapFragment extends Fragment implements MapListener {
 			stateUpdated(state);
 		}
 	};
+	private boolean toastShown;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -296,6 +305,7 @@ public class MapFragment extends Fragment implements MapListener {
 			MapState mapState = savedInstanceState.getParcelable("map-state");
 			mapView.getController().setZoom(mapState.zoomLevel);
 			mapView.getController().setCenter(mapState.center);
+			toastShown = mapState.providerWarningShown;
 
 			if (!mapState.directions.isEmpty())
 				updateDirectionOverlay(mapState.directions);
@@ -339,6 +349,33 @@ public class MapFragment extends Fragment implements MapListener {
 
 		state = State.CREATED;
 		stateUpdated(state);
+		
+		checkProvidersEnabled();
+	}
+	
+	private void checkProvidersEnabled() {
+		LocationManager locationManager = (LocationManager) getActivity()
+				.getSystemService(Context.LOCATION_SERVICE);
+
+		// Check if all providers disabled and show warning
+		if (!toastShown
+				&& !locationManager
+						.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+				&& !locationManager
+						.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+
+			SharedPreferences pref = PreferenceManager
+					.getDefaultSharedPreferences(getActivity());
+			if (!pref.getBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, false)) {
+				ProvidersDialog dialog = new ProvidersDialog();
+				dialog.show(getFragmentManager(), "providers-dialog");
+			} else {
+				Toast toast = Toast.makeText(getActivity(),
+						R.string.warn_no_providers, Toast.LENGTH_SHORT);
+				toast.show();
+			}
+			toastShown = true;
+		}
 	}
 	
 	@Override
@@ -514,6 +551,7 @@ public class MapFragment extends Fragment implements MapListener {
 		mapState.center = Utils.copyGeoPoint(mapView.getMapCenter());
 		mapState.zoomLevel = mapView.getZoomLevel();
 		mapState.isTracking = isTracking;
+		mapState.providerWarningShown = toastShown;
 		//mapState.mapOrientation = mapView.getMapOrientation();
 		outState.putParcelable("map-state", mapState);
 	}

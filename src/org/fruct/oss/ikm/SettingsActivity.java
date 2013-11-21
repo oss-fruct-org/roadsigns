@@ -13,6 +13,7 @@ import android.preference.PreferenceActivity;
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	public static final String STORE_LOCATION = "store_location";
+	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
 	public static final String NEAREST_POINTS = "nearest_points";
 		
 	private CheckBoxPreference storeLocationsPref;

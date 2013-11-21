@@ -33,6 +33,7 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -67,9 +68,7 @@ public class DirectionService extends Service implements PointsListener,
 	
 	private Location lastLocation;
 	
-	private boolean disableRealLocation = false;
-	private boolean toastShown = false;
-	
+	private boolean disableRealLocation = false;	
 	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -274,20 +273,12 @@ public class DirectionService extends Service implements PointsListener,
 		} catch (IllegalArgumentException ex) {
 			ex.printStackTrace();
 		}
-		
-		// Check if all providers disabled and show warning
-		if (!toastShown && !locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-				&& !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			Toast toast = Toast.makeText(this, R.string.warn_no_providers, Toast.LENGTH_SHORT);
-			toast.show();
-			toastShown = true;
-		}
 	}
 	
 	private void onNewLocation(Location location) {
 		lastLocation = location;
 		notifyLocationChanged(location);
-						
+
 		dirManager.updateLocation(lastLocation);
 		dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 	}

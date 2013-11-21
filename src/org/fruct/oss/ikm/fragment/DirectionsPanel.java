@@ -68,11 +68,9 @@ public class DirectionsPanel extends GridView implements OnItemClickListener {
 	@Override
 	public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
 		PointDesc point = points.get(pos);
-		Utils.log("" + point.getName());
 		
 		Bundle bundle = new Bundle();
 		bundle.putParcelable("pointdesc", point);
-
 		
 		Intent intent = new Intent(getContext(), PointsActivity.class);
 		intent.setAction(PointsActivity.SHOW_DETAILS);

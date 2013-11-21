@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.service.Direction;
@@ -49,7 +50,9 @@ public class TestOverlay extends RelativeLayout  {
 		this.mapView = mapView;
 		
 	    panel_width = Utils.getDP(80);
-
+	    //Utils.log("asdasd " + panel_width);
+	    //Utils.log("asdasd  " + getContext().getResources().getDisplayMetrics().density);
+	    
 	    DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
 	    DirectionsPanel rightPanel = (DirectionsPanel) findViewById(R.id.directions_panel_right);
 	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);

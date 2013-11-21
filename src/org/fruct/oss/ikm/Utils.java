@@ -32,6 +32,10 @@ public class Utils {
 		public R apply(T t);
 	}
 	
+	public static interface FunctionDouble {
+		public double apply(double x);
+	}
+	
 	public final static Executor executor = Executors.newFixedThreadPool(1);
 	public static GeoPoint copyGeoPoint(IGeoPoint p) {
 		return new GeoPoint(p.getLatitudeE6(), p.getLongitudeE6());
@@ -214,5 +218,95 @@ public class Utils {
 	
 	public static String tr(int resId, int count, Object... args) {
 		return App.getContext().getResources().getQuantityString(resId, count, args);
+	}
+	
+	/*public static double solve(double a, double b, double delta, FunctionDouble fun) {
+		{
+			double fa = fun.apply(a);
+			double fb = fun.apply(b);
+
+			if (fa > 0 && fb > 0 || fa < 0 && fb < 0 || a >= b)
+				throw new IllegalArgumentException();
+		}
+		
+		final int MAX_ITERS = 100;
+		for (int i = 0; i < MAX_ITERS; i++) {
+			double c = (a + b) / 2;
+			double fc = fun.apply(c);
+			
+			if (Math.abs(fc) < delta || (b - a) / 2 < delta) {
+				return c;
+			}
+			
+			double fa = fun.apply(a);
+			if (fa < 0 && fc < 0 || fa > 0 && fc > 0) {
+				a = c;
+			} else {
+				b = c;
+			}
+		}
+		
+		throw new IllegalArgumentException();
+	}*/
+	
+	/*public static double solve(double a, double b, double delta, FunctionDouble fun) {
+		{
+			double fa = fun.apply(a);
+			double fb = fun.apply(b);
+
+			if (fa > 0 && fb > 0 || fa < 0 && fb < 0 || a >= b)
+				throw new IllegalArgumentException();
+		}
+		
+		final int MAX_ITERS = 100;
+		for (int i = 0; i < MAX_ITERS; i++) {
+			if (Math.abs(a - b) <= delta)
+				return (a + b) / 2;
+			
+			final double fa = fun.apply(a);
+			final double fb = fun.apply(b);
+
+	        a = b - (b - a) * fb / (fb - fa);
+	        b = a - (a - b) * fa / (fa - fb);
+		}
+		
+		throw new IllegalArgumentException();
+	}*/
+	
+	// False position method
+	public static double solve(double a, double b, double delta, FunctionDouble fun) {
+		double fa = fun.apply(a);
+		double fb = fun.apply(b);
+		double fr, r = 0;
+		int side = 0;
+		
+		if (fa > 0 && fb > 0 || fa < 0 && fb < 0 || a >= b)
+			throw new IllegalArgumentException();
+		
+		final int MAX_ITERS = 100;
+		for (int i = 0; i < MAX_ITERS; i++) {
+			r = (fa * b - fb * a) / (fa - fb);
+			if (Math.abs(a - b) < delta * Math.abs(a + b))
+				break;
+
+			fr = fun.apply(r);
+			if (fr * fb > 0) {
+				b = r;
+				fb = fr;
+				if (side == -1)
+					fa /= 2;
+				side = -1;
+			} else if (fa * fr > 0) {
+				a = r;
+				fa = fr;
+				if (side == 1)
+					fb /= 2;
+				side = 1;
+			} else {
+				break;
+			}
+		}
+		
+		return r;
 	}
 }

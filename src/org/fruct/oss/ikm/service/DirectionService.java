@@ -50,7 +50,7 @@ public class DirectionService extends Service implements PointsListener,
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
-		
+
 	private DirectionManager dirManager;
 	private Routing routing;
 	private IBinder binder = new DirectionBinder();
@@ -65,7 +65,6 @@ public class DirectionService extends Service implements PointsListener,
 	
 	private Location lastLocation;
 	
-	
 	private boolean disableRealLocation = false;
 	
 	public class DirectionBinder extends android.os.Binder {
@@ -79,12 +78,10 @@ public class DirectionService extends Service implements PointsListener,
 		return binder;
 	}
 	
-	
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		log("DirectionService created");
-		
+	
 		PointsManager.getInstance().addListener(this);
 		PreferenceManager.getDefaultSharedPreferences(App.getContext())
 				.registerOnSharedPreferenceChangeListener(this);
@@ -97,6 +94,8 @@ public class DirectionService extends Service implements PointsListener,
 		
 		// Restore last location
 		tryRestoreLocation();
+		
+		log("DirectionService created");
 	}
 	
 	@Override

@@ -201,20 +201,35 @@ public class DirectionManager {
 			listener.directionsUpdated(lastResultDirections, userPosition);
 	}
 	
-	private Pair<GeoPoint, GeoPoint> getDirectionNode(GeoPoint current, PointList path) {				
+	private Pair<GeoPoint, GeoPoint> getDirectionNode(final GeoPoint current, PointList path) {				
 		GeoPoint point = new GeoPoint(0, 0);
 		GeoPoint prev = Utils.copyGeoPoint(current);
+		
+		//point.
 		
 		for (int i = 1; i < path.getSize(); i++) {
 			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
 			
 			int dist = current.distanceTo(point);
 			if (dist > radius) {
-				if (current != prev)
-					// XXX: fix
-					return Pair.create(current, point);
-				else
-					return Pair.create(current, point);
+				final GeoPoint a = prev;
+				final GeoPoint b = point;
+				final double d = a.distanceTo(b);
+				final float bearing = (float) a.bearingTo(b);
+				
+				// TODO: catch exceptions
+				double sol = Utils.solve(0, d, 0.1, new Utils.FunctionDouble() {
+					@Override
+					public double apply(double x) {
+						GeoPoint mid = a.destinationPoint(x, bearing);
+						double distFromCenter = current.distanceTo(mid);
+						return distFromCenter - radius;
+					}
+				});
+				
+				GeoPoint target = a.destinationPoint(sol, bearing);
+				
+				return Pair.create(a, target);
 			}
 			prev = Utils.copyGeoPoint(point);
 		}

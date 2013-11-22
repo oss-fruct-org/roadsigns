@@ -48,8 +48,6 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		// TODO: reuse convertView
-		
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
 		View view = null;
 		
@@ -68,6 +66,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 		textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
 			imageView.setImageResource(point.getRelativeDirection().getIconId());
+			imageView.setContentDescription(point.getRelativeDirection().getDescription());
 			distanceView.setVisibility(View.VISIBLE);
 		} else {
 			imageView.setVisibility(View.GONE);
@@ -126,7 +125,7 @@ public class PointsFragment extends ListFragment {
 		/*return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
 				? android.R.layout.simple_list_item_activated_1
 				: android.R.layout.simple_list_item_1;*/
-		
+	
 		return R.layout.point_list_item;
 	}
 	

@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:minHeight="?android:attr/listPreferredItemHeight"
     android:layout_width="match_parent"
+    
     android:layout_height="match_parent" >
 
     <LinearLayout
@@ -34,6 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
+        android:contentDescription="@android:string/untitled"
         android:src="@drawable/arrow" />
 
 </RelativeLayout>

@@ -23,7 +23,7 @@
         yourapp:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_filter"
-        android:icon="@drawable/ic_action_place"
+        android:icon="@drawable/filter"
         android:title="@string/filter"
         yourapp:showAsAction="ifRoom"/>
 </menu>

@@ -13,15 +13,22 @@ import android.os.Parcelable;
 
 public class Direction implements Parcelable {
 	public static enum RelativeDirection {
-		LEFT(R.drawable.barrow_270), RIGHT(R.drawable.barrow_90), FORWARD(R.drawable.barrow), BACK(R.drawable.barrow_180);
+		LEFT(R.drawable.barrow_270, "left"), RIGHT(R.drawable.barrow_90, "right"), FORWARD(R.drawable.barrow, "forward"), BACK(R.drawable.barrow_180, "back");
+		
 	
 		private int iconId;
-		private RelativeDirection(int resId) {
+		private String description;
+		private RelativeDirection(int resId, String desc) {
 			this.iconId = resId;
+			this.description = desc;
 		}
 		
 		public int getIconId() {
 			return iconId;
+		}
+
+		public CharSequence getDescription() {
+			return description;
 		}
 	}
 	

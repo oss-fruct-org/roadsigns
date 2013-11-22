@@ -15,7 +15,6 @@ public class LocationReceiver implements LocationListener {
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
 	
-	private Context context;
 	private LocationManager locationManager;
 	private boolean isMockProviderEnabled = false;
 	private Location oldLocation;
@@ -25,7 +24,6 @@ public class LocationReceiver implements LocationListener {
 	private String lastReason = "";
 	
 	public LocationReceiver(Context context) {
-		this.context = context;
 		this.locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 		
 	}

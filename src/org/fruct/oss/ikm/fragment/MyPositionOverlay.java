@@ -30,6 +30,9 @@ public class MyPositionOverlay extends Overlay {
 	
 	private boolean isPaintAccuracy;
 	
+	private int arrowWidth;
+	private int arrowHeight;
+	
 	public MyPositionOverlay(Context ctx, MapView mapView) {
 		super(ctx);
 		
@@ -46,8 +49,11 @@ public class MyPositionOverlay extends Overlay {
 		
 		paintAccuracy = new Paint();
 		paintAccuracy.setColor(0x1162A4B6);
-		paintAccuracy.setStyle(Style.FILL_AND_STROKE);
+		paintAccuracy.setStyle(Style.FILL);
 		paintAccuracy.setAntiAlias(true);
+		
+		arrowWidth = Utils.getDP(7);
+		arrowHeight = Utils.getDP(32);
 	}
 	
 	@Override
@@ -81,10 +87,10 @@ public class MyPositionOverlay extends Overlay {
 	private void drawArrow(Canvas canvas) {
 		path.reset();
 		
-		path.moveTo(0, 5);
-		path.lineTo(-5, 0);
-		path.lineTo(0, -20);
-		path.lineTo(5, 0);
+		path.moveTo(0, arrowWidth);
+		path.lineTo(-arrowWidth, 0);
+		path.lineTo(0, -arrowHeight);
+		path.lineTo(arrowWidth, 0);
 		path.close();
 		
 		canvas.drawPath(path, paintRed);

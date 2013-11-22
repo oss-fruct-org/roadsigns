@@ -89,9 +89,6 @@ public class DirectionService extends Service implements PointsListener,
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
 		
-		// Restore last location
-		tryRestoreLocation();
-		
 		log("DirectionService created");
 	}
 	
@@ -106,72 +103,8 @@ public class DirectionService extends Service implements PointsListener,
 				.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
-		
-		try {
-			storeLocation();
-		} catch (IOException ex) {
-			Log.w("roadsigns", "Can't save current location");
-		}
 	}
-
-	private void storeLocation() throws IOException {
-		if (lastLocation == null)
-			return;
 		
-		// Store current location anyway (despite of "store_location" setting)
-		FileOutputStream out = openFileOutput("location-store", Context.MODE_PRIVATE);
-		ObjectOutputStream oout = new ObjectOutputStream(out);
-		
-		oout.writeObject(lastLocation.getProvider());
-		oout.writeDouble(lastLocation.getLatitude());
-		oout.writeDouble(lastLocation.getLongitude());
-		oout.writeFloat(lastLocation.getBearing());
-		oout.writeLong(lastLocation.getTime());
-		oout.writeFloat(lastLocation.getAccuracy());
-		oout.close();
-	}
-	
-	private void tryRestoreLocation() {
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean store = pref.getBoolean(SettingsActivity.STORE_LOCATION, false);
-		if (!store)
-			return;
-				
-		log("Restoring previous location");
-		
-		try {
-			Location loc = restoreLocation();
-			if (loc != null) {
-				newLocation(loc);
-				log("Successfully restored: " + loc);
-			}
-		} catch (IOException ex) {
-			log("Can't restore previous location");
-			ex.printStackTrace();
-		}
-	}
-	
-	private Location restoreLocation() throws IOException {
-		FileInputStream in = openFileInput("location-store");
-		ObjectInputStream oin = new ObjectInputStream(in);
-		Location loc = null;
-		
-		try {
-			loc = new Location((String) oin.readObject());
-		} catch (ClassNotFoundException e) {
-			throw new IOException("Corrupted stream");
-		}
-		
-		loc.setLatitude(oin.readDouble());
-		loc.setLongitude(oin.readDouble());
-		loc.setBearing(oin.readFloat());
-		loc.setTime(oin.readLong());
-		loc.setAccuracy(oin.readFloat());
-		oin.close();
-		
-		return loc;
-	}
-	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
@@ -216,6 +149,12 @@ public class DirectionService extends Service implements PointsListener,
 		}
 		
 		locationReceiver.setListener(this);
+		
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
+			locationReceiver.sendLastLocation();
+		}
+		
 		locationReceiver.start();
 	}
 	

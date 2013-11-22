@@ -357,6 +357,16 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		stateUpdated(state);
 		
 		checkProvidersEnabled();
+		
+		// Start tracking if preference set
+		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
+			addPendingTask(new Runnable() {
+				@Override
+				public void run() {
+					startTracking();
+				}
+			}, State.DS_RECEIVED);
+		}
 	}
 	
 	private void checkProvidersEnabled() {

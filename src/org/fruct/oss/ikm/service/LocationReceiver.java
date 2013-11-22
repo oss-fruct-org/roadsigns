@@ -25,7 +25,6 @@ public class LocationReceiver implements LocationListener {
 	
 	public LocationReceiver(Context context) {
 		this.locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-		
 	}
 	
 	public void setListener(Listener listener) {
@@ -68,7 +67,6 @@ public class LocationReceiver implements LocationListener {
 			ex.printStackTrace();
 		}
 		
-		
 		setupMockProvider();
 		isStarted = true;
 	}
@@ -81,6 +79,35 @@ public class LocationReceiver implements LocationListener {
 			locationManager.removeTestProvider(MOCK_PROVIDER);
 		}
 		isStarted = false;
+	}
+	
+	/**
+	 * Retrieves last location from LocationManager and sends it to listener
+	 */
+	public void sendLastLocation() {
+		if (listener == null)
+			return;
+		
+		Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+		Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+		
+		Location locationToSend = null;
+		
+		if (gpsLocation != null && networkLocation != null) {
+			if (isBetterLocation(networkLocation, gpsLocation))
+				locationToSend = networkLocation;
+			else
+				locationToSend = gpsLocation;
+		} else if (gpsLocation != null)
+			locationToSend = gpsLocation;
+		else if (networkLocation != null)
+			locationToSend = networkLocation;
+		
+		if (locationToSend != null) {
+			oldLocation = locationToSend;
+			listener.newLocation(locationToSend);
+			Utils.log("LocationReceiver send last location");
+		}
 	}
 	
 	public boolean isStarted() {

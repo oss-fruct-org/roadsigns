@@ -11,11 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
+import org.fruct.oss.ikm.service.LocationReceiver.Listener;
 import org.osmdroid.util.GeoPoint;
 
 import android.annotation.TargetApi;
@@ -25,23 +25,18 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
 
 public class DirectionService extends Service implements PointsListener,
-		DirectionManager.Listener, OnSharedPreferenceChangeListener {
+		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener {
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
@@ -58,8 +53,7 @@ public class DirectionService extends Service implements PointsListener,
 	private Routing routing;
 	private IBinder binder = new DirectionBinder();
 	
-	private LocationManager locationManager;
-	private LocationListener locationListener;
+	private LocationReceiver locationReceiver;
 	
 	// Last query result
 	private ArrayList<Direction> lastResultDirections;
@@ -67,8 +61,6 @@ public class DirectionService extends Service implements PointsListener,
 	private Location lastResultLocation;
 	
 	private Location lastLocation;
-	
-	private boolean disableRealLocation = false;	
 	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -89,6 +81,8 @@ public class DirectionService extends Service implements PointsListener,
 		PreferenceManager.getDefaultSharedPreferences(App.getContext())
 				.registerOnSharedPreferenceChangeListener(this);
 		
+		locationReceiver = new LocationReceiver(this);
+		
 		routing = new OneToManyRouting();
 		dirManager = new DirectionManager(routing);
 		dirManager.setListener(this);
@@ -104,15 +98,8 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onDestroy() {
 		log("DirectionService destroyed");
-		if (locationManager != null) {
-			locationManager.removeUpdates(locationListener);
-			
-			if (locationManager.isProviderEnabled(MOCK_PROVIDER)) {
-				locationManager.clearTestProviderEnabled(MOCK_PROVIDER);
-				locationManager.removeTestProvider(MOCK_PROVIDER);
-			}
-			
-			locationManager = null;
+		if (locationReceiver.isStarted()) {
+			locationReceiver.stop();
 		}
 		
 		PreferenceManager.getDefaultSharedPreferences(App.getContext())
@@ -155,7 +142,7 @@ public class DirectionService extends Service implements PointsListener,
 		try {
 			Location loc = restoreLocation();
 			if (loc != null) {
-				onNewLocation(loc);
+				newLocation(loc);
 				log("Successfully restored: " + loc);
 			}
 		} catch (IOException ex) {
@@ -185,13 +172,12 @@ public class DirectionService extends Service implements PointsListener,
 		return loc;
 	}
 	
-	
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
 		
-		if (locationManager != null && locationManager.isProviderEnabled(MOCK_PROVIDER)) {
+		if (locationReceiver.isStarted()) {
 			float bearing;
 			
 			if (lastLocation != null) {
@@ -214,19 +200,13 @@ public class DirectionService extends Service implements PointsListener,
 				location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 			}
 
-			locationManager.setTestProviderLocation(MOCK_PROVIDER, location);
+			locationReceiver.mockLocation(location);
 		}
 	}
 	
-	private void tryRegisterLocationProvider(String name, LocationListener listener) {
-		try {
-			locationManager.requestLocationUpdates(name, 5000, 50, locationListener);
-		} catch (Exception ex) {
-		}
-	}
 	
 	public void startTracking() {
-		if (locationManager != null) {
+		if (locationReceiver.isStarted()) {
 			notifyLocationChanged(lastLocation);
 			
 			if (lastResultDirections != null)
@@ -235,47 +215,12 @@ public class DirectionService extends Service implements PointsListener,
 			return;
 		}
 		
-		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-		locationListener = new LocationListener() {
-			@Override
-			public void onStatusChanged(String provider, int status, Bundle extras) {
-			}
-			
-			@Override
-			public void onProviderEnabled(String provider) {
-			}
-			
-			@Override
-			public void onProviderDisabled(String provider) {
-			}
-			
-			@Override
-			public void onLocationChanged(Location location) {
-				log("DirectionService.onLocationChanged " + location);
-				onNewLocation(location);
-			}
-		};
-		
-		if (!disableRealLocation) {
-			tryRegisterLocationProvider(LocationManager.NETWORK_PROVIDER, locationListener);
-			tryRegisterLocationProvider(LocationManager.GPS_PROVIDER, locationListener);
-		}
-		
-		try {
-			locationManager.addTestProvider(MOCK_PROVIDER, false, false,
-						false, false, false, false, true, 0, 5);
-				
-			locationManager.setTestProviderEnabled(MOCK_PROVIDER, true);
-			locationManager.requestLocationUpdates(MOCK_PROVIDER, 1000, 5,
-						locationListener);
-		} catch (SecurityException ex) {
-			ex.printStackTrace();
-		} catch (IllegalArgumentException ex) {
-			ex.printStackTrace();
-		}
+		locationReceiver.setListener(this);
+		locationReceiver.start();
 	}
 	
-	private void onNewLocation(Location location) {
+	@Override
+	public void newLocation(Location location) {
 		lastLocation = location;
 		notifyLocationChanged(location);
 
@@ -287,7 +232,11 @@ public class DirectionService extends Service implements PointsListener,
 	 * Disable network and gps location provider for testing purposes.
 	 */
 	public void disableRealLocation() {
-		disableRealLocation = true;
+		if (!locationReceiver.isStarted()) {
+			locationReceiver.disableRealLocation();
+		} else {
+			throw new IllegalStateException("Can't disable real location on running LocationReceiver");
+		}
 	}
 	
 	private void notifyLocationChanged(Location location) {

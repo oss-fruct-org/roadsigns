@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.fragment;
 
 import static org.fruct.oss.ikm.Utils.log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -17,11 +18,14 @@ import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
+import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.tileprovider.IRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
@@ -48,6 +52,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -61,9 +66,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
+import com.salidasoftware.osmdroidandmapsforge.MFTileProvider;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -134,6 +143,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
+	public static final GeoPoint ICELAND = new GeoPoint(64.133038, -21.898337);
 	public static final int DEFAULT_ZOOM = 18;
 	
 	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
@@ -245,39 +255,44 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
             mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
     
+    private void createMapView(View view) {
+    	RelativeLayout layout = (RelativeLayout) view.findViewById(R.id.map_layout);
+    	ResourceProxyImpl proxy = new ResourceProxyImpl(this.getActivity().getApplicationContext());
+    			
+    	File mapFile = new File(Environment.getExternalStorageDirectory().getPath() + File.separator + "iceland.map");
+		
+    	log("Map file " + mapFile.getAbsolutePath());
+    	MFTileProvider provider = new MFTileProvider(new IRegisterReceiver() {
+			@Override
+			public void unregisterReceiver(BroadcastReceiver arg0) {
+				//getActivity().unregisterReceiver(arg0);
+			}
+			
+			@Override
+			public Intent registerReceiver(BroadcastReceiver arg0, IntentFilter arg1) {
+				//return getActivity().registerReceiver(arg0, arg1);
+				return null;
+			}
+		}, mapFile);
+
+		mapView = new MapView(getActivity(), 256, proxy, provider);
+    	mapView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+		
+		mapView.setBuiltInZoomControls(true);
+		mapView.setMultiTouchControls(true);
+		mapView.setMapListener(this);
+		layout.addView(mapView);		
+		
+		setHardwareAccelerationOff();
+    }
+    
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		Context context = getActivity();
 
-		// Initialize map
-		mapView = (MapView) getView().findViewById(R.id.map_view);
-		mapView.setBuiltInZoomControls(true);
-		mapView.setMultiTouchControls(true);
-		mapView.setMapListener(this);
-		setHardwareAccelerationOff();
-
-		/*new Thread() {
-			public void run() {
-				for (int i = 0; i < 40; i++) {
-				Projection proj = mapView.getProjection();
-				
-				GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
-				IGeoPoint p2 = proj.fromPixels(mapView.getWidth(), 0);
-				IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
-				
-				log("+Size " + mapView.getWidth() + " " + mapView.getHeight());
-				log("+Dist " + p1.distanceTo(p2) + " " + p1.distanceTo(p3));
-				log("+Zoom level " + mapView.getZoomLevel());
-				
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				}
-			};
-		}.start();*/
+		// Initialize map		
+		createMapView(getView());
 		
 		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
 		panelOverlay.initialize(mapView);
@@ -303,7 +318,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		// Restore saved instance state
 		if (savedInstanceState == null) {
 			mapView.getController().setZoom(DEFAULT_ZOOM);
-			mapView.getController().setCenter(PTZ);
+			mapView.getController().setCenter(ICELAND);
 		} else {
 			log("Restore mapCenter = " + mapState.center);
 			
@@ -410,7 +425,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.map_fragment, container, false);
+		View view = inflater.inflate(R.layout.map_fragment, container, false);		
+		return view;
 	}
 
 	@Override

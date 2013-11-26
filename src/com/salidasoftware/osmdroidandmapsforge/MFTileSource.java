@@ -85,7 +85,7 @@ public class MFTileSource extends BitmapTileSourceBase {
 
 		//Create a bitmap to draw on
 		Bitmap bitmap = Bitmap.createBitmap(tileSizePixels, tileSizePixels, Bitmap.Config.RGB_565);
-
+		
 		//You could try something like this to load a custom theme
 		//try{
 		//	jobTheme = new ExternalRenderTheme(themeFile);
@@ -110,6 +110,10 @@ public class MFTileSource extends BitmapTileSourceBase {
 	}
 
 	public synchronized void setFile(File file) {
+		if (mapDatabase != null && mapDatabase.hasOpenFile()) {
+			mapDatabase.closeFile();
+		}
+		
 		mapDatabase = new MapDatabase();
 
 		//Make sure the database can open the file

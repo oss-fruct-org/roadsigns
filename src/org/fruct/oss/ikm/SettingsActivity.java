@@ -16,10 +16,11 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
 	public static final String NEAREST_POINTS = "nearest_points";
 	public static final String SHOW_ACCURACY = "show_accuracy";
-		
+	public static final String OFFLINE_MAP = "offline_map";	
+	
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
-	
+	private EditTextPreference offlineMapPref;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +29,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
+		offlineMapPref = (EditTextPreference) findPreference(OFFLINE_MAP);
 	}
 	
 	@Override
@@ -35,7 +37,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onResume();
 	
 		updateNearestPoints(getPreferenceScreen().getSharedPreferences());
-	
+		updateOfflineMap(getPreferenceScreen().getSharedPreferences());
+		
 		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
 	}
 
@@ -53,6 +56,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);
+		} else if (key.equals(OFFLINE_MAP)) {
+			updateOfflineMap(sharedPreferences);
 		}
 	}
 	
@@ -67,5 +72,14 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		}
 		
 		nearestPointsPref.setSummary(summary);
+	}
+	
+	private void updateOfflineMap(SharedPreferences sharedPreferences) {
+		String value = sharedPreferences.getString(OFFLINE_MAP, "");
+		if (value == null || value.isEmpty()) {
+			offlineMapPref.setSummary(android.R.string.no);
+		} else {
+			offlineMapPref.setSummary(value);
+		}
 	}
 }

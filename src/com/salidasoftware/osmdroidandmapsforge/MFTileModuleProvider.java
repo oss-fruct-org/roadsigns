@@ -54,12 +54,18 @@ public class MFTileModuleProvider extends MapTileFileStorageProviderBase {
 
 	@Override
 	public int getMinimumZoomLevel() {
-		return tileSource.getMinimumZoomLevel();
+		if (tileSource != null)
+			return tileSource.getMinimumZoomLevel();
+		else
+			return MINIMUM_ZOOMLEVEL;
 	}
 
 	@Override
 	public int getMaximumZoomLevel() {
-		return tileSource.getMaximumZoomLevel();
+		if (tileSource != null)
+			return tileSource.getMaximumZoomLevel();
+		else
+			return MAXIMUM_ZOOMLEVEL;
 	}
 
 	@Override
@@ -67,14 +73,18 @@ public class MFTileModuleProvider extends MapTileFileStorageProviderBase {
 		//prevent re-assignment of tile source
 		if (tileSource instanceof MFTileSource) {
 			this.tileSource = (MFTileSource) tileSource;
+		} else {
+			this.tileSource = null;
 		}
 	}
 
 	private class TileLoader extends MapTileModuleProviderBase.TileLoader {
-
 		@Override
 		public Drawable loadTile(final MapTileRequestState pState) {
-			return tileSource.renderTile(pState.getMapTile());
+			if (tileSource != null)
+				return tileSource.renderTile(pState.getMapTile());
+			else
+				return null;
 		}
 	}
 

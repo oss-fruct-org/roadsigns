@@ -56,25 +56,7 @@ public class MFTileSource extends BitmapTileSourceBase {
 	protected MFTileSource(int minZoom, int maxZoom, int tileSizePixels, File file) {
 		super("MFTiles", resourceId, minZoom, maxZoom, tileSizePixels, ".png");
 
-		mapDatabase = new MapDatabase();
-
-		//Make sure the database can open the file
-		FileOpenResult fileOpenResult = this.mapDatabase.openFile(file);
-		if (fileOpenResult.isSuccess()) {
-			mapFile = file;
-		}
-		else{
-			mapFile = null;
-		}
-
-		renderer = new DatabaseRenderer(mapDatabase);
-
-		//  For this to work I had to edit org.mapsforge.map.rendertheme.InternalRenderTheme.getRenderThemeAsStream()  to:
-		//  return this.getClass().getResourceAsStream(this.absolutePath + this.file);
-		jobTheme = InternalRenderTheme.OSMARENDER;    		
-		jobParameters = new JobParameters(jobTheme, 1);
-		debugSettings = new DebugSettings(false, false, false);
-
+		setFile(file);
 	}
 
 	/**
@@ -125,6 +107,27 @@ public class MFTileSource extends BitmapTileSourceBase {
 
 		Drawable d = new BitmapDrawable(bitmap);
 		return d;
+	}
+
+	public synchronized void setFile(File file) {
+		mapDatabase = new MapDatabase();
+
+		//Make sure the database can open the file
+		FileOpenResult fileOpenResult = this.mapDatabase.openFile(file);
+		if (fileOpenResult.isSuccess()) {
+			mapFile = file;
+		}
+		else{
+			mapFile = null;
+		}
+
+		renderer = new DatabaseRenderer(mapDatabase);
+
+		//  For this to work I had to edit org.mapsforge.map.rendertheme.InternalRenderTheme.getRenderThemeAsStream()  to:
+		//  return this.getClass().getResourceAsStream(this.absolutePath + this.file);
+		jobTheme = InternalRenderTheme.OSMARENDER;    		
+		jobParameters = new JobParameters(jobTheme, 1);
+		debugSettings = new DebugSettings(false, false, false);
 	}
 
 }

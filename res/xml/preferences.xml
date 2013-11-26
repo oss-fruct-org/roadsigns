@@ -31,4 +31,11 @@
         android:summary="Show all"
         android:title="Nearest points" />
 
+    <EditTextPreference 
+        android:key="offline_map"
+        android:defaultValue=""
+        android:title="@string/pref_offline_map_path"
+        
+        />
+    
 </PreferenceScreen>

@@ -13,17 +13,25 @@ import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
-import org.osmdroid.DefaultResourceProxyImpl;
+import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.tileprovider.IRegisterReceiver;
+import org.osmdroid.tileprovider.MapTileProviderArray;
+import org.osmdroid.tileprovider.modules.MapTileDownloader;
+import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
+import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
+import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
+import org.osmdroid.tileprovider.modules.TileWriter;
+import org.osmdroid.tileprovider.tilesource.XYTileSource;
+import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
@@ -68,11 +76,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
-import com.salidasoftware.osmdroidandmapsforge.MFTileProvider;
+import com.salidasoftware.osmdroidandmapsforge.MFTileModuleProvider;
+import com.salidasoftware.osmdroidandmapsforge.MFTileSource;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -173,6 +181,9 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
+
+	private boolean toastShown;
+	private TileProviderManager tileProviderManager;
 	
 	public MapFragment() {
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
@@ -198,7 +209,6 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			stateUpdated(state);
 		}
 	};
-	private boolean toastShown;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -258,24 +268,10 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
     private void createMapView(View view) {
     	RelativeLayout layout = (RelativeLayout) view.findViewById(R.id.map_layout);
     	ResourceProxyImpl proxy = new ResourceProxyImpl(this.getActivity().getApplicationContext());
-    			
-    	File mapFile = new File(Environment.getExternalStorageDirectory().getPath() + File.separator + "iceland.map");
-		
-    	log("Map file " + mapFile.getAbsolutePath());
-    	MFTileProvider provider = new MFTileProvider(new IRegisterReceiver() {
-			@Override
-			public void unregisterReceiver(BroadcastReceiver arg0) {
-				//getActivity().unregisterReceiver(arg0);
-			}
-			
-			@Override
-			public Intent registerReceiver(BroadcastReceiver arg0, IntentFilter arg1) {
-				//return getActivity().registerReceiver(arg0, arg1);
-				return null;
-			}
-		}, mapFile);
-
-		mapView = new MapView(getActivity(), 256, proxy, provider);
+    	
+    	tileProviderManager = new TileProviderManager(getActivity());
+    	
+		mapView = new MapView(getActivity(), 256, proxy, tileProviderManager.getProvider());
     	mapView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		
 		mapView.setBuiltInZoomControls(true);
@@ -318,7 +314,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		// Restore saved instance state
 		if (savedInstanceState == null) {
 			mapView.getController().setZoom(DEFAULT_ZOOM);
-			mapView.getController().setCenter(ICELAND);
+			mapView.getController().setCenter(PTZ);
 		} else {
 			log("Restore mapCenter = " + mapState.center);
 			
@@ -712,6 +708,11 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
+			mapView.invalidate();
+		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
+			String value = sharedPreferences.getString(key, "");
+			tileProviderManager.setFile(value);
+			
 			mapView.invalidate();
 		}
 	}

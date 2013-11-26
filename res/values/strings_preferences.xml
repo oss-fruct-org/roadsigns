@@ -9,6 +9,10 @@
     
     <string name="pref_offline_map_path">Offline map path</string>
     
+    <string name="pref_autozoom">Autozoom</string>
+    <string name="pref_autozoom_sumon">On</string>
+    <string name="pref_autozoom_sumoff">Off</string>
+    
 	<string name="pref_all">All</string>
 
     <string-array name="pref_nearest_points_str">

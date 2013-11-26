@@ -2,7 +2,6 @@ package org.fruct.oss.ikm.fragment;
 
 import static org.fruct.oss.ikm.Utils.log;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -10,6 +9,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.fruct.oss.ikm.MainActivity;
+import org.fruct.oss.ikm.MovingAverage;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -19,19 +19,10 @@ import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
-import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.tileprovider.MapTileProviderArray;
-import org.osmdroid.tileprovider.modules.MapTileDownloader;
-import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
-import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
-import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
-import org.osmdroid.tileprovider.modules.TileWriter;
-import org.osmdroid.tileprovider.tilesource.XYTileSource;
-import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
@@ -60,7 +51,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -79,8 +69,6 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
-import com.salidasoftware.osmdroidandmapsforge.MFTileModuleProvider;
-import com.salidasoftware.osmdroidandmapsforge.MFTileSource;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -169,6 +157,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private BroadcastReceiver locationReceiver;
 	
 	private Location myLocation;
+	private MovingAverage speedAverage = new MovingAverage(20000);
 	
 	// Camera follow updates from DirectionService
 	private boolean isTracking = false;
@@ -243,10 +232,21 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				
 				log("New location provider " + location.getProvider());
 				log("New location accuracy " + location.getAccuracy());
+				log("New location speed " + location.getSpeed());
 
 				myPositionOverlay.setLocation(myLocation);
 
 				if (isTracking) {
+					speedAverage.insert(location.getSpeed(), location.getTime());
+					float ave = speedAverage.average();
+					
+					int newZoomLevel = getZoomBySpeed(ave);
+					log("Speed average = " + (ave * 3.6) + "km/h zoom = " + newZoomLevel);
+
+					if (newZoomLevel != mapView.getZoomLevel()) {
+						mapView.getController().setZoom(newZoomLevel);
+					}
+					
 					mapView.getController().animateTo(new GeoPoint(myLocation));
 					mapView.setMapOrientation(-location.getBearing());
 				}
@@ -256,6 +256,19 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 		
 		log("MapFragment.onCreate EXIT");
+	}
+	
+	private int getZoomBySpeed(float speed) {
+		float speedkmh = speed * 3.6f;
+		
+		if (speedkmh < 10)
+			return 18;
+		else if (speedkmh < 30)
+			return 17;
+		else if (speedkmh < 50)
+			return 16;
+		else
+			return 15;
 	}
 	
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)

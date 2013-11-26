@@ -129,13 +129,15 @@ public class DirectionManager {
 		int pointsProcessed = 0;
 		boolean needContinue = false;
 		
+		int dbgPointsProcessed = 0, dbgPointsCache = 0;
+		
 		// Hash table mapping road direction to POI list
 		for (PointDesc point : activePoints) {	
-			log("Processing POI");
+			dbgPointsProcessed++;
 			
 			// If direction for this point already calculated, skip it
 			if (readyPoints.containsKey(point)) {
-				log("From cache");
+				dbgPointsCache++;
 				continue;
 			}
 
@@ -156,7 +158,7 @@ public class DirectionManager {
 		}
 		
 		long curr = System.nanoTime();
-		log("Routing time " + (curr - last) / 1e9);
+		log("Routing time " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
 		
 		sendResult();
 		

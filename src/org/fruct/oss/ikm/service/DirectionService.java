@@ -112,13 +112,18 @@ public class DirectionService extends Service implements PointsListener,
 		
 		if (locationReceiver.isStarted()) {
 			float bearing;
+			float speed;
 			
 			if (lastLocation != null) {
 				GeoPoint last = new GeoPoint(lastLocation);
 				bearing = (float) last.bearingTo(current);
+				
+				speed = (float) last.distanceTo(current) / ((System.currentTimeMillis() - lastLocation.getTime()) / 1000);
+				
 				log("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
 			} else {
 				bearing = 0;
+				speed = 0;
 				log("fakeLocation current = " + current + ", bearing = " + bearing);
 			}
 			
@@ -128,6 +133,7 @@ public class DirectionService extends Service implements PointsListener,
 			location.setTime(System.currentTimeMillis());
 			location.setBearing(bearing); 
 			location.setAccuracy(1);
+			location.setSpeed(speed);
 			
 			if (Build.VERSION.SDK_INT > 17) {
 				location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());

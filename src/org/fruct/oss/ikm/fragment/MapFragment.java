@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.fruct.oss.ikm.MainActivity;
-import org.fruct.oss.ikm.MovingAverage;
+import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -157,7 +157,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private BroadcastReceiver locationReceiver;
 	
 	private Location myLocation;
-	private MovingAverage speedAverage = new MovingAverage(20000);
+	private Smoother speedAverage = new Smoother(10000);
 	
 	// Camera follow updates from DirectionService
 	private boolean isTracking = false;
@@ -241,7 +241,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 					float ave = speedAverage.average();
 					
 					int newZoomLevel = getZoomBySpeed(ave);
-					log("Speed average = " + (ave * 3.6) + "km/h zoom = " + newZoomLevel);
+					log("Speed average = " + (ave ) + " zoom = " + newZoomLevel);
 
 					if (newZoomLevel != mapView.getZoomLevel()) {
 						mapView.getController().setZoom(newZoomLevel);

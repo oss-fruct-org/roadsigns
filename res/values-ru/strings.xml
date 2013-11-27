@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Дорожные знаки</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_place">Показать достопримечательности</string>
+    <string name="title_activity_points">Достопримечательности</string>
+    <string name="title_activity_details">Детали</string>
+    <string name="action_track">Следовать</string>
+    <string name="filter">Фильтр</string>
+
+    <string name="warn_no_providers">Не включено ни одного источника местоположения</string>
+    <string name="configure_providers">Настроить</string>
+    <string name="warn_providers_disable">Больше не показывать</string>
+    
+    <plurals  name="distance_meters">
+        <item quantity="one">Расстояние: %d метр</item>
+        <item quantity="few">Расстояние: %d метра</item>        
+        <item quantity="many">Расстояние: %d метров</item>
+        <item quantity="other">Расстояние: %d метров</item>
+    </plurals>
+    
+    <plurals name="distance_kilometers">
+        <item quantity="one">Расстояние: %.1f километр</item>
+        <item quantity="few">Расстояние: %.1f километра</item>
+        <item quantity="many">Расстояние: %.1f километров</item>
+        <item quantity="other">Расстояние: %.1f километров</item>
+    </plurals>
+</resources>

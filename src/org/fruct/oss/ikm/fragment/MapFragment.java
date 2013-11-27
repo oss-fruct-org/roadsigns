@@ -237,16 +237,17 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				myPositionOverlay.setLocation(myLocation);
 
 				if (isTracking) {
+					if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
 					speedAverage.insert(location.getSpeed(), location.getTime());
 					float ave = speedAverage.average();
 					
 					int newZoomLevel = getZoomBySpeed(ave);
-					log("Speed average = " + (ave ) + " zoom = " + newZoomLevel);
+					log("Speed average = " + ave + " zoom = " + newZoomLevel);
 
 					if (newZoomLevel != mapView.getZoomLevel()) {
 						mapView.getController().setZoom(newZoomLevel);
 					}
-					
+					}
 					mapView.getController().animateTo(new GeoPoint(myLocation));
 					mapView.setMapOrientation(-location.getBearing());
 				}

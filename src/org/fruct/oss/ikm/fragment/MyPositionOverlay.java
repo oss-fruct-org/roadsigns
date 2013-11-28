@@ -27,7 +27,8 @@ public class MyPositionOverlay extends Overlay {
 	private Paint paint;
 	private Paint paintRed;
 	private Paint paintAccuracy;
-	
+	private Paint paintRad;
+
 	private boolean isPaintAccuracy;
 	
 	private int arrowWidth;
@@ -43,7 +44,7 @@ public class MyPositionOverlay extends Overlay {
 		paint.setStyle(Style.STROKE);
 		
 		paintRed = new Paint();
-		paintRed.setColor(0xffff0000);
+		paintRed.setColor(0x99ff0000);
 		paintRed.setStyle(Style.FILL);
 		paintRed.setAntiAlias(true);
 		
@@ -51,6 +52,11 @@ public class MyPositionOverlay extends Overlay {
 		paintAccuracy.setColor(0x1162A4B6);
 		paintAccuracy.setStyle(Style.FILL);
 		paintAccuracy.setAntiAlias(true);
+		
+		paintRad = new Paint();
+		paintRad.setColor(0x11B66284);
+		paintRad.setStyle(Style.FILL);
+		paintRad.setAntiAlias(true);
 		
 		arrowWidth = Utils.getDP(7);
 		arrowHeight = Utils.getDP(32);
@@ -77,7 +83,10 @@ public class MyPositionOverlay extends Overlay {
 		if (isPaintAccuracy) {
 			float pixels = 2 * proj.metersToEquatorPixels(location.getAccuracy());
 			canvas.drawCircle(0, 0, pixels, paintAccuracy);
-		}
+		}/* else {
+			float pixels = 2 * proj.metersToEquatorPixels(45);
+			canvas.drawCircle(0, 0, pixels, paintRad);
+		}*/
 		
 		drawArrow(canvas);
 		

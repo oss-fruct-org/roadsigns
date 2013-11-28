@@ -212,11 +212,11 @@ public class DirectionManager {
 		for (int i = 1; i < path.getSize(); i++) {
 			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
 			
-			int dist = current.distanceTo(point);
+			final int dist = current.distanceTo(point);
 			if (dist > radius) {
 				final GeoPoint a = prev;
 				final GeoPoint b = point;
-				final double d = a.distanceTo(b);
+				final double d = a.distanceTo(b) + 2;
 				final float bearing = (float) a.bearingTo(b);
 				
 				// TODO: catch exceptions
@@ -225,9 +225,11 @@ public class DirectionManager {
 					public double apply(double x) {
 						GeoPoint mid = a.destinationPoint(x, bearing);
 						double distFromCenter = current.distanceTo(mid);
-						return distFromCenter - radius;
+						return distFromCenter - (radius + 2);
 					}
 				});
+				
+				log("SOL " + current.distanceTo(prev));
 				
 				GeoPoint target = a.destinationPoint(sol, bearing);
 				

@@ -34,9 +34,7 @@
     <EditTextPreference 
         android:key="offline_map"
         android:defaultValue=""
-        android:title="@string/pref_offline_map_path"
-        
-        />
+        android:title="@string/pref_offline_map_path" />
     
     <CheckBoxPreference 
         android:defaultValue="false" 

@@ -4,6 +4,7 @@ import static org.fruct.oss.ikm.Utils.log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
@@ -27,10 +28,13 @@ import android.support.v4.app.ListFragment;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBarActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -82,18 +86,20 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	}
 }
 
-public class PointsFragment extends ListFragment {
+public class PointsFragment extends ListFragment implements TextWatcher {
 	private List<PointDesc> poiList;
 	private List<PointDesc> shownList = new ArrayList<PointDesc>();
 	private Filter currentFilter = null;
 	
 	private boolean isDualPane;
+	private String searchText;
+	private EditText searchBar;
 	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 		
-		return super.onCreateView(inflater, container, savedInstanceState);
+		return inflater.inflate(R.layout.point_list_layout, container, true);
 	}
 	
 	private void updateList() {
@@ -106,7 +112,14 @@ public class PointsFragment extends ListFragment {
 		Utils.select(poiList, shownList, new Utils.Predicate<PointDesc>() {
 			@Override
 			public boolean apply(PointDesc t) {
-				return currentFilter == null || currentFilter.accepts(t);
+				if (currentFilter != null && !currentFilter.accepts(t))
+					return false;
+				else if (searchText != null 
+						&& searchText.length() > 0 
+						&& !t.getName().toLowerCase(Locale.getDefault()).contains(searchText))
+					return false;
+				else 
+					return true;
 			}
 		});
 		
@@ -230,6 +243,9 @@ public class PointsFragment extends ListFragment {
 		}
 		
 		setupFilterBar();
+		
+		searchBar = (EditText) getActivity().findViewById(R.id.search_field);
+		searchBar.addTextChangedListener(this);
 	}
 	
 	private void setupTab(final Filter filter) {
@@ -279,5 +295,19 @@ public class PointsFragment extends ListFragment {
 		super.onSaveInstanceState(outState);
 	
 		outState.putInt("index", getListView().getCheckedItemPosition());
+	}
+
+	@Override
+	public void afterTextChanged(Editable s) {}
+
+	@Override
+	public void beforeTextChanged(CharSequence s, int start, int count,
+			int after) {}
+
+	@Override
+	public void onTextChanged(CharSequence s, int start, int before, int count) {
+		log("onTextChanged " + s);
+		searchText = s.toString().toLowerCase(Locale.getDefault());
+		updateList();
 	}
 }

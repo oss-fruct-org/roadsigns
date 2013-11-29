@@ -10,7 +10,7 @@
         
         android:layout_alignParentTop="true"
         android:layout_above="@+id/search_field"
-        
+                
         android:drawSelectorOnTop="true" />
 
     <EditText android:id="@id/search_field"

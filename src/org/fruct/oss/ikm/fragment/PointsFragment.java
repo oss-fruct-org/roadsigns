@@ -25,6 +25,7 @@ import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBarActivity;
@@ -172,6 +173,12 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		}
 	}
 	
+	/**
+	 * Show point of interest details on details panel (dual-pane layout)
+	 * or new activity (one-panel layout)
+	 * 
+	 * @param index of element
+	 */
 	public void showDetails(int index) {
 		PointDesc pointDesc = shownList.get(index);
 		log("PointsFragment.showDetails isDualPane = " + isDualPane);

@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.fruct.oss.ikm.MainActivity;
-import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -20,6 +20,9 @@ import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
+import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
+import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -28,9 +31,7 @@ import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
-import org.osmdroid.views.overlay.ItemizedIconOverlay;
 import org.osmdroid.views.overlay.Overlay;
-import org.osmdroid.views.overlay.OverlayItem;
 import org.osmdroid.views.overlay.PathOverlay;
 
 import android.annotation.TargetApi;
@@ -65,6 +66,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -552,18 +554,25 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	private void createPOIOverlay() {
 		log("MapFragment.createPOIOverlay");
-		Context context = getActivity();
-		ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
+		final Context context = getActivity();
+		
+		
+		List<PointDesc> points = PointsManager.getInstance()
+				.getFilteredPoints();
+		List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
+					public ExtendedOverlayItem apply(PointDesc point) {
+						ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
+								.getDescription(), point.toPoint(), context);
+						item.setRelatedObject(point);
+						return item;
+					};
+				});
 
-		List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
-
-		for (PointDesc point : points) {
-			items.add(new OverlayItem(point.getName(), "", point.toPoint()));
-		}
-
-		ItemizedIconOverlay<OverlayItem> overlay = new ItemizedIconOverlay<OverlayItem>(
-				context, items, null);
-		mapView.getOverlays().add(overlay);
+		final DefaultInfoWindow infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);		
+		ItemizedOverlayWithBubble<ExtendedOverlayItem> overlay2 = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
+				context, items2, mapView, infoWindow);
+		
+		mapView.getOverlays().add(overlay2);
 		log("MapFragment.createPOIOverlay EXIT");
 	}
 	

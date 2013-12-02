@@ -1,26 +1,7 @@
 package org.fruct.oss.ikm.service;
 
-import static org.fruct.oss.ikm.Utils.log;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
-import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
-import org.fruct.oss.ikm.service.LocationReceiver.Listener;
-import org.osmdroid.util.GeoPoint;
-
 import android.annotation.TargetApi;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -31,12 +12,24 @@ import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-
 import com.graphhopper.util.PointList;
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
+import org.fruct.oss.ikm.service.LocationReceiver.Listener;
+import org.osmdroid.util.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DirectionService extends Service implements PointsListener,
 		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener {
+	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
+
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
@@ -89,12 +82,12 @@ public class DirectionService extends Service implements PointsListener,
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
 		
-		log("DirectionService created");
+		log.debug("DirectionService created");
 	}
 	
 	@Override
 	public void onDestroy() {
-		log("DirectionService destroyed");
+		log.debug("DirectionService destroyed");
 		if (locationReceiver.isStarted()) {
 			locationReceiver.stop();
 		}
@@ -120,11 +113,11 @@ public class DirectionService extends Service implements PointsListener,
 				
 				speed = (float) last.distanceTo(current) / ((System.currentTimeMillis() - lastLocation.getTime()) / 1000);
 				
-				log("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
+				log.debug("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
 			} else {
 				bearing = 0;
 				speed = 0;
-				log("fakeLocation current = " + current + ", bearing = " + bearing);
+				log.debug("fakeLocation current = " + current + ", bearing = " + bearing);
 			}
 			
 			Location location = new Location(MOCK_PROVIDER);
@@ -189,7 +182,7 @@ public class DirectionService extends Service implements PointsListener,
 			return;
 		
 		Intent intent = new Intent(LOCATION_CHANGED);
-		intent.putExtra(LOCATION, (Parcelable) location);
+		intent.putExtra(LOCATION, location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 		
@@ -221,6 +214,7 @@ public class DirectionService extends Service implements PointsListener,
 	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
 		this.lastResultDirections = new ArrayList<Direction>(directions);
 		this.lastResultCenter = center;
+		this.lastResultLocation = lastLocation;
 		
 		sendResult(lastResultDirections, lastResultCenter, lastLocation);
 	}
@@ -229,7 +223,7 @@ public class DirectionService extends Service implements PointsListener,
 		Intent intent = new Intent(DIRECTIONS_READY);
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);
 		intent.putExtra(CENTER, (Parcelable) center);
-		intent.putExtra(LOCATION, (Parcelable) location);
+		intent.putExtra(LOCATION, location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 

@@ -21,8 +21,12 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.util.TypedValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
+	private static Logger log = LoggerFactory.getLogger(Utils.class);
+
 	public static interface Predicate<T> {
 		public boolean apply(T t);
 	}
@@ -94,7 +98,7 @@ public class Utils {
 	
 	private static boolean checkFileNeedsUpdate(String path, InputStream in) throws IOException {
 		if (!in.markSupported()) {
-			log("copyToInternalStorage in.markSupported == false");
+			log.warn("copyToInternalStorage in.markSupported == false");
 			return true;
 		}
 		
@@ -103,14 +107,14 @@ public class Utils {
 		SharedPreferences pref = App.getContext().getSharedPreferences("stored-files", Context.MODE_PRIVATE);
 		String oldFileHash = pref.getString(fileId, null);
 		
-		log("copyToInternalStorage oldFileHash = " + oldFileHash);
+		log.info("copyToInternalStorage oldFileHash = " + oldFileHash);
 		
 		// XXX: handle any file size
 		in.mark(50 * 1024 * 1024);
 		String fileHash = hashStream(in);
 		in.reset();
 		
-		log("copyToInternalStorage fileHash = " + fileHash);
+		log.info("copyToInternalStorage fileHash = " + fileHash);
 		
 		boolean needUpdate = !fileHash.equals(oldFileHash);
 		
@@ -124,7 +128,7 @@ public class Utils {
 	 * Copies or updates data from stream to internal storage
 	 * 
 	 * @param context
-	 * @param inputStream data stream
+	 * @param input data stream
 	 * @param pathInStorage
 	 * @param fileInStorage
 	 * @return path to file
@@ -143,9 +147,10 @@ public class Utils {
 		if (targetFile.exists() || !checkFileNeedsUpdate(storageFile, input))
 			return storageFile;
 		
-		log("copyToInternalStorage copying file " + storageFile);
+		log.info("copyToInternalStorage copying file " + storageFile);
 	
 		File targetDirectory = new File(storageFolder);
+		// XXX: check return value
 		targetDirectory.mkdirs();
 		
 		OutputStream output = new BufferedOutputStream(new FileOutputStream(targetFile));

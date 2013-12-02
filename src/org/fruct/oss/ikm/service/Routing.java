@@ -1,7 +1,5 @@
 package org.fruct.oss.ikm.service;
 
-import static org.fruct.oss.ikm.Utils.log;
-
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -14,8 +12,12 @@ import com.graphhopper.routing.util.AbstractFlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.storage.index.Location2IDIndex;
 import com.graphhopper.util.PointList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class Routing {
+	private static Logger log = LoggerFactory.getLogger(Routing.class);
+
 	private GeoPoint oldGeoPoint = null;
 	private boolean isInitialized = false;
 	protected GraphHopper hopper;
@@ -53,7 +55,7 @@ public abstract class Routing {
 	 * @return true if success, false otherwise
 	 */
 	public boolean initializeFrom(InputStream input, String name) {
-		log("DirectionService.initializeFrom ENTER");
+		log.debug("DirectionService.initializeFrom ENTER");
 		hopper = new GraphHopper().forMobile();
 		
 		try {
@@ -63,7 +65,7 @@ public abstract class Routing {
 			String filename = Utils.copyToInternalStorage(App.getContext(), input, "graphhopper", name + ".ghz.ghz");
 			filename = filename.substring(0, filename.length() - 4); // Cut last ".ghz"
 			boolean res = hopper.load(filename);
-			log("GraphHopper loaded " + res);
+			log.info("GraphHopper loaded " + res);
 			isInitialized = true;
 
 			return res;
@@ -71,7 +73,7 @@ public abstract class Routing {
 			ex.printStackTrace();
 			return false;
 		} finally {
-			log("DirectionService.initializeFrom EXIT");
+			log.debug("DirectionService.initializeFrom EXIT");
 		}
 	}
 	
@@ -97,20 +99,18 @@ public abstract class Routing {
 
 	public PointList findPath(GeoPoint from, GeoPoint to) {
 		initialize();
-		
-		log("findPath enter");
+
+		log.debug("findPath enter");
 		try {
-		
-		//Routing routing = new OneToManyRouting(hopper);
-		prepare(from);
-		PointList list = route(to);
-		
-		return list;
+			prepare(from);
+			PointList list = route(to);
+
+			return list;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return null;
 		} finally {
-			log("findPath exit");
+			log.debug("findPath exit");
 		}
 	}
 }

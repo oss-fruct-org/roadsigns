@@ -7,8 +7,12 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LocationReceiver implements LocationListener {
+	private static Logger log = LoggerFactory.getLogger(LocationReceiver.class);
+
 	public interface Listener {
 		void newLocation(Location location);
 	}
@@ -106,7 +110,7 @@ public class LocationReceiver implements LocationListener {
 		if (locationToSend != null) {
 			oldLocation = locationToSend;
 			listener.newLocation(locationToSend);
-			Utils.log("LocationReceiver send last location");
+			log.debug("LocationReceiver send last location");
 		}
 	}
 	
@@ -128,10 +132,10 @@ public class LocationReceiver implements LocationListener {
 			if (listener != null) {
 				listener.newLocation(location);
 			}
-			
-			Utils.log(dbg + " accepted. Reason = " + lastReason);
+
+			log.info(dbg + " accepted. Reason = " + lastReason);
 		} else {
-			Utils.log(dbg + " dropped. Reson = " + lastReason);
+			log.info(dbg + " dropped. Reson = " + lastReason);
 		}
 	}
 

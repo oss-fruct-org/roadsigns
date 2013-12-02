@@ -1,7 +1,5 @@
 package org.fruct.oss.ikm.service;
 
-import static org.fruct.oss.ikm.Utils.log;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,8 +21,12 @@ import android.util.Pair;
 
 import com.graphhopper.util.DistanceCalc3D;
 import com.graphhopper.util.PointList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DirectionManager {
+	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
+
 	public interface Listener {
 		void directionsUpdated(List<Direction> directions, GeoPoint center);
 	}
@@ -42,8 +44,7 @@ public class DirectionManager {
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
 	private Location location;
-	private ArrayList<Direction> lastResultDirections;
-	
+
 	// POI, for that directions ready
 	private Map<PointDesc, PointList> readyPoints = new HashMap<PointDesc, PointList>();
 	
@@ -89,8 +90,7 @@ public class DirectionManager {
 				GeoPoint nearestNode = routing.getNearestRoadNode(current);				
 				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
 					return;
-				current = nearestNode;
-				
+
 				DirectionManager.this.userPosition = nearestNode;
 				routing.reset(userPosition);
 				
@@ -158,7 +158,7 @@ public class DirectionManager {
 		}
 		
 		long curr = System.nanoTime();
-		log("Routing time " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
+		log.info("Routing results " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
 		
 		sendResult();
 		
@@ -198,7 +198,7 @@ public class DirectionManager {
 		}
 		
 		// XXX: reset relative direction to non-active POI
-		lastResultDirections = new ArrayList<Direction>(directions.values());
+		ArrayList<Direction> lastResultDirections = new ArrayList<Direction>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);
 	}

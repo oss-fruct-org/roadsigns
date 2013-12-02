@@ -4,3 +4,5 @@ gen/
 libs/
 
 draw/out/
+.idea/workspace.xml
+out

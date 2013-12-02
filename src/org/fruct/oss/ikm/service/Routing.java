@@ -90,7 +90,7 @@ public abstract class Routing {
 		
 		double lat = hopper.getGraph().getLatitude(nodeId);
 		double lon = hopper.getGraph().getLongitude(nodeId);
-		
+
 		GeoPoint nearestNode = new GeoPoint(lat, lon);		
 		return nearestNode;
 	}

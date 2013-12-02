@@ -1,39 +1,5 @@
 package org.fruct.oss.ikm.fragment;
 
-import static org.fruct.oss.ikm.Utils.log;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map.Entry;
-
-import org.fruct.oss.ikm.MainActivity;
-import org.fruct.oss.ikm.PointsActivity;
-import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Smoother;
-import org.fruct.oss.ikm.TileProviderManager;
-import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
-import org.fruct.oss.ikm.service.Direction;
-import org.fruct.oss.ikm.service.DirectionService;
-import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
-import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
-import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.util.ResourceProxyImpl;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.MapView.Projection;
-import org.osmdroid.views.overlay.DirectedLocationOverlay;
-import org.osmdroid.views.overlay.Overlay;
-import org.osmdroid.views.overlay.PathOverlay;
-
 import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -66,11 +32,42 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import com.graphhopper.util.PointList;
+import org.fruct.oss.ikm.MainActivity;
+import org.fruct.oss.ikm.PointsActivity;
+import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Smoother;
+import org.fruct.oss.ikm.TileProviderManager;
+import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.service.Direction;
+import org.fruct.oss.ikm.service.DirectionService;
+import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
+import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
+import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.util.ResourceProxyImpl;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.MapView.Projection;
+import org.osmdroid.views.overlay.DirectedLocationOverlay;
+import org.osmdroid.views.overlay.Overlay;
+import org.osmdroid.views.overlay.PathOverlay;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map.Entry;
+
+import static org.fruct.oss.ikm.Utils.log;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -322,8 +319,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				.equals(getActivity().getIntent().getAction())
 				&& savedInstanceState == null) {
 			log("MapFragment.onActivityCreated SHOW_PATH");
-			GeoPoint target = (GeoPoint) getActivity().getIntent()
-					.getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
+			GeoPoint target = getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
 			showPath(target);
 		}
 		
@@ -361,7 +357,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 			@Override
 			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
-				if (shadow == true)
+				if (shadow)
 					return;
 					
 				Projection proj = mapView.getProjection();
@@ -437,8 +433,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View view = inflater.inflate(R.layout.map_fragment, container, false);		
-		return view;
+		return inflater.inflate(R.layout.map_fragment, container, false);
 	}
 
 	@Override
@@ -565,7 +560,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 								.getDescription(), point.toPoint(), context);
 						item.setRelatedObject(point);
 						return item;
-					};
+					}
 				});
 
 		final DefaultInfoWindow infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);		

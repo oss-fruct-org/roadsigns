@@ -25,7 +25,6 @@ import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
-import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBar.Tab;
 import android.support.v7.app.ActionBarActivity;
@@ -54,7 +53,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
-		View view = null;
+		View view;
 		
 		if (convertView != null)
 			view = convertView;
@@ -115,18 +114,18 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			public boolean apply(PointDesc t) {
 				if (currentFilter != null && !currentFilter.accepts(t))
 					return false;
-				else if (searchText != null 
-						&& searchText.length() > 0 
+				else if (searchText != null
+						&& searchText.length() > 0
 						&& !t.getName().toLowerCase(Locale.getDefault()).contains(searchText))
 					return false;
-				else 
+				else
 					return true;
 			}
 		});
 		
 		PointAdapter adapter = new PointAdapter(
 				getActivity(), 
-				getListItemlayout(),
+				getListItemLayout(),
 				shownList);
 		setListAdapter(adapter);
 		
@@ -135,7 +134,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	}
 	
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public static int getListItemlayout() {
+	public static int getListItemLayout() {
 		/*return Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
 				? android.R.layout.simple_list_item_activated_1
 				: android.R.layout.simple_list_item_1;*/
@@ -229,10 +228,12 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		if (detailFragment != null && !isDualPane) {
 			getActivity().getSupportFragmentManager().beginTransaction().remove(detailFragment).commit();
 		}
-		 
+
+		int selectedBar = 0;
 		int index = ListView.INVALID_POSITION;
 		if (savedInstanceState != null) {
 			index = savedInstanceState.getInt("index", 0);
+			selectedBar = savedInstanceState.getInt("selectedBar", 0);
 		}
 		
 		if (isDualPane) {
@@ -249,13 +250,13 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			showDetails(index);
 		}
 		
-		setupFilterBar();
+		setupFilterBar(selectedBar);
 		
 		searchBar = (EditText) getActivity().findViewById(R.id.search_field);
 		searchBar.addTextChangedListener(this);
 	}
 	
-	private void setupTab(final Filter filter) {
+	private void setupTab(final Filter filter, boolean isSelected) {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
 
@@ -280,17 +281,22 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			}
 		});
 		
-		actionBar.addTab(tab, false);
+		actionBar.addTab(tab, isSelected);
 	}
 	
-	private void setupFilterBar() {
-		ActionBarActivity activity = (ActionBarActivity) getActivity();
-		ActionBar actionBar = activity.getSupportActionBar();
+	private void setupFilterBar(int selectedBar) {
+		ActionBar actionBar = getActionBar();
 		List<Filter> filters = PointsManager.getInstance().getFilters();
 		
-		setupTab(new AllFilter());
+		setupTab(new AllFilter(), false);
+		int c = 1;
 		for (final Filter filter : filters) {
-			setupTab(filter);
+			if (selectedBar == c) {
+				currentFilter = filter;
+			}
+
+			setupTab(filter, selectedBar == c);
+			c++;
 		}
 		
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -302,6 +308,13 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		super.onSaveInstanceState(outState);
 	
 		outState.putInt("index", getListView().getCheckedItemPosition());
+		int selectedTab = getActionBar().getSelectedNavigationIndex();
+		outState.putInt("selectedBar", selectedTab);
+	}
+
+	private ActionBar getActionBar() {
+		ActionBarActivity activity = (ActionBarActivity) getActivity();
+		return activity.getSupportActionBar();
 	}
 
 	@Override

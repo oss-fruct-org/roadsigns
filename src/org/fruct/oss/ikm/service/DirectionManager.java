@@ -228,9 +228,7 @@ public class DirectionManager {
 						return distFromCenter - (radius + 2);
 					}
 				});
-				
-				log("SOL " + current.distanceTo(prev));
-				
+
 				GeoPoint target = a.destinationPoint(sol, bearing);
 				
 				return Pair.create(a, target);

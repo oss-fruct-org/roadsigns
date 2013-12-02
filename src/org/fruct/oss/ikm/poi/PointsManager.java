@@ -3,7 +3,10 @@ package org.fruct.oss.ikm.poi;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.fruct.oss.ikm.App;
@@ -28,12 +31,19 @@ public class PointsManager {
 	
 	private PointsManager(PointLoader loader) {
 		points = Collections.unmodifiableList(loader.getPoints());
-		
-		final String[] names = {"Education", "Health", "Culture", "Sport"};
-		final String[] filters = {"education", "health", "culture", "sport"};
+		createFiltersFromPoints(points);
 
-		for (int i = 0; i < names.length; i++) {
-			this.filters.add(new CategoryFilter(filters[i], names[i]));
+	}
+
+	private void createFiltersFromPoints(List<PointDesc> points) {
+		Set<String> names = new HashSet<String>();
+
+		for (PointDesc point : points)
+			names.add(point.getCategory());
+
+		for (String str : names) {
+			CategoryFilter filter = new CategoryFilter(str.toLowerCase(Locale.getDefault()), str);
+			filters.add(filter);
 		}
 	}
 	

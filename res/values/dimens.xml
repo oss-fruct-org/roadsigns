@@ -4,4 +4,7 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
 	<dimen name="widget_margin">8dp</dimen>
+
+    <dimen name="point_panel_width">84dp</dimen>
+    <dimen name="point_panel_item_width">80dp</dimen>
 </resources>

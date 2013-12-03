@@ -3,14 +3,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
-    
-<!--     <org.osmdroid.views.MapView -->
-<!--         android:id="@+id/map_view" -->
-<!--         android:layout_width="match_parent" -->
-<!--         android:layout_height="match_parent" -->
-<!--         tilesource="Mapnik" -->
-<!--         /> -->
-    
+
     <RelativeLayout 
         android:id="@+id/map_layout"
         android:layout_width="match_parent"
@@ -27,8 +20,8 @@
             android:layout_width="match_parent" >
             
         <org.fruct.oss.ikm.fragment.DirectionsPanel 
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="@dimen/point_panel_width"
+            android:layout_height="@dimen/point_panel_width"
             
             android:numColumns="auto_fit"
             android:columnWidth="80dp"
@@ -38,14 +31,15 @@
             
             android:visibility="gone"
             android:background="#11000000"
+
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             
             android:id="@+id/directions_panel_left"/>
         
-        <org.fruct.oss.ikm.fragment.DirectionsPanel 
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+        <org.fruct.oss.ikm.fragment.DirectionsPanel
+            android:layout_width="@dimen/point_panel_width"
+            android:layout_height="@dimen/point_panel_width"
             
             android:numColumns="auto_fit"
             android:columnWidth="80dp"
@@ -56,14 +50,15 @@
             
             android:visibility="gone"
             android:background="#11000000"
+
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             
             android:id="@+id/directions_panel_right"/>
         
-        <org.fruct.oss.ikm.fragment.DirectionsPanel 
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+        <org.fruct.oss.ikm.fragment.DirectionsPanel
+            android:layout_width="@dimen/point_panel_width"
+            android:layout_height="@dimen/point_panel_width"
             
             android:numColumns="auto_fit"
             android:columnWidth="80dp"
@@ -73,14 +68,15 @@
             
             android:visibility="gone"
             android:background="#11000000"
+
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             
             android:id="@+id/directions_panel_top"/>
         
-        <org.fruct.oss.ikm.fragment.DirectionsPanel 
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+        <org.fruct.oss.ikm.fragment.DirectionsPanel
+            android:layout_width="@dimen/point_panel_width"
+            android:layout_height="@dimen/point_panel_width"
             
             android:numColumns="auto_fit"
             android:columnWidth="80dp"
@@ -91,6 +87,7 @@
             
             android:visibility="gone"
             android:background="#11000000"
+
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
             

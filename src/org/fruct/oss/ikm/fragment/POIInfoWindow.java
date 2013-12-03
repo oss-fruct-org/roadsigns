@@ -1,5 +1,10 @@
 package org.fruct.oss.ikm.fragment;
 
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -7,18 +12,13 @@ import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
 import org.osmdroid.views.MapView;
 
-import android.content.Intent;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-
 public class POIInfoWindow extends DefaultInfoWindow {
 	private PointDesc point;
 	
 	public POIInfoWindow(int res, MapView mapView) {
 		super(res, mapView);
 		
-		Button button = (Button) getView().findViewById(R.id.bubble_moreinfo);
+		ImageButton button = (ImageButton) getView().findViewById(R.id.bubble_moreinfo);
 		button.setVisibility(Button.VISIBLE);
 		button.setOnClickListener(new Button.OnClickListener() {			
 			@Override

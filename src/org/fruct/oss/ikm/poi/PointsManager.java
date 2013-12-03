@@ -13,8 +13,12 @@ import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 
 import android.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PointsManager {
+	private static Logger log = LoggerFactory.getLogger(PointsManager.class);
+
 	public interface PointsListener {
 		void filterStateChanged(List<PointDesc> newList, List<PointDesc> added,
 				List<PointDesc> removed);
@@ -32,7 +36,11 @@ public class PointsManager {
 	private PointsManager(PointLoader loader) {
 		points = Collections.unmodifiableList(loader.getPoints());
 		createFiltersFromPoints(points);
+		log.info("{} points total loaded", points.size());
 
+		for (PointDesc point : points) {
+			log.trace(point.toString());
+		}
 	}
 
 	private void createFiltersFromPoints(List<PointDesc> points) {
@@ -42,7 +50,7 @@ public class PointsManager {
 			names.add(point.getCategory());
 
 		for (String str : names) {
-			CategoryFilter filter = new CategoryFilter(str.toLowerCase(Locale.getDefault()), str);
+			CategoryFilter filter = new CategoryFilter(str, str);
 			filters.add(filter);
 		}
 	}
@@ -81,14 +89,10 @@ public class PointsManager {
 				}
 				
 				return false;
-			};
+			}
 		});
 	}
-	
-	public String getFilter() {
-		return "";
-	}
-	
+
 	public List<Filter> getFilters() {
 		return Collections.unmodifiableList(filters);
 	}
@@ -128,23 +132,31 @@ public class PointsManager {
 		
 		return instance;
 	}
-	
+
 	public synchronized static PointsManager getInstance() {
 		if (instance == null) {
-			try {
-				if (true)
-				throw new IOException();
-				
-				JSONPointLoader loader = new JSONPointLoader(App.getContext()
-						.getAssets().open("karelia-poi.js"));
+			if (false)
+				return instance = new PointsManager(new StubPointLoader());
 
-				instance = new PointsManager(loader);
-			} catch (IOException ex) {
+			log.debug("Loading points from assets");
+			MultiPointLoader multiLoader = new MultiPointLoader();
 
-				instance = new PointsManager(new StubPointLoader());
+			for (int i = 1; i < 14; i++) {
+				String filename = String.format("karelia-poi/%02d.js", i);
+
+				JSONPointLoader jsonLoader;
+				try {
+					jsonLoader = JSONPointLoader.createForAsset(filename);
+				} catch (IOException ex) {
+					ex.printStackTrace();
+					log.warn("Can not load POI from file {}", filename);
+					continue;
+				}
+				multiLoader.addLoader(jsonLoader);
 			}
+
+			instance = new PointsManager(multiLoader);
 		}
-		
 		return instance;
 	}
 	

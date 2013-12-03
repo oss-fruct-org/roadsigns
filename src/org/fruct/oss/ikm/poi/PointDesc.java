@@ -102,10 +102,16 @@ public class PointDesc implements Serializable, Parcelable {
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "PointDesc [name=" + name + "]";
+		return "PointDesc{" +
+				"latE6=" + latE6 +
+				", lonE6=" + lonE6 +
+				", name='" + name + '\'' +
+				", category='" + category + '\'' +
+				", desc='" + desc + '\'' +
+				'}';
 	}
 
 	@Override

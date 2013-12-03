@@ -30,7 +30,6 @@ public class ProvidersDialog extends DialogFragment implements OnClickListener {
 		// TODO: get checkbox style from current theme
 		checkbox = new CheckBox(getActivity());
 		checkbox.setText(R.string.warn_providers_disable);
-		checkbox.setTextColor(Color.WHITE);
 		builder.setView(checkbox);
 		
 		return builder.create();
@@ -39,7 +38,7 @@ public class ProvidersDialog extends DialogFragment implements OnClickListener {
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
 		if (which == DialogInterface.BUTTON_POSITIVE) {
-			Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+			Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
 			startActivity(intent);
 		}
 		

@@ -40,7 +40,6 @@ public class Utils {
 		public double apply(double x);
 	}
 	
-	public final static Executor executor = Executors.newFixedThreadPool(1);
 	public static GeoPoint copyGeoPoint(IGeoPoint p) {
 		return new GeoPoint(p.getLatitudeE6(), p.getLongitudeE6());
 	}
@@ -66,11 +65,12 @@ public class Utils {
 	}
 	
 	public static String hashString(String input) {
-		MessageDigest md5 = null;
+		MessageDigest md5;
 		try {
 			md5 = MessageDigest.getInstance("MD5");
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
+			return String.valueOf(input.hashCode());
 		}
 		md5.update(input.getBytes());
 		byte[] hash = md5.digest();
@@ -87,7 +87,7 @@ public class Utils {
 		
 		int bsize = 1024;
 		byte[] buffer = new byte[bsize];
-		int length = 0;
+		int length;
 		
 		while ((length = in.read(buffer, 0, bsize)) > 0) {
 			md5.update(buffer, 0, length);
@@ -127,7 +127,7 @@ public class Utils {
 	/**
 	 * Copies or updates data from stream to internal storage
 	 * 
-	 * @param context
+	 * @param context Android context
 	 * @param input data stream
 	 * @param pathInStorage
 	 * @param fileInStorage

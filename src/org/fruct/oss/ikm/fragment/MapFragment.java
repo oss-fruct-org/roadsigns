@@ -14,6 +14,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Point;
+import android.graphics.drawable.LayerDrawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -25,12 +26,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -60,14 +56,14 @@ import org.osmdroid.views.MapView.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.PathOverlay;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map.Entry;
-
-import static org.fruct.oss.ikm.Utils.log;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -97,7 +93,7 @@ class MapState implements Parcelable {
 		@Override
 		public MapState createFromParcel(Parcel source) {
 			MapState ret = new MapState();
-			ClassLoader loader = getClass().getClassLoader();
+			ClassLoader loader = ((Object)this).getClass().getClassLoader();
 			
 			ret.center = source.readParcelable(loader);
 			ret.zoomLevel = source.readInt();
@@ -122,6 +118,8 @@ class MapState implements Parcelable {
 }
 
 public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener {
+	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
+
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
 		
@@ -188,7 +186,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			log("MapFragment.onServiceConnected");
+			log.info("MapFragment.onServiceConnected");
 			directionService = ((DirectionService.DirectionBinder) service).getService();
 			
 			directionService.startTracking();
@@ -200,7 +198,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		log("MapFragment.onCreate");
+		log.debug("MapFragment.onCreate");
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
@@ -212,7 +210,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				log("MapFragment DIRECTIONS_READY");
+				log.debug("MapFragment DIRECTIONS_READY");
 				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
@@ -225,13 +223,13 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				log("MapFragment LOCATION_CHANGED");
+				log.debug("MapFragment LOCATION_CHANGED");
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 				myLocation = location;
-				
-				log("New location provider " + location.getProvider());
-				log("New location accuracy " + location.getAccuracy());
-				log("New location speed " + location.getSpeed());
+
+				log.debug("New location provider " + location.getProvider());
+				log.debug("New location accuracy " + location.getAccuracy());
+				log.debug("New location speed " + location.getSpeed());
 
 				myPositionOverlay.setLocation(myLocation);
 
@@ -241,7 +239,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 					float ave = speedAverage.average();
 					
 					int newZoomLevel = getZoomBySpeed(ave);
-					log("Speed average = " + ave + " zoom = " + newZoomLevel);
+						log.debug("Speed average = " + ave + " zoom = " + newZoomLevel);
 
 					if (newZoomLevel != mapView.getZoomLevel()) {
 						mapView.getController().setZoom(newZoomLevel);
@@ -254,10 +252,10 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
-		
-		log("MapFragment.onCreate EXIT");
+
+		log.debug("MapFragment.onCreate EXIT");
 	}
-	
+
 	private int getZoomBySpeed(float speed) {
 		float speedkmh = speed * 3.6f;
 		
@@ -286,7 +284,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
     	
 		mapView = new MapView(getActivity(), 256, proxy, tileProviderManager.getProvider());
     	mapView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-		
+
 		mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 		mapView.setMapListener(this);
@@ -310,7 +308,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		Intent intent = getActivity().getIntent();
 		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
 		if (center != null && savedInstanceState == null) {
-			log("MapFragment.onActivityCreated setCenter = " + center);
+			log.debug("MapFragment.onActivityCreated setCenter = " + center);
 			setCenter(center);
 		}
 
@@ -318,7 +316,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		if (MainActivity.SHOW_PATH
 				.equals(getActivity().getIntent().getAction())
 				&& savedInstanceState == null) {
-			log("MapFragment.onActivityCreated SHOW_PATH");
+			log.debug("MapFragment.onActivityCreated SHOW_PATH");
 			GeoPoint target = getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
 			showPath(target);
 		}
@@ -328,7 +326,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			mapView.getController().setZoom(DEFAULT_ZOOM);
 			mapView.getController().setCenter(PTZ);
 		} else {
-			log("Restore mapCenter = " + mapState.center);
+			log.debug("Restore mapCenter = " + mapState.center);
 			
 			MapState mapState = savedInstanceState.getParcelable("map-state");
 			mapView.getController().setZoom(mapState.zoomLevel);
@@ -390,6 +388,25 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				}
 			}, State.DS_RECEIVED);
 		}
+
+		// Listen for mapView shown
+		ViewTreeObserver vto = mapView.getViewTreeObserver();
+		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+			@Override
+			public void onGlobalLayout() {
+				log.debug("New size {} {}", mapView.getWidth(), mapView.getHeight());
+
+				mapView.getController().setZoom(mapView.getZoomLevel());
+				updateRadius();
+
+				ViewTreeObserver obs = mapView.getViewTreeObserver();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+					obs.removeOnGlobalLayoutListener(this);
+				} else {
+					obs.removeGlobalOnLayoutListener(this);
+				}
+			}
+		});
 	}
 	
 	private void checkProvidersEnabled() {
@@ -419,7 +436,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	@Override
 	public void onDestroy() {
-		log("MapFragment.onDestroy");
+		log.debug("MapFragment.onDestroy");
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
 		
@@ -520,10 +537,6 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override
 				public void onClick() {
-					for (PointDesc pointDesc : points) {
-						log(pointDesc.getName());
-					}
-					
 					Intent intent = new Intent(getActivity(), PointsActivity.class);
 					intent.putParcelableArrayListExtra(POINTS, new ArrayList<PointDesc>(points));
 					startActivity(intent);
@@ -548,7 +561,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	}
 	
 	private void createPOIOverlay() {
-		log("MapFragment.createPOIOverlay");
+		log.debug("MapFragment.createPOIOverlay");
 		final Context context = getActivity();
 		
 		
@@ -568,7 +581,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				context, items2, mapView, infoWindow);
 		
 		mapView.getOverlays().add(overlay2);
-		log("MapFragment.createPOIOverlay EXIT");
+		log.debug("MapFragment.createPOIOverlay EXIT");
 	}
 	
 	public void startTracking() {
@@ -614,7 +627,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
-				log("MapFragment.showPath task start");
+				log.debug("MapFragment.showPath task start");
 
 				// Get last known location from DirectionService
 				Location lastLocation = directionService.getLastLocation();
@@ -653,7 +666,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		pathOverlay.setAlpha(127);
 		
 		for (GeoPoint geoPoint : path) {
-			log("path " + geoPoint);
+			log.trace("path " + geoPoint);
 			pathOverlay.addPoint(geoPoint);
 		}
 		
@@ -692,15 +705,15 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 	private void updateRadius() {
 		Projection proj = mapView.getProjection();
-		
+
 		GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
 		IGeoPoint p2 = proj.fromPixels(mapView.getWidth(), 0);
 		IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
-		
+
 		final int dist = Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
-		log("Size " + mapView.getWidth() + " " + mapView.getHeight());
-		log("Dist " + p1.distanceTo(p2) + " " + p1.distanceTo(p3));
-		log("Zoom level " + mapView.getZoomLevel());
+		log.debug("Size {} {}", mapView.getWidth(),  mapView.getHeight());
+		log.debug("Dist {} {}", p1.distanceTo(p2), p1.distanceTo(p3));
+		log.debug("Zoom level {}", mapView.getZoomLevel());
 		
 		if (dist == 0)
 			return;
@@ -715,7 +728,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	@Override
 	public boolean onZoom(ZoomEvent event) {
-		log("MapFragment.onZoom");
+		log.debug("MapFragment.onZoom");
 		updateRadius();
 		return false;
 	}

@@ -9,6 +9,7 @@
 		<relative-module-cls project-related="jar://$PROJECT_DIR$/libs/graphhopper-0.2-SNAPSHOT-android.jar!/"/>
 	</lib>
 	<lib name="osmdroid-android-4.0.jar" scope="COMPILE">
+		<srcroot url="file://$USER_HOME$/tmp/osmdroid/osmdroid-android/src/main/java"/>
 		<relative-module-cls project-related="jar://$PROJECT_DIR$/libs/osmdroid-android-4.0.jar!/"/>
 	</lib>
 	<lib name="mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies.jar" scope="COMPILE">

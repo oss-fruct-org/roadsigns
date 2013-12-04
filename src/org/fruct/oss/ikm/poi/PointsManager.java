@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
@@ -29,21 +31,43 @@ public class PointsManager {
 
 	private boolean needUpdate = true;
 
-	private List<PointDesc> points;
+	private List<PointLoader> loaders = new ArrayList<PointLoader>();
+	private ExecutorService executor = Executors.newFixedThreadPool(1);
+
+	/**
+	 * All points fetched from loaders
+	 */
+	private List<PointDesc> points = new ArrayList<PointDesc>();
+
+	/**
+	 * Points that accepted by at least one filter
+	 */
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 
 	private List<Filter> filters = new ArrayList<Filter>();
 
 	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
 
-	private PointsManager(PointLoader loader) {
-		points = Collections.unmodifiableList(loader.getPoints());
-		createFiltersFromPoints(points);
-		log.info("{} points total loaded", points.size());
+	public void addPointLoader(final PointLoader pointLoader) {
+		loaders.add(pointLoader);
 
-		for (PointDesc point : points) {
-			log.trace(point.toString());
-		}
+		// Schedule loader
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				pointLoader.loadPoints();
+
+				// When previous method returns, points guaranteed to be ready
+				List<PointDesc> newPoints = pointLoader.getPoints();
+				addPoints(newPoints);
+				notifyFiltersUpdated();
+			}
+		});
+	}
+
+	private synchronized void addPoints(List<PointDesc> points) {
+		this.points.addAll(points);
+		needUpdate = true;
 	}
 
 	private void createFiltersFromPoints(List<PointDesc> points) {
@@ -66,7 +90,7 @@ public class PointsManager {
 		listeners.remove(listener);
 	}
 
-	public List<PointDesc> getFilteredPoints() {
+	public synchronized List<PointDesc> getFilteredPoints() {
 		ensureValid();
 		return filteredPoints;
 	}
@@ -99,7 +123,7 @@ public class PointsManager {
 		return Collections.unmodifiableList(filters);
 	}
 
-	public void notifyFiltersUpdated() {
+	public synchronized void notifyFiltersUpdated() {
 		List<PointDesc> oldFilteredPoints = filteredPoints;
 		List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 		filterPoints(points, filteredPoints);
@@ -110,7 +134,8 @@ public class PointsManager {
 		addedPoints.removeAll(oldFilteredPoints);
 		removedPoints.removeAll(filteredPoints);
 
-		this.filteredPoints = filteredPoints;
+		this.filteredPoints = Collections.unmodifiableList(filteredPoints);
+		needUpdate = false;
 
 		for (PointsListener listener : listeners) {
 			listener.filterStateChanged(filteredPoints, addedPoints, removedPoints);
@@ -126,22 +151,16 @@ public class PointsManager {
 		}
 	}
 
-
-	public synchronized static PointsManager getInstance(PointLoader loader) {
-		if (instance == null) {
-			instance = new PointsManager(loader);
-		}
-
-		return instance;
-	}
-
 	public synchronized static PointsManager getInstance() {
 		if (instance == null) {
-			if (false)
-				return instance = new PointsManager(new StubPointLoader());
+			instance = new PointsManager();
+
+			if (false) {
+				instance.addPointLoader(new StubPointLoader());
+				return instance;
+			}
 
 			log.debug("Loading points from assets");
-			MultiPointLoader multiLoader = new MultiPointLoader();
 
 			String[] jsonFiles;
 			try {
@@ -150,7 +169,8 @@ public class PointsManager {
 			} catch (IOException e) {
 				e.printStackTrace();
 				log.warn("Can not open list of .js files");
-				return instance = new PointsManager(new StubPointLoader());
+				instance.addPointLoader(new StubPointLoader());
+				return instance;
 			}
 
 			for (String filename : jsonFiles) {
@@ -162,10 +182,8 @@ public class PointsManager {
 					log.warn("Can not load POI from file {}", "karelia-poi/" + filename);
 					continue;
 				}
-				multiLoader.addLoader(jsonLoader);
+				instance.addPointLoader(jsonLoader);
 			}
-
-			instance = new PointsManager(multiLoader);
 		}
 		return instance;
 	}

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class StubPointLoader2 implements PointLoader {
+public class StubPointLoader2 extends PointLoader {
 	private ArrayList<PointDesc> stubPoints = new ArrayList<PointDesc>();
 	{
 		stubPoints.add(new PointDesc("Petrozavodsk", 61781090, 34362360)
@@ -22,7 +22,7 @@ public class StubPointLoader2 implements PointLoader {
 	}
 
 	@Override
-	public List<PointDesc> getPoints() {
-		return stubPoints;
+	public void loadPoints() {
+		notifyPointsReady(stubPoints);
 	}
 }

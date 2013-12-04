@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class StubPointLoader implements PointLoader {
+public class StubPointLoader extends PointLoader {
 	private ArrayList<PointDesc> stubPoints = new ArrayList<PointDesc>();
 	{
 		stubPoints.add(new PointDesc("Voenkomat", 61781090, 34362360)
@@ -31,9 +31,9 @@ public class StubPointLoader implements PointLoader {
 						.setCategory("culture")
 						.setDescription("Music theater"));
 	}
-	
+
 	@Override
-	public List<PointDesc> getPoints() {
-		return stubPoints;
+	public void loadPoints() {
+		notifyPointsReady(stubPoints);
 	}
 }

@@ -1,23 +1,19 @@
 package org.fruct.oss.ikm.poi;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.Utils;
 import org.json.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JSONPointLoader implements PointLoader {
+public class JSONPointLoader extends PointLoader {
 	private static Logger log = LoggerFactory.getLogger(JSONPointLoader.class);
-	private ArrayList<PointDesc> list = new ArrayList<PointDesc>();
-	
+	private ArrayList<PointDesc> points = new ArrayList<PointDesc>();
 
 	public JSONPointLoader(InputStream in) throws IOException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -66,13 +62,12 @@ public class JSONPointLoader implements PointLoader {
 		
 		PointDesc poi = new PointDesc(name, (int) (lon * 1e6), (int) (lat * 1e6));
 		poi.setCategory(collectionName);
-		list.add(poi);
+		points.add(poi);
 	}
-	
+
 	@Override
-	public List<PointDesc> getPoints() {
-		Utils.log("" + list.size());
-		return list;
+	public void loadPoints() {
+		notifyPointsReady(points);
 	}
 
 	public static JSONPointLoader createForAsset(String assetFile) throws IOException {

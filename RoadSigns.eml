@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component jdk="Android 4.3 Platform" jdk_type="Android SDK">
+<component inheritJdk="true">
 	<exclude-output/>
 	<contentEntry url="file://$MODULE_DIR$"/>
 	<lib name="slf4j-android-1.6.1-RC1.jar" scope="COMPILE">

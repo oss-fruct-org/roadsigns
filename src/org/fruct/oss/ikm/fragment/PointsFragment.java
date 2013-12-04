@@ -93,8 +93,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	
 	private boolean isDualPane;
 	private String searchText;
-	private EditText searchBar;
-	
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -251,8 +250,8 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		}
 		
 		setupFilterBar(selectedBar);
-		
-		searchBar = (EditText) getActivity().findViewById(R.id.search_field);
+
+		EditText searchBar = (EditText) getActivity().findViewById(R.id.search_field);
 		searchBar.addTextChangedListener(this);
 	}
 	

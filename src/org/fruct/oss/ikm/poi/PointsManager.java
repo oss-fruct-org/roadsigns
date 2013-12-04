@@ -9,6 +9,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import android.animation.Animator;
+import android.animation.ValueAnimator;
+import android.content.res.AssetManager;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 
@@ -23,16 +26,16 @@ public class PointsManager {
 		void filterStateChanged(List<PointDesc> newList, List<PointDesc> added,
 				List<PointDesc> removed);
 	}
-	
+
 	private boolean needUpdate = true;
 
 	private List<PointDesc> points;
 	private List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
-	
-	private List<Filter> filters = new ArrayList<Filter>();	
-	
+
+	private List<Filter> filters = new ArrayList<Filter>();
+
 	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
-	
+
 	private PointsManager(PointLoader loader) {
 		points = Collections.unmodifiableList(loader.getPoints());
 		createFiltersFromPoints(points);
@@ -54,31 +57,30 @@ public class PointsManager {
 			filters.add(filter);
 		}
 	}
-	
+
 	public void addListener(PointsListener listener) {
 		listeners.add(listener);
 	}
-	
+
 	public void removeListener(PointsListener listener) {
 		listeners.remove(listener);
 	}
-	
-	
+
 	public List<PointDesc> getFilteredPoints() {
-		ensureValid(); 
+		ensureValid();
 		return filteredPoints;
 	}
-	
+
 	public List<PointDesc> getAllPoints() {
 		return points;
 	}
-	
+
 	public List<PointDesc> filterPoints(List<PointDesc> list) {
 		ArrayList<PointDesc> ret = new ArrayList<PointDesc>();
 		filterPoints(list, ret);
 		return Collections.unmodifiableList(ret);
 	}
-	
+
 	private void filterPoints(List<PointDesc> in, List<PointDesc> out) {
 		out.clear();
 		Utils.select(in, out, new Utils.Predicate<PointDesc>() {
@@ -87,7 +89,7 @@ public class PointsManager {
 					if (filter.isActive() && filter.accepts(point))
 						return true;
 				}
-				
+
 				return false;
 			}
 		});
@@ -96,25 +98,25 @@ public class PointsManager {
 	public List<Filter> getFilters() {
 		return Collections.unmodifiableList(filters);
 	}
-	
+
 	public void notifyFiltersUpdated() {
 		List<PointDesc> oldFilteredPoints = filteredPoints;
 		List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 		filterPoints(points, filteredPoints);
-		
+
 		List<PointDesc> addedPoints = new ArrayList<PointDesc>(filteredPoints);
 		List<PointDesc> removedPoints = new ArrayList<PointDesc>(oldFilteredPoints);
-		
+
 		addedPoints.removeAll(oldFilteredPoints);
 		removedPoints.removeAll(filteredPoints);
-		
+
 		this.filteredPoints = filteredPoints;
-		
+
 		for (PointsListener listener : listeners) {
 			listener.filterStateChanged(filteredPoints, addedPoints, removedPoints);
 		}
 	}
-	
+
 	private void ensureValid() {
 		if (needUpdate) {
 			needUpdate = false;
@@ -123,13 +125,13 @@ public class PointsManager {
 			filteredPoints = Collections.unmodifiableList(newArray);
 		}
 	}
-	
+
 
 	public synchronized static PointsManager getInstance(PointLoader loader) {
 		if (instance == null) {
 			instance = new PointsManager(loader);
 		}
-		
+
 		return instance;
 	}
 
@@ -141,15 +143,23 @@ public class PointsManager {
 			log.debug("Loading points from assets");
 			MultiPointLoader multiLoader = new MultiPointLoader();
 
-			for (int i = 1; i < 14; i++) {
-				String filename = String.format("karelia-poi/%02d.js", i);
+			String[] jsonFiles;
+			try {
+				AssetManager am = App.getContext().getAssets();
+				jsonFiles = am.list("karelia-poi");
+			} catch (IOException e) {
+				e.printStackTrace();
+				log.warn("Can not open list of .js files");
+				return instance = new PointsManager(new StubPointLoader());
+			}
 
+			for (String filename : jsonFiles) {
 				JSONPointLoader jsonLoader;
 				try {
-					jsonLoader = JSONPointLoader.createForAsset(filename);
+					jsonLoader = JSONPointLoader.createForAsset("karelia-poi/" + filename);
 				} catch (IOException ex) {
 					ex.printStackTrace();
-					log.warn("Can not load POI from file {}", filename);
+					log.warn("Can not load POI from file {}", "karelia-poi/" + filename);
 					continue;
 				}
 				multiLoader.addLoader(jsonLoader);
@@ -159,7 +169,7 @@ public class PointsManager {
 		}
 		return instance;
 	}
-	
+
 	/**
 	 * For unit testing
 	 */

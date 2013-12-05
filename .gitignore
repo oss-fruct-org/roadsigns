@@ -1,8 +1,20 @@
-assets/karelia.ghz.ghz
+.gradle
+/local.properties
+/.idea/workspace.xml
+.DS_Store
+*.apk
+*.ap_
+
+*.dex
+*.class
+
 bin/
 gen/
-libs/
 
-draw/out/
-.idea/workspace.xml
-out
+gradle/
+/RoadSigns/build
+/RoadSigns/lib
+gradlew
+gradlew.bat
+
+*.ghz.ghz

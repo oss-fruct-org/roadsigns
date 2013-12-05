@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/RoadSigns/lib/mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

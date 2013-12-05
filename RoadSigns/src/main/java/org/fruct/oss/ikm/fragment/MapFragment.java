@@ -714,13 +714,14 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		log.debug("Size {} {}", mapView.getWidth(),  mapView.getHeight());
 		log.debug("Dist {} {}", p1.distanceTo(p2), p1.distanceTo(p3));
 		log.debug("Zoom level {}", mapView.getZoomLevel());
-		
+
 		if (dist == 0)
 			return;
 		
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
+				assert directionService != null;
 				directionService.setRadius(dist);
 			}
 		}, State.DS_CREATED);

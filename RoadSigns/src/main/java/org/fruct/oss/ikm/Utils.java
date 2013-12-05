@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -166,7 +168,21 @@ public class Utils {
 		
 		return storageFile;
 	}
-	
+
+	public static String inputStreamToString(InputStream stream) throws IOException {
+		int bufferSize = 4096;
+		InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+
+		StringBuilder builder = new StringBuilder();
+		char[] buf = new char[bufferSize];
+
+		int readed = 0;
+		while ((readed = reader.read(buf)) > 0) {
+			builder.append(buf, 0, readed);
+		}
+
+		return builder.toString();
+	}
 
 	public static <T> void select(Collection<T> source, Collection<T> target, Predicate<T> pred) {
 		for (T t : source) {

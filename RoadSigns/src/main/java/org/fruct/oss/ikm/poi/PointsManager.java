@@ -18,6 +18,8 @@ import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 
 import android.util.Log;
+
+import org.fruct.oss.ikm.poi.gets.Gets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,6 +193,10 @@ public class PointsManager {
 				}
 				instance.addPointLoader(jsonLoader);
 			}
+
+			// Load gets
+			//Gets gets = new Gets();
+			//gets.checkAvailability();
 		}
 		return instance;
 	}

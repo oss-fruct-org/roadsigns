@@ -14,12 +14,12 @@ import org.slf4j.LoggerFactory;
 public class JSONPointLoader extends PointLoader {
 	private static Logger log = LoggerFactory.getLogger(JSONPointLoader.class);
 	private ArrayList<PointDesc> points = new ArrayList<PointDesc>();
-    private InputStream input;
+	private InputStream input;
 
 	public JSONPointLoader(InputStream in) throws IOException {
-        this.input = in;
+		this.input = in;
 	}
-	
+
 	private void load(String content) throws IOException {
 		try {
 			JSONObject root = new JSONObject(content);
@@ -29,26 +29,26 @@ public class JSONPointLoader extends PointLoader {
 
 			String collectionName = objects.getString("name");
 			JSONArray arr = objects.getJSONArray("featureMembers");
-			
+
 			for (int i = 0; i < arr.length(); i++) {
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("GeoObject");
 				loadObject(obj, collectionName);
 			}
-			
+
 		} catch (JSONException e) {
 			e.printStackTrace();
 			throw new IOException();
 		}
 	}
-	
+
 	private void loadObject(JSONObject obj, String collectionName) throws JSONException {
 		String name = obj.getString("name");
 		name = name.replace("&quot;", "\"");
-		
+
 		JSONArray point = obj.getJSONArray("Point");
 		double lat = point.getDouble(0);
 		double lon = point.getDouble(1);
-		
+
 		PointDesc poi = new PointDesc(name, (int) (lon * 1e6), (int) (lat * 1e6));
 		poi.setCategory(collectionName);
 		points.add(poi);
@@ -56,37 +56,33 @@ public class JSONPointLoader extends PointLoader {
 
 	@Override
 	public void loadPoints() {
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(input));
-            StringBuilder builder = new StringBuilder();
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(input));
+			StringBuilder builder = new StringBuilder();
 
-            String line = null;
+			String line = null;
 
-            while ((line = reader.readLine()) != null) {
-                builder.append(line).append('\n');
-            }
+			while ((line = reader.readLine()) != null) {
+				builder.append(line).append('\n');
+			}
 
-            String content = builder.toString();
-            load(content);
+			String content = builder.toString();
+			load(content);
 
-            // Simulate network operations
-            Thread.sleep(1100);
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+				}
+			}
+		}
 
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) { }
-            }
-        }
-
-        notifyPointsReady(points);
+		notifyPointsReady(points);
 	}
 
 	public static JSONPointLoader createForAsset(String assetFile) throws IOException {

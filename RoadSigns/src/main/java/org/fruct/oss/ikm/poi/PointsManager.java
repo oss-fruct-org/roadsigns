@@ -49,6 +49,7 @@ public class PointsManager {
 	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
 
 	public void addPointLoader(final PointLoader pointLoader) {
+        log.trace("addPointLoader");
 		loaders.add(pointLoader);
 
 		// Schedule loader
@@ -60,23 +61,30 @@ public class PointsManager {
 				// When previous method returns, points guaranteed to be ready
 				List<PointDesc> newPoints = pointLoader.getPoints();
 				addPoints(newPoints);
-				notifyFiltersUpdated();
 			}
 		});
 	}
 
 	private synchronized void addPoints(List<PointDesc> points) {
-		this.points.addAll(points);
-		needUpdate = true;
-	}
+        log.trace("Adding new points");
+        this.points.addAll(points);
+        needUpdate = true;
+
+        createFiltersFromPoints(this.points);
+        notifyFiltersUpdated();
+    }
 
 	private void createFiltersFromPoints(List<PointDesc> points) {
-		Set<String> names = new HashSet<String>();
+        log.trace("Recreating filters");
 
+        Set<String> names = new HashSet<String>();
+
+        filters.clear();
 		for (PointDesc point : points)
 			names.add(point.getCategory());
 
-		for (String str : names) {
+        for (String str : names) {
+            log.trace("Filter for category {}", str);
 			CategoryFilter filter = new CategoryFilter(str, str);
 			filters.add(filter);
 		}
@@ -113,7 +121,6 @@ public class PointsManager {
 					if (filter.isActive() && filter.accepts(point))
 						return true;
 				}
-
 				return false;
 			}
 		});

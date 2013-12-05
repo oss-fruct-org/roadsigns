@@ -14,21 +14,10 @@ import org.slf4j.LoggerFactory;
 public class JSONPointLoader extends PointLoader {
 	private static Logger log = LoggerFactory.getLogger(JSONPointLoader.class);
 	private ArrayList<PointDesc> points = new ArrayList<PointDesc>();
+    private InputStream input;
 
 	public JSONPointLoader(InputStream in) throws IOException {
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-		StringBuilder builder = new StringBuilder();
-		
-		String line = null;
-		
-		while ((line = reader.readLine()) != null) {
-			builder.append(line).append('\n');
-		}
-		
-		String content = builder.toString();
-		load(content);
-
-		reader.close();
+        this.input = in;
 	}
 	
 	private void load(String content) throws IOException {
@@ -67,7 +56,37 @@ public class JSONPointLoader extends PointLoader {
 
 	@Override
 	public void loadPoints() {
-		notifyPointsReady(points);
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(input));
+            StringBuilder builder = new StringBuilder();
+
+            String line = null;
+
+            while ((line = reader.readLine()) != null) {
+                builder.append(line).append('\n');
+            }
+
+            String content = builder.toString();
+            load(content);
+
+            // Simulate network operations
+            Thread.sleep(1100);
+
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) { }
+            }
+        }
+
+        notifyPointsReady(points);
 	}
 
 	public static JSONPointLoader createForAsset(String assetFile) throws IOException {

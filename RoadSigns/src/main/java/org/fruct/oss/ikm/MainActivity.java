@@ -37,7 +37,6 @@ public class MainActivity extends ActionBarActivity {
 			mapFragment.setCenter(newCenter);
 		}
 		
-		
 		if (SHOW_PATH.equals(intent.getAction())) {
 			GeoPoint target = (GeoPoint) intent.getParcelableExtra(SHOW_PATH_TARGET);
 			mapFragment.showPath(target);

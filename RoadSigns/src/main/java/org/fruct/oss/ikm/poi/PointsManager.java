@@ -195,8 +195,6 @@ public class PointsManager {
 			}
 
 			// Load gets
-			//Gets gets = new Gets();
-			//gets.checkAvailability();
 		}
 		return instance;
 	}

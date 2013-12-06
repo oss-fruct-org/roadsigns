@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -170,13 +171,16 @@ public class Utils {
 	}
 
 	public static String inputStreamToString(InputStream stream) throws IOException {
-		int bufferSize = 4096;
 		InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+		return readerToString(reader);
+	}
 
+	public static String readerToString(Reader reader) throws IOException {
 		StringBuilder builder = new StringBuilder();
+		int bufferSize = 4096;
 		char[] buf = new char[bufferSize];
 
-		int readed = 0;
+		int readed;
 		while ((readed = reader.read(buf)) > 0) {
 			builder.append(buf, 0, readed);
 		}

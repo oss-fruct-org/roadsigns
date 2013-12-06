@@ -21,6 +21,10 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
+
+import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
+import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Content;
 
 public class Gets {
 	private String getsServerUrl;
@@ -42,25 +46,24 @@ public class Gets {
 			return false;
 		}
 
-		getCategories();
+		List<Category> categories = getCategories();
+
+		for (Category cat : categories) {
+			log.debug("Category {}", cat);
+		}
 
 		return true;
 	}
 
-	private void getCategories() {
+	private List<Category> getCategories() {
 		String response = null;
 
 		try {
 			response = downloadUrl(getsServerUrl + "getCategories.php", "<request><params><auth_token>qweasdzxc</auth_token></params></request>");
-
-			Serializer serializer = new Persister();
-			CategoriesResponse catResponse = serializer.read(CategoriesResponse.class, response);
-
-			for (Category cat : catResponse.getContent().getCategories()) {
-				log.debug("Category: {}", cat);
-			}
+			return CategoriesResponse.createFromXml(response).getContent().getCategories();
 		} catch (Exception e) {
 			log.warn("Error: ", e);
+			return null;
 		}
 	}
 

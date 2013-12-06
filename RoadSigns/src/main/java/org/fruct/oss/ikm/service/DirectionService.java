@@ -88,7 +88,7 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onDestroy() {
 		log.debug("DirectionService destroyed");
-		if (locationReceiver.isStarted()) {
+		if (locationReceiver != null && locationReceiver.isStarted()) {
 			locationReceiver.stop();
 		}
 		

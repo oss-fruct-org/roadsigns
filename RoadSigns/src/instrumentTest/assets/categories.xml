@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+    <status>
+        <code>0</code>
+        <message>success</message>
+    </status>
+    <content>
+        <categories>
+            <category>
+                <id>1</id>
+                <name>shops</name>
+                <description>Shops, markets, etc.</description>
+                <url>http://en.wikipedia.org/wiki/Market</url>
+            </category>
+
+            <category>
+                <id>3</id>
+                <name>hostels</name>
+                <description>Hostels, recreation centers, etc.</description>
+                <url>http://en.wikipedia.org/wiki/Hostel</url>
+            </category>
+
+            <category>
+                <id>4</id>
+                <name>sights</name>
+                <description>Sights, tourist attractions, etc.</description>
+                <url>http://en.wikipedia.org/wiki/Tourist_attraction</url>
+            </category>
+        </categories>
+    </content>
+</response>

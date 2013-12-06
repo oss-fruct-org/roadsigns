@@ -17,4 +17,5 @@ gradle/
 gradlew
 gradlew.bat
 
-*.ghz.ghz
+*.ghz
+

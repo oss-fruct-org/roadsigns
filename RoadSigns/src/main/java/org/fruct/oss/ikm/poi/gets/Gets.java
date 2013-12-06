@@ -7,6 +7,8 @@ import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,8 @@ public class Gets {
 			return false;
 		}
 
+		getCategories();
+
 		return true;
 	}
 
@@ -47,42 +51,55 @@ public class Gets {
 		String response = null;
 
 		try {
-			response = downloadUrl(getsServerUrl, "<request><params><auth_token>qweasdzxc</auth_token></params></request>");
-		} catch (IOException e) {
-			e.printStackTrace();
-			log.warn("Error");
-			return;
+			response = downloadUrl(getsServerUrl + "getCategories.php", "<request><params><auth_token>qweasdzxc</auth_token></params></request>");
+
+			Serializer serializer = new Persister();
+			CategoriesResponse catResponse = serializer.read(CategoriesResponse.class, response);
+
+			for (Category cat : catResponse.getContent().getCategories()) {
+				log.debug("Category: {}", cat);
+			}
+		} catch (Exception e) {
+			log.warn("Error: ", e);
 		}
 	}
 
 	private String downloadUrl(String urlString, String postQuery) throws IOException {
-		InputStream input = null;
+		HttpURLConnection conn = null;
+		InputStream responseStream = null;
 
-		URL url = new URL(urlString);
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setReadTimeout(10000);
-		conn.setConnectTimeout(10000);
-		conn.setRequestMethod("POST");
-		conn.setDoInput(true);
-		conn.setDoOutput(true);
+		try {
+			URL url = new URL(urlString);
+			conn = (HttpURLConnection) url.openConnection();
+			conn.setReadTimeout(10000);
+			conn.setConnectTimeout(10000);
+			conn.setRequestMethod("POST");
+			conn.setDoInput(true);
+			conn.setDoOutput(true);
 
-		if (postQuery != null) {
-			OutputStream out = conn.getOutputStream();
+			if (postQuery != null) {
+				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));
+				writer.write(postQuery);
+				writer.flush();
+				writer.close();
+			}
 
-			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));
-			writer.write(postQuery);
-			writer.flush();
-			writer.close();
+			conn.connect();
+
+			int responseCode = conn.getResponseCode();
+			responseStream = conn.getInputStream();
+			String response = Utils.inputStreamToString(responseStream);
+
+			log.trace("Request url {} data {}", urlString, postQuery);
+			log.trace("Response code {}, response {}", responseCode, response);
+
+			return response;
+		} finally {
+			if (conn != null)
+				conn.disconnect();
+
+			if (responseStream != null)
+				responseStream.close();
 		}
-
-		conn.connect();
-
-		int responseCode = conn.getResponseCode();
-		InputStream responseStream = conn.getInputStream();
-		String response = Utils.inputStreamToString(responseStream);
-
-		log.debug("Response code {}, response {}", responseCode, response);
-
-		return null;
 	}
 }

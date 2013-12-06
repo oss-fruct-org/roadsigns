@@ -31,4 +31,5 @@ dependencies {
     compile files('lib/osmbonuspack_v4.2.jar')
     compile files('lib/osmdroid-android-4.0.jar')
     compile files('lib/slf4j-android-1.6.1-RC1.jar')
+    compile files('lib/simple-xml-2.7.1.jar')
 }

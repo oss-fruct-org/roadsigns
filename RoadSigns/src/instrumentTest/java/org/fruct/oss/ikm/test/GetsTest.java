@@ -7,10 +7,16 @@ import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.gets.CategoriesResponse;
 import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
 import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Content;
+import org.fruct.oss.ikm.poi.gets.Kml;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
+import static org.fruct.oss.ikm.poi.gets.Kml.Document;
+import static org.fruct.oss.ikm.poi.gets.Kml.Placemark;
 
 public class GetsTest extends AndroidTestCase {
 	private Context testContext;
@@ -34,6 +40,40 @@ public class GetsTest extends AndroidTestCase {
 			List<Category> categories = response.getContent().getCategories();
 
 			assertEquals("shops", categories.get(0).getName());
+		} finally {
+			if (stream != null)
+				stream.close();
+		}
+	}
+
+	public void testKml() throws Exception {
+		InputStream stream = null;
+		try {
+			stream = testContext.getAssets().open("testKml.xml");
+
+			Serializer serializer = new Persister();
+			Kml kml = serializer.read(Kml.class, stream);
+
+			assertNotNull(kml);
+
+			Document doc = kml.getDocument();
+			assertEquals("tests", doc.getName());
+			assertEquals("description", doc.getDescription());
+			assertEquals(1, doc.getOpen());
+
+			assertEquals(2, doc.getPlacemarks().size());
+
+			Placemark mark1 = doc.getPlacemarks().get(0);
+			assertEquals("test place 1", mark1.getName());
+			assertEquals("test description 1", mark1.getDescription());
+			assertEquals(12.0, mark1.getLatitude(), 0.01);
+			assertEquals(34.0, mark1.getLongitude(), 0.01);
+
+			Placemark mark2 = doc.getPlacemarks().get(1);
+			assertEquals("test place 2", mark2.getName());
+			assertEquals("test description 2", mark2.getDescription());
+			assertEquals(34.1, mark2.getLatitude(), 0.01);
+			assertEquals(56.0, mark2.getLongitude(), 0.01);
 		} finally {
 			if (stream != null)
 				stream.close();

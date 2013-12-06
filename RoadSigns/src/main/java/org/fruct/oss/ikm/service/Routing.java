@@ -21,10 +21,10 @@ public abstract class Routing {
 	private GeoPoint oldGeoPoint = null;
 	private boolean isInitialized = false;
 	protected GraphHopper hopper;
-	
+
 	protected abstract void prepare(GeoPoint from);
 	public abstract PointList route(GeoPoint to);
-	
+
 	public void reset(GeoPoint from) {
 		initialize();
 		

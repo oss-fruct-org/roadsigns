@@ -1,0 +1,20 @@
+<kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>
+        <name>tests</name>
+        <description><![CDATA[description]]></description>
+        <open>1</open>
+        <Style id="styleDocument"><LabelStyle><color>ff0000cc</color></LabelStyle></Style>
+
+        <Placemark>
+            <name>test place 1</name>
+            <description><![CDATA[test description 1]]></description>
+            <Point><coordinates>12.0, 34.0, 0.0</coordinates></Point>
+        </Placemark>
+
+        <Placemark>
+            <name>test place 2</name>
+            <description><![CDATA[test description 2]]></description>
+            <Point><coordinates>34.1, 56.0, 0.0</coordinates></Point>
+        </Placemark>
+    </Document>
+</kml>

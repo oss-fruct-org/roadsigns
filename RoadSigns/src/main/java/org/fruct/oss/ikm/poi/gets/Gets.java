@@ -7,24 +7,18 @@ import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
-import org.simpleframework.xml.Serializer;
-import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 
-import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
-import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Content;
+import static org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
 
 public class Gets {
 	private String getsServerUrl;
@@ -56,7 +50,7 @@ public class Gets {
 	}
 
 	private List<Category> getCategories() {
-		String response = null;
+		String response;
 
 		try {
 			response = downloadUrl(getsServerUrl + "getCategories.php", "<request><params><auth_token>qweasdzxc</auth_token></params></request>");

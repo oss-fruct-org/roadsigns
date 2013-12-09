@@ -4,6 +4,7 @@ import android.content.Context;
 import android.test.AndroidTestCase;
 
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.gets.AuthToken;
 import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Kml;
 import org.fruct.oss.ikm.poi.gets.Response;
@@ -84,6 +85,22 @@ public class GetsTest extends AndroidTestCase {
 			assertEquals("test description 2", mark2.getDescription());
 			assertEquals(34.1, mark2.getLatitude(), 0.01);
 			assertEquals(56.0, mark2.getLongitude(), 0.01);
+		} finally {
+			if (stream != null)
+				stream.close();
+		}
+	}
+
+	public void testLoginXml() throws Exception{
+		InputStream stream = null;
+		try {
+			stream = testContext.getAssets().open("login.xml");
+
+			Serializer serializer = new Persister();
+			Response resp = serializer.read(Response.class, stream);
+
+			AuthToken auth = (AuthToken) resp.getContent();
+			assertEquals("qwerty", auth.getToken());
 		} finally {
 			if (stream != null)
 				stream.close();

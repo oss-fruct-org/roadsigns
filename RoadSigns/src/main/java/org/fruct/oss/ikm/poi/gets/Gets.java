@@ -23,8 +23,20 @@ import java.util.List;
 import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
 
 public class Gets implements IGets {
-	public static final String GET_CATEGORIES_REQUEST = "<request><params><auth_token>%s</auth_token></params></request>";
-	public static final String LOGIN_REQUEST = "<request><params><login>%s</login><password>%s</password></params></request>";
+	public static final String GET_CATEGORIES_REQUEST =
+			"<request><params>" +
+				"<auth_token>%s</auth_token>" +
+			"</params></request>";
+	public static final String LOGIN_REQUEST =
+			"<request><params>" +
+				"<login>%s</login>" +
+				"<password>%s</password>" +
+			"</params></request>";
+	public static final String LOAD_POINTS_REQUEST =
+			"<request><params>" +
+				"<auth_token>%s</auth_token>" +
+				"<category_name>%s</category_name>" +
+			"</params></request>";
 
 	private String token = "notoken";
 	private String getsServerUrl;
@@ -36,8 +48,15 @@ public class Gets implements IGets {
 		context = App.getContext();
 	}
 
+	/**
+	 * Login in GeTS to receive auth token
+	 * @param username Username
+	 * @param password Password
+	 * @return auth token or null if login incorrect
+	 * @throws IOException
+	 */
 	@Override
-	public String login(String username, String password) {
+	public String login(String username, String password) throws IOException {
 		try {
 			String responseStr = downloadUrl(getsServerUrl + "login.php", String.format(LOGIN_REQUEST, username, password));
 			Response resp = processResponse(responseStr);
@@ -49,41 +68,69 @@ public class Gets implements IGets {
 
 			AuthToken authToken = (AuthToken) resp.getContent();
 			return authToken.getToken();
+		} catch (RuntimeException ex) {
+			// Simple XMl throws Exception on any error
+			throw ex;
 		} catch (Exception e) {
-			log.warn("Error: ", e);
-			return null;
+			throw new IOException("Incorrect answer from server");
 		}
 	}
 
-	@Override
 	public boolean checkAvailability() {
 		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo info = connManager.getActiveNetworkInfo();
 		return info != null && info.isConnected();
 	}
 
+	/**
+	 * Receive list of categories
+	 * @return list of categories
+	 * @throws IOException
+	 */
 	@Override
-	public List<Category> getCategories() {
+	public List<Category> getCategories() throws IOException {
 		try {
 			String responseStr = downloadUrl(getsServerUrl + "getCategories.php", String.format(GET_CATEGORIES_REQUEST, token));
 			Response resp = processResponse(responseStr);
 
 			if (resp.getCode() != 0) {
 				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
-				return null;
+				throw new LoginException("Server return error");
 			}
 
 			CategoriesList categories = (CategoriesList) resp.getContent();
 			return categories.getCategories();
+		} catch (RuntimeException ex) {
+			throw ex;
 		} catch (Exception e) {
-			log.warn("Error: ", e);
-			return null;
+			throw new IOException("Incorrect answer from server");
 		}
 	}
 
 	@Override
-	public List<PointDesc> getPoints() {
-		return null;
+	public List<PointDesc> getPoints(final String category) throws IOException, LoginException{
+		try {
+			String responseStr = downloadUrl(getsServerUrl + "loadPoints.php", String.format(LOAD_POINTS_REQUEST, token, category));
+			Response resp = processResponse(responseStr);
+			if (resp.getCode() != 0) {
+				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
+				throw new LoginException("Server return error");
+			}
+
+			Kml kml = (Kml) resp.getContent();
+			Kml.Document document = kml.getDocument();
+			List<PointDesc> pointList = Utils.map(document.getPlacemarks(), new Utils.Function<PointDesc, Kml.Placemark>() {
+				@Override
+				public PointDesc apply(Kml.Placemark placemark) {
+					return placemark.toPointDesc().setCategory(category);
+				}
+			});
+			return pointList;
+		} catch (RuntimeException ex) {
+			throw ex;
+		} catch (Exception e) {
+			throw new IOException("Incorrect answer from server");
+		}
 	}
 
 	public String downloadUrl(String urlString, String postQuery) throws IOException {

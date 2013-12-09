@@ -9,9 +9,7 @@ import java.util.List;
  * Interface for GeTS service
  */
 public interface IGets {
-	boolean checkAvailability();
-
-	String login(String username, String password);
-	List<CategoriesList.Category> getCategories();
-	List<PointDesc> getPoints();
+	String login(String username, String password) throws IOException;
+	List<CategoriesList.Category> getCategories() throws IOException, LoginException;
+	List<PointDesc> getPoints(String category) throws IOException, LoginException;
 }

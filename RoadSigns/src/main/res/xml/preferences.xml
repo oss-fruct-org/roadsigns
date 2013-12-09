@@ -43,5 +43,18 @@
         android:summaryOn="@string/pref_autozoom_sumon"
         android:summaryOff="@string/pref_autozoom_sumoff"
         />
+
+    <PreferenceCategory
+        android:title="GeTS preferences"
+        android:key="gets_preferences">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="gets_enable"
+            android:title="Enable GeTS"/>
+
+        <org.fruct.oss.ikm.AccountPreference
+            android:title="Account setup"
+            />
+    </PreferenceCategory>
     
 </PreferenceScreen>

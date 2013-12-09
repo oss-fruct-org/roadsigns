@@ -177,7 +177,7 @@ public class PointsManager {
 				jsonFiles = am.list("karelia-poi");
 			} catch (IOException e) {
 				e.printStackTrace();
-				log.warn("Can not open list of .js files");
+				log.warn("Can not open list of .json files");
 				instance.addPointLoader(new StubPointLoader());
 				return instance;
 			}

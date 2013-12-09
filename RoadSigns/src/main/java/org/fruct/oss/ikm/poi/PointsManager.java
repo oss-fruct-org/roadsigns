@@ -195,6 +195,7 @@ public class PointsManager {
 			}
 
 			// Load gets
+
 		}
 		return instance;
 	}

@@ -4,10 +4,9 @@ import android.content.Context;
 import android.test.AndroidTestCase;
 
 import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.poi.gets.CategoriesResponse;
-import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
-import org.fruct.oss.ikm.poi.gets.CategoriesResponse.Content;
+import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Kml;
+import org.fruct.oss.ikm.poi.gets.Response;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -15,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
 import static org.fruct.oss.ikm.poi.gets.Kml.Document;
 import static org.fruct.oss.ikm.poi.gets.Kml.Placemark;
 
@@ -35,9 +35,19 @@ public class GetsTest extends AndroidTestCase {
 		InputStream stream = null;
 		try {
 			stream = testContext.getAssets().open("categories.xml");
-			CategoriesResponse response = CategoriesResponse.createFromXml(Utils.inputStreamToString(stream));
+			Serializer serializer = new Persister();
 
-			List<Category> categories = response.getContent().getCategories();
+			Response response = serializer.read(Response.class, Utils.inputStreamToString(stream));
+			assertNotNull(response);
+			assertNotNull(response.getContent());
+			assertTrue(response.getContent() instanceof CategoriesList);
+			assertEquals("success", response.getMessage());
+			assertEquals(1, response.getCode());
+
+
+			CategoriesList list = (CategoriesList) response.getContent();
+
+			List<Category> categories = list.getCategories();
 
 			assertEquals("shops", categories.get(0).getName());
 		} finally {

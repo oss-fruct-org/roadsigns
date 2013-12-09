@@ -26,13 +26,8 @@ public class DirectionServiceTest extends ServiceTestCase<DirectionService> {
 
 	@Override
 	protected void setUp() throws Exception {
-		
 		super.setUp();
 
-		PointsManager.resetInstance();
-		PointsManager manager = PointsManager.getInstance();
-		manager.addPointLoader(new TestPointsLoader());
-		
 		if (testContext == null) {
 			testContext = getContext().createPackageContext(
 					"org.fruct.oss.ikm.test", Context.CONTEXT_IGNORE_SECURITY);
@@ -41,7 +36,11 @@ public class DirectionServiceTest extends ServiceTestCase<DirectionService> {
 		serv = ((DirectionService.DirectionBinder) bindService(new Intent()))
 				.getService();
 		serv.disableRealLocation();
-		
+
+		PointsManager.resetInstance();
+		PointsManager manager = PointsManager.getInstance();
+		manager.addPointLoader(new TestPointsLoader());
+
 		InputStream input = testContext.getAssets().open("ptz.ghz");
 		assertNotNull(input);
 		

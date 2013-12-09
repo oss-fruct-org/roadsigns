@@ -8,32 +8,13 @@ import org.simpleframework.xml.core.Persister;
 
 import java.util.List;
 
-@Root(name = "response", strict = false)
-public class CategoriesResponse {
-	@Element(name = "content")
-	private Content content;
+@Root(name = "content", strict = false)
+public class CategoriesList implements IContent{
+	@ElementList(name = "categories", inline = true, entry = "category")
+	private List<Category> categories;
 
-	public Content getContent() {
-		return content;
-	}
-
-
-	public static CategoriesResponse createFromXml(String xml) throws Exception {
-		Serializer serializer = new Persister();
-		CategoriesResponse catResponse = serializer.read(CategoriesResponse.class, xml);
-
-		return catResponse;
-	}
-
-
-	@Root(name = "content", strict = false)
-	public static class Content {
-		@ElementList(name = "categories")
-		private List<Category> categories;
-
-		public List<Category> getCategories() {
-			return categories;
-		}
+	public List<Category> getCategories() {
+		return categories;
 	}
 
 	@Root(name = "category")

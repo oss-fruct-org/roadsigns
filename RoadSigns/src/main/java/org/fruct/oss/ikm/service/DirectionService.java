@@ -69,11 +69,7 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onCreate() {
 		super.onCreate();
-	
-		PointsManager.getInstance().addListener(this);
-		PreferenceManager.getDefaultSharedPreferences(App.getContext())
-				.registerOnSharedPreferenceChangeListener(this);
-		
+
 		locationReceiver = new LocationReceiver(this);
 		
 		routing = new OneToManyRouting();
@@ -81,7 +77,11 @@ public class DirectionService extends Service implements PointsListener,
 		dirManager.setListener(this);
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
-		
+
+		PointsManager.getInstance().addListener(this);
+		PreferenceManager.getDefaultSharedPreferences(App.getContext())
+				.registerOnSharedPreferenceChangeListener(this);
+
 		log.debug("DirectionService created");
 	}
 	
@@ -185,7 +185,7 @@ public class DirectionService extends Service implements PointsListener,
 		intent.putExtra(LOCATION, location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
-		
+
 	public PointList findPath(GeoPoint from, GeoPoint to) {
 		return routing.findPath(from, to);
 	}

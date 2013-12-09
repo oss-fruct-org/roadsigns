@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.poi.gets;
 
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Path;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 @Root(name = "kml", strict = false)
-public class Kml {
+public class Kml implements IContent {
 	public Document getDocument() {
 		return document;
 	}
@@ -92,6 +93,11 @@ public class Kml {
 
 		public double getLongitude() {
 			return longitude;
+		}
+
+		public PointDesc toPointDesc() {
+			return new PointDesc(getName(), (int) (getLatitude() * 1e6), (int) (getLongitude() * 1e6))
+					.setDescription(getDescription());
 		}
 	}
 }

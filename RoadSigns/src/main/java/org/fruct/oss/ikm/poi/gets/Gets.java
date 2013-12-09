@@ -3,10 +3,12 @@ package org.fruct.oss.ikm.poi.gets;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.PointDesc;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +20,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 
-import static org.fruct.oss.ikm.poi.gets.CategoriesResponse.Category;
+import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
 
-public class Gets {
+public class Gets implements IGets {
+	public static final String GET_CATEGORIES_REQUEST = "<request><params><auth_token>%s</auth_token></params></request>";
+	public static final String LOGIN_REQUEST = "<request><params><login>%s</login><password>%s</password></params></request>";
+
+	private String token = "notoken";
 	private String getsServerUrl;
 	private Context context;
 	private Logger log =  LoggerFactory.getLogger(Gets.class);
@@ -30,38 +36,57 @@ public class Gets {
 		context = App.getContext();
 	}
 
-	public boolean checkAvailability() {
-		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info = connManager.getActiveNetworkInfo();
-		if (info != null && info.isConnected()) {
-			Toast.makeText(context, "Yes network", Toast.LENGTH_LONG).show();
-		} else {
-			Toast.makeText(context, "No network", Toast.LENGTH_LONG).show();
-			return false;
-		}
-
-		List<Category> categories = getCategories();
-
-		for (Category cat : categories) {
-			log.debug("Category {}", cat);
-		}
-
-		return true;
-	}
-
-	private List<Category> getCategories() {
-		String response;
-
+	@Override
+	public String login(String username, String password) {
 		try {
-			response = downloadUrl(getsServerUrl + "getCategories.php", "<request><params><auth_token>qweasdzxc</auth_token></params></request>");
-			return CategoriesResponse.createFromXml(response).getContent().getCategories();
+			String responseStr = downloadUrl(getsServerUrl + "login.php", String.format(LOGIN_REQUEST, username, password));
+			Response resp = processResponse(responseStr);
+
+			if (resp.getCode() != 0) {
+				log.warn("login returned with code {} message '{}'", resp.getCode(), resp.getMessage());
+				return null;
+			}
+
+			AuthToken authToken = (AuthToken) resp.getContent();
+			return authToken.getToken();
 		} catch (Exception e) {
 			log.warn("Error: ", e);
 			return null;
 		}
 	}
 
-	private String downloadUrl(String urlString, String postQuery) throws IOException {
+	@Override
+	public boolean checkAvailability() {
+		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo info = connManager.getActiveNetworkInfo();
+		return info != null && info.isConnected();
+	}
+
+	@Override
+	public List<Category> getCategories() {
+		try {
+			String responseStr = downloadUrl(getsServerUrl + "getCategories.php", String.format(GET_CATEGORIES_REQUEST, token));
+			Response resp = processResponse(responseStr);
+
+			if (resp.getCode() != 0) {
+				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
+				return null;
+			}
+
+			CategoriesList categories = (CategoriesList) resp.getContent();
+			return categories.getCategories();
+		} catch (Exception e) {
+			log.warn("Error: ", e);
+			return null;
+		}
+	}
+
+	@Override
+	public List<PointDesc> getPoints() {
+		return null;
+	}
+
+	public String downloadUrl(String urlString, String postQuery) throws IOException {
 		HttpURLConnection conn = null;
 		InputStream responseStream = null;
 
@@ -98,5 +123,10 @@ public class Gets {
 			if (responseStream != null)
 				responseStream.close();
 		}
+	}
+
+	public Response processResponse(String responseStr) throws Exception {
+		Serializer serializer = new Persister();
+		return serializer.read(Response.class, responseStr);
 	}
 }

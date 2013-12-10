@@ -69,8 +69,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Map.Entry;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -168,9 +168,9 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	private DirectionService directionService;
 	
-	private State state = State.NO_CREATED;
 	private EnumMap<State, List<Runnable>> pendingTasks = new EnumMap<MapFragment.State, List<Runnable>>(
 			State.class);
+	private EnumSet<State> activeStates = EnumSet.of(State.NO_CREATED);
 	
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
@@ -191,6 +191,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			log.info("MapFragment.onServiceDisconnected");
+
+			clearState(State.DS_CREATED);
 			directionService = null;
 		}
 		
@@ -202,8 +204,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 			directionService.startTracking();
 			
-			state = State.DS_CREATED;
-			stateUpdated(state);
+			setState(State.DS_CREATED);
 		}
 	};
 
@@ -226,8 +227,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
 				
-				state = State.DS_RECEIVED;
-				stateUpdated(state);
+				setState(State.DS_RECEIVED);
 			}
 		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
 		
@@ -386,8 +386,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		mapView.getOverlays().add(overlay);
 		createPOIOverlay();
 
-		state = State.CREATED;
-		stateUpdated(state);
+		setState(State.CREATED);
 		
 		checkProvidersEnabled();
 		
@@ -450,8 +449,9 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
 
-		state = State.NO_CREATED;
-		stateUpdated(state);
+		clearState(State.DS_RECEIVED);
+		clearState(State.CREATED);
+		clearState(State.DS_CREATED);
 
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
@@ -608,7 +608,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
 		
-		if (state.idx >= State.DS_CREATED.idx)
+		if (activeStates.contains(State.DS_CREATED))
 			directionService.startTracking();
 	}
 	
@@ -693,26 +693,26 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	}
 	
 	private void addPendingTask(Runnable runnable, State state) {
-		pendingTasks.get(state).add(runnable);
-		
-		// Execute all tasks for current state
-		stateUpdated(this.state);
+		if (activeStates.contains(state))
+			runnable.run();
+		else
+			pendingTasks.get(state).add(runnable);
 	}
 	
-	private void stateUpdated(State newState) {
-		log.info("MapFragment state updated " + newState.toString());
-		for (Entry<State, List<Runnable>> entry : pendingTasks.entrySet()) {
-			State state = entry.getKey();
-			
-			if (state.idx <= newState.idx) {
-				List<Runnable> tasks = new ArrayList<Runnable>(entry.getValue());
-				entry.getValue().clear();
-				
-				for (Runnable runnable : tasks) {
-					runnable.run();
-				}
-			}
-		}
+	private void setState(State newState) {
+		log.info("MapFragment.setState " + newState.toString());
+
+		activeStates.add(newState);
+
+		List<Runnable> tasks = new ArrayList<Runnable>(pendingTasks.get(newState));
+		pendingTasks.get(newState).clear();
+
+		for (Runnable runnable : tasks)
+			runnable.run();
+	}
+
+	private void clearState(State state) {
+		activeStates.remove(state);
 	}
 
 	@Override

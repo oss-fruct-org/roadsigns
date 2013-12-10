@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointLoader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;

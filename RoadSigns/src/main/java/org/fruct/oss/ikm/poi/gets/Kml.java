@@ -20,10 +20,6 @@ public class Kml implements IContent {
 
 	@Root(strict = false)
 	public static class Document {
-		public static String getQwe() {
-			return "qwe";
-		}
-
 		public List<Placemark> getPlacemarks() {
 			return placemarks;
 		}

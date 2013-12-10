@@ -179,6 +179,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private TileProviderManager tileProviderManager;
 	
 	public MapFragment() {
+		log.trace("MapFragment.MapFragment");
+
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.DS_CREATED, new ArrayList<Runnable>());
@@ -188,6 +190,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
+			log.info("MapFragment.onServiceDisconnected");
 			directionService = null;
 		}
 		
@@ -195,7 +198,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			log.info("MapFragment.onServiceConnected");
 			directionService = ((DirectionService.DirectionBinder) service).getService();
-			
+			assert directionService != null;
+
 			directionService.startTracking();
 			
 			state = State.DS_CREATED;
@@ -205,7 +209,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		log.debug("MapFragment.onCreate");
+		log.trace("MapFragment.onCreate");
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
@@ -241,16 +245,17 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				myPositionOverlay.setLocation(myLocation);
 
 				if (isTracking) {
+					assert getActivity() != null;
 					if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
-					speedAverage.insert(location.getSpeed(), location.getTime());
-					float ave = speedAverage.average();
-					
-					int newZoomLevel = getZoomBySpeed(ave);
+						speedAverage.insert(location.getSpeed(), location.getTime());
+						float ave = speedAverage.average();
+
+						int newZoomLevel = getZoomBySpeed(ave);
 						log.debug("Speed average = " + ave + " zoom = " + newZoomLevel);
 
-					if (newZoomLevel != mapView.getZoomLevel()) {
-						mapView.getController().setZoom(newZoomLevel);
-					}
+						if (newZoomLevel != mapView.getZoomLevel()) {
+							mapView.getController().setZoom(newZoomLevel);
+						}
 					}
 					mapView.getController().animateTo(new GeoPoint(myLocation));
 					mapView.setMapOrientation(-location.getBearing());
@@ -260,7 +265,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
-		log.debug("MapFragment.onCreate EXIT");
+		log.trace("MapFragment.onCreate EXIT");
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -444,6 +449,10 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	@Override
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
+
+		state = State.NO_CREATED;
+		stateUpdated(state);
+
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
 		
@@ -568,7 +577,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	}
 	
 	private void createPOIOverlay() {
-		log.debug("MapFragment.createPOIOverlay");
+		log.trace("MapFragment.createPOIOverlay");
 		final Context context = getActivity();
 		
 		
@@ -588,7 +597,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				context, items2, mapView, infoWindow);
 		
 		mapView.getOverlays().add(overlay2);
-		log.debug("MapFragment.createPOIOverlay EXIT");
+		log.trace("MapFragment.createPOIOverlay EXIT");
 	}
 	
 	public void startTracking() {
@@ -691,6 +700,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	}
 	
 	private void stateUpdated(State newState) {
+		log.info("MapFragment state updated " + newState.toString());
 		for (Entry<State, List<Runnable>> entry : pendingTasks.entrySet()) {
 			State state = entry.getKey();
 			

@@ -33,7 +33,6 @@ public class MainActivity extends ActionBarActivity {
 		
 		GeoPoint newCenter = intent.getParcelableExtra(MapFragment.MAP_CENTER);
 		if (newCenter != null) {
-			mapFragment.stopTracking();
 			mapFragment.setCenter(newCenter);
 		}
 		

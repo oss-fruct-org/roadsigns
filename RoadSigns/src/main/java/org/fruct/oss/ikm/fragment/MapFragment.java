@@ -50,6 +50,7 @@ import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
+import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
 import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
@@ -58,6 +59,7 @@ import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
+import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
@@ -124,7 +126,7 @@ class MapState implements Parcelable {
 	};
 }
 
-public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener {
+public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener, MyPositionOverlay.OnScrollListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	static enum State {
@@ -177,7 +179,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 	private boolean toastShown;
 	private TileProviderManager tileProviderManager;
-	
+
 	public MapFragment() {
 		log.trace("MapFragment.MapFragment");
 
@@ -246,6 +248,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 				if (isTracking) {
 					assert getActivity() != null;
+					// Auto zoom enabled
 					if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
 						speedAverage.insert(location.getSpeed(), location.getTime());
 						float ave = speedAverage.average();
@@ -257,7 +260,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 							mapView.getController().setZoom(newZoomLevel);
 						}
 					}
-					mapView.getController().animateTo(new GeoPoint(myLocation));
+					safeAnimateTo(new GeoPoint(myLocation));
 					mapView.setMapOrientation(-location.getBearing());
 				}
 			}
@@ -297,7 +300,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		mapView = new MapView(getActivity(), 256, proxy, tileProviderManager.getProvider());
     	mapView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
-		mapView.setBuiltInZoomControls(true);
+		//mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 		mapView.setMapListener(this);
 		layout.addView(mapView);		
@@ -459,7 +462,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		getActivity().unbindService(serviceConnection);
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
-		
+
 		super.onDestroy();
 	}
 	
@@ -602,6 +605,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	public void startTracking() {
 		isTracking = true;
+		myPositionOverlay.setListener(this);
 		panelOverlay.setVisibility(View.VISIBLE);
 		panelOverlay.setHidden(false);
 
@@ -614,6 +618,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
 	public void stopTracking() {
 		isTracking = false;
+		myPositionOverlay.clearListener();
 		panelOverlay.setVisibility(View.GONE);
 		panelOverlay.setHidden(true);
 		
@@ -637,6 +642,14 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		mapView.getController().setZoom(DEFAULT_ZOOM);
 		mapView.getController().animateTo(geoPoint);
 		stopTracking();
+	}
+
+	/**
+	 * Animate to point without stopping track mode
+	 * @param geoPoint Target point
+	 */
+	public void safeAnimateTo(IGeoPoint geoPoint) {
+		mapView.getController().animateTo(geoPoint);
 	}
 	
 	public void showPath(final GeoPoint target) {
@@ -715,10 +728,18 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		activeStates.remove(state);
 	}
 
+	// Scroll from MapListener
 	@Override
 	public boolean onScroll(ScrollEvent event) {
 		return false;
 	}
+
+	@Override
+	public void onScroll() {
+		if (isTracking)
+			stopTracking();
+	}
+
 
 	private void updateRadius() {
 		Projection proj = mapView.getProjection();
@@ -761,7 +782,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
 			String value = sharedPreferences.getString(key, "");
 			tileProviderManager.setFile(value);
-			
+
 			mapView.invalidate();
 		}
 	}

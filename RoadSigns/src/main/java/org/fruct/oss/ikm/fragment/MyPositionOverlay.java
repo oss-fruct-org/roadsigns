@@ -14,8 +14,14 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.location.Location;
+import android.view.MotionEvent;
 
 public class MyPositionOverlay extends Overlay {
+	interface OnScrollListener {
+		void onScroll();
+	}
+	private OnScrollListener listener;
+
 	private MapView mapView;
 	private Location location;
 	
@@ -111,5 +117,21 @@ public class MyPositionOverlay extends Overlay {
 	
 	public void setShowAccuracy(boolean isShow) {
 		this.isPaintAccuracy = isShow;
+	}
+
+	@Override
+	public boolean onScroll(MotionEvent pEvent1, MotionEvent pEvent2, float pDistanceX, float pDistanceY, MapView pMapView) {
+		if (listener != null)
+			listener.onScroll();
+
+		return super.onScroll(pEvent1, pEvent2, pDistanceX, pDistanceY, pMapView);
+	}
+
+	public void setListener(OnScrollListener listener) {
+		this.listener = listener;
+	}
+
+	public void clearListener() {
+		this.listener = null;
 	}
 }

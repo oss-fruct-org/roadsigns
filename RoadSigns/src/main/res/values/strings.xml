@@ -4,6 +4,8 @@
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
     <string name="action_place">Show places</string>
+    <string name="action_download_map">Download map</string>
+
     <string name="title_activity_points">Points of interest</string>
     <string name="title_activity_details">Details</string>
     <string name="action_track">Follow location</string>
@@ -12,7 +14,7 @@
     <string name="warn_no_providers">No location providers enabled</string>
     <string name="configure_providers">Configure</string>
     <string name="warn_providers_disable">Don\'t show this dialog again</string>
-    
+
     <plurals  name="distance_meters">
         <item quantity="one">Distance: %d meter</item>
         <item quantity="other">Distance: %d meters</item>

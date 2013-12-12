@@ -2,26 +2,17 @@ package org.fruct.oss.ikm.test;
 
 import android.test.AndroidTestCase;
 
-import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.poi.gets.CategoriesList;
-import org.fruct.oss.ikm.poi.gets.Gets;
-import org.fruct.oss.ikm.poi.gets.IGets;
-import org.fruct.oss.ikm.storage.Content;
 import org.fruct.oss.ikm.storage.FileStorage;
 import org.fruct.oss.ikm.storage.IContentConnection;
 import org.fruct.oss.ikm.storage.IContentItem;
 import org.fruct.oss.ikm.storage.NetworkProvider;
+import org.fruct.oss.ikm.storage.RemoteContent;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.InputStream;
-import java.util.List;
-
-import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
 
 @Root(strict = false)
 class Entity {
@@ -93,6 +84,19 @@ public class TestTest extends AndroidTestCase {
 			IContentConnection dataConn = provider.loadContentItem(item.getUrl());
 			storage.storeContentItem(item, dataConn.getStream());
 			dataConn.close();
+		}*/
+	}
+
+	public void testRemoteStorage() throws Exception {
+		/*NetworkProvider provider = new NetworkProvider();
+		FileStorage storage = FileStorage.createExternalStorage("teststorage");
+		RemoteContent rem = new RemoteContent(storage);
+		rem.initialize();
+
+		for (IContentItem item : rem.getContentList(provider, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml")) {
+			IContentConnection conn = provider.loadContentItem(item.getUrl());
+			rem.storeContentItem(item, storage, conn.getStream());
+			conn.close();
 		}*/
 	}
 }

@@ -26,4 +26,9 @@
         android:icon="@drawable/filter"
         android:title="@string/filter"
         yourapp:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_download_map"
+        android:icon="@drawable/filter"
+        android:title="@string/action_download_map"/>
+
 </menu>

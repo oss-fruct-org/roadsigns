@@ -1,35 +1,107 @@
 package org.fruct.oss.ikm.storage;
 
-import android.content.Context;
+import org.simpleframework.xml.Serializer;
+import org.simpleframework.xml.core.Persister;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class RemoteContent {
-	private final String contentUrl;
-	private final IProvider provider;
-	private final IStorage storage;
-	private final Context context;
-	private Content content;
+	public enum LocalContentState {
+		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE
+	}
 
-	public RemoteContent(Context context, IProvider provider, IStorage storage, String contentUrl) {
-		this.contentUrl = contentUrl;
-		this.provider = provider;
+	private static Logger log = LoggerFactory.getLogger(RemoteContent.class);
+	private final IStorage storage;
+
+	private List<IContentItem> storageContent;
+
+	public RemoteContent(IStorage storage) {
 		this.storage = storage;
-		this.context = context;
 	}
 
 	public void initialize() throws IOException {
+		storageContent = getContentList(storage, "content.xml");
+		if (storageContent == null) {
+			storageContent = new ArrayList<IContentItem>();
+			createContentList(storage);
+		}
+	}
+
+	public void createContentList(IStorage storage) throws IOException {
+		ByteArrayInputStream input = new ByteArrayInputStream("<content/>".getBytes("UTF-8"));
+		storage.storeContentItem("content.xml", input);
+		input.close();
+	}
+
+	public List<IContentItem> getContentList(IProvider storage, String contentUrl) throws IOException {
 		IContentConnection conn = null;
 		try {
-			conn = provider.loadContentItem(contentUrl);
-			content = Content.createFromStream(conn.getStream());
-		} catch (Exception e) {
-			throw new IOException(e.getMessage());
+			conn = storage.loadContentItem(contentUrl);
+			Content content = Content.createFromStream(conn.getStream());
+			return content.getContent();
+		} catch (FileNotFoundException e) {
+			return null;
 		} finally {
-			if (conn != null) {
+			if (conn != null)
 				conn.close();
+		}
+	}
+
+	public void storeContentItem(IContentItem item, IStorage storage, InputStream stream) throws IOException {
+		try {
+			storage.storeContentItem(item.getName(), stream);
+			storageContent.add(item);
+		} catch (IOException e) {
+			// Delete file record from content xml
+			for (Iterator<IContentItem> iter = storageContent.iterator(); iter.hasNext(); ) {
+				IContentItem exItem = iter.next();
+				if (item.getHash().equals(exItem.getHash())) {
+					iter.remove();
+					break;
+				}
+			}
+
+			throw e;
+		} finally {
+			// Update content record
+			Content content = new Content(storageContent);
+
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			Serializer serializer = new Persister();
+			try {
+				serializer.write(content, buffer);
+			} catch (Exception e) {
+				throw new IOException(e);
+			}
+
+			ByteArrayInputStream inputBuffer = new ByteArrayInputStream(buffer.toByteArray());
+			storage.storeContentItem("content.xml", inputBuffer);
+		}
+	}
+
+	public LocalContentState checkLocalState(IContentItem item) {
+		boolean exists = false;
+		for (IContentItem existingItem : storageContent) {
+			log.debug("Checking item {} against {}", existingItem.getName(), item.getName());
+			log.debug("Hash {} {}", existingItem.getHash(), item.getHash());
+			if (existingItem.getName().equals(item.getName())) {
+				exists = true;
+
+				if (!existingItem.getHash().equals(item.getHash())) {
+					return LocalContentState.NEEDS_UPDATE;
+				}
 			}
 		}
+
+		return exists ? LocalContentState.UP_TO_DATE : LocalContentState.NOT_EXISTS;
 	}
 }

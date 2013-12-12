@@ -39,6 +39,7 @@ import android.widget.Toast;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.MainActivity;
+import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -519,7 +520,12 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		case R.id.action_filter:
 			showFilterDialog();
 			break;
-			
+
+		case R.id.action_download_map:
+			intent = new Intent(getActivity(), OnlineContentActivity.class);
+			startActivity(intent);
+			break;
+
 		default:
 			//mapView.getOverlayManager().onOptionsItemSelected(item, 4, mapView);
 			return super.onOptionsItemSelected(item);

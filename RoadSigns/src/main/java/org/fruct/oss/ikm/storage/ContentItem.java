@@ -20,16 +20,21 @@ public class ContentItem implements IContentItem {
 	@Element(name = "hash")
 	private String hash;
 
+	@Element(name = "description", required = false)
+	private String description;
+
 	public ContentItem(@Element(name = "name") String name,
 					   @Element(name = "type") String type,
 					   @Element(name = "size") int size,
 					   @Element(name = "url")  String url,
-					   @Element(name = "hash") String hash) {
+					   @Element(name = "hash") String hash,
+					   @Element(name = "description", required = false) String description) {
 		this.name = name;
 		this.type = type;
 		this.size = size;
 		this.url = url;
 		this.hash = hash;
+		this.description = description;
 	}
 
 	@Override
@@ -56,4 +61,10 @@ public class ContentItem implements IContentItem {
 	public String getHash() {
 		return hash;
 	}
+
+	@Override
+	public String getDescription() {
+		return description;
+	}
+
 }

@@ -24,7 +24,8 @@ public class FileStorage implements IStorage, IProvider {
 
 	private final String storagePath;
 	private List<IContentItem> contentItems;
-	private boolean interrupt = false;
+
+	private volatile boolean interrupt = false;
 
 	public FileStorage(String storagePath) {
 		this.storagePath = storagePath;
@@ -37,28 +38,30 @@ public class FileStorage implements IStorage, IProvider {
 
 	@Override
 	public void storeContentItem(String url, InputStream input) throws IOException {
+		interrupt = false;
 		OutputStream output = null;
 		String fileStr = storagePath + "/" + url;
+		File outputFile = new File(fileStr + ".roadsignsdownload");
+		File targetFile = new File(fileStr);
 
 		try {
-			output = new FileOutputStream(fileStr);
+			output = new FileOutputStream(outputFile);
 
 			// Write file
 			int readed;
 			byte[] buf = new byte[BUFFER_SIZE];
 			while ((readed = input.read(buf)) > 0) {
 				output.write(buf, 0, readed);
-
 				if (interrupt) {
 					throw new InterruptedIOException();
 				}
 			}
+
+			outputFile.renameTo(targetFile);
 		} catch (IOException e) {
-			new File(fileStr).delete();
+			outputFile.delete();
 			throw e;
 		} finally {
-			interrupt = false;
-
 			if (output != null) {
 				output.close();
 			}

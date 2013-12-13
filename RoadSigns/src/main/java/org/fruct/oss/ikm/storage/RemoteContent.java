@@ -66,17 +66,11 @@ public class RemoteContent {
 	}
 
 	public void storeContentItem(IContentItem item, IStorage storage, InputStream stream) throws IOException {
-		try {
-			removeFromList(item);
+		storage.storeContentItem(item.getName(), stream);
 
-			storage.storeContentItem(item.getName(), stream);
-			storageContent.add(item);
-		} catch (IOException e) {
-			throw e;
-		} finally {
-			// Update content record
-			updateContentRecord(storage);
-		}
+		removeFromList(item);
+		storageContent.add(item);
+		updateContentRecord(storage);
 	}
 
 	private void updateContentRecord(IStorage storage) throws IOException {

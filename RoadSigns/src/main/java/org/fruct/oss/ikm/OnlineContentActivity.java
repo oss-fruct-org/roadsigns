@@ -26,14 +26,22 @@ import org.fruct.oss.ikm.storage.RemoteContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class ContentListItem {
 	IContentItem item;
 	RemoteContent.LocalContentState state;
+	boolean isDownloading;
+	int downloaded;
+	View view;
 }
 
 class ContentAdapter extends ArrayAdapter<ContentListItem> {
@@ -76,7 +84,19 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			view.setTag(tag);
 		}
 
-		tag.text1.setText(item.item.getName());
+		if (item.item.getDescription() != null)
+			tag.text1.setText(item.item.getDescription());
+		else
+			tag.text1.setText(item.item.getName());
+
+		if (item.isDownloading) {
+			float mbMax = (float) item.item.getSize() / (1024 * 1024);
+			float mbCurrent = (float) item.downloaded / (1024 * 1024);
+			tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
+		} else {
+			float mbSize = (float) item.item.getSize() / (1024 * 1024);
+			tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
+		}
 
 		int resId = 0;
 		switch (item.state) {
@@ -92,6 +112,7 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 		}
 
 		tag.icon.setImageResource(resId);
+		item.view = view;
 
 		return view;
 	}
@@ -110,7 +131,7 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 	private MenuItem downloadItem;
 	private MenuItem deleteItem;
 	private MenuItem updateItem;
-	private IContentItem currentItem;
+	private ContentListItem currentItem;
 	private List<IContentItem> remoteList;
 
 	public void onCreate(Bundle savedInstanceState) {
@@ -132,6 +153,15 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 
 		loadContentList();
 		setUpActionBar();
+	}
+
+	@Override
+	protected void onDestroy() {
+		if (storage != null) {
+			storage.interrupt();
+		}
+
+		super.onDestroy();
 	}
 
 	private void initialize() throws IOException {
@@ -179,7 +209,7 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		log.debug("Clicked{}", i);
 
 		ContentListItem listItem = adapter.getItem(i);
-		currentItem = listItem.item;
+		currentItem = listItem;
 
 		PopupMenu menu = new PopupMenu(this, view);
 		switch (listItem.state) {
@@ -210,42 +240,96 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		}
 	}
 
-	private void downloadItem(IContentItem item) {
+	private void showToast(final String string) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(OnlineContentActivity.this, string, Toast.LENGTH_SHORT).show();
+			}
+		});
+	}
+
+	private void setItemDownloadStatus(final ContentListItem item, final int current) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				item.downloaded = current;
+				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.view.getTag();
+				float mbMax = (float) item.item.getSize() / (1024 * 1024);
+				float mbCurrent = (float) item.downloaded / (1024 * 1024);
+				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
+			}
+		});
+	}
+
+	private void downloadItem(final ContentListItem listItem) {
+		IContentItem item = listItem.item;
 		IContentConnection conn = null;
+		listItem.downloaded = 0;
+		listItem.isDownloading = true;
+
 		try {
 			conn = provider.loadContentItem(item.getUrl());
-			remoteContent.storeContentItem(currentItem, storage, conn.getStream());
 
-			Toast.makeText(this, "Successfully loaded", Toast.LENGTH_SHORT).show();
+			ProgressInputStream progressStream = new ProgressInputStream(conn.getStream(), item.getSize(),
+					10000, new ProgressInputStream.ProgressListener() {
+				@Override
+				public void update(int current, int max) {
+					setItemDownloadStatus(listItem, current);
+				}
+			});
+
+			remoteContent.storeContentItem(item, storage, progressStream);
+			showToast("Successfully downloaded");
+
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					// Update list view
+					setContentList(remoteList);
+				}
+			});
+
+		} catch (InterruptedIOException ex) {
+			showToast("Downloading interupted");
 		} catch (IOException e) {
 			e.printStackTrace();
-			Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+			showToast("Error downloading");
 		} finally {
+			listItem.isDownloading = false;
 			if (conn != null)
 				conn.close();
 		}
 	}
 
+	private void asyncDownloadItem(final ContentListItem listItem) {
+		new Thread() {
+			@Override
+			public void run() {
+				downloadItem(listItem);
+			}
+		}.start();
+	}
+
 	private void deleteItem(IContentItem item) {
 		try {
 			remoteContent.deleteContentItem(item, storage);
-			Toast.makeText(this, "Successfully deleted", Toast.LENGTH_SHORT).show();
+			showToast("Successfully deleted");
+			// Update list view
+			setContentList(remoteList);
 		} catch (IOException e) {
 			e.printStackTrace();
-			Toast.makeText(this, "Can not delete", Toast.LENGTH_LONG).show();
+			showToast("Can not delete");
 		}
 	}
 
 	@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
 		if (menuItem == downloadItem || menuItem == updateItem) {
-			downloadItem(currentItem);
+			asyncDownloadItem(currentItem);
 		} else if (menuItem == deleteItem) {
-			deleteItem(currentItem);
+			deleteItem(currentItem.item);
 		}
-
-		// Update list view
-		setContentList(remoteList);
 
 		return true;
 	}

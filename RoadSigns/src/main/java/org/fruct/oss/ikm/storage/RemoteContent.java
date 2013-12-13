@@ -116,4 +116,14 @@ public class RemoteContent {
 
 		return exists ? LocalContentState.UP_TO_DATE : LocalContentState.NOT_EXISTS;
 	}
+
+	public String getPath(IContentItem item) {
+		if (storage instanceof FileStorage) {
+			FileStorage fs = (FileStorage) storage;
+			return fs.getPath(item);
+		} else {
+			return null;
+		}
+	}
+
 }

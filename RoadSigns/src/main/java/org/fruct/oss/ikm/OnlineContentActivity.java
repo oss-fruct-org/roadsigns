@@ -3,8 +3,10 @@ package org.fruct.oss.ikm;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -26,10 +28,7 @@ import org.fruct.oss.ikm.storage.RemoteContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Locale;
@@ -131,6 +130,8 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 	private MenuItem downloadItem;
 	private MenuItem deleteItem;
 	private MenuItem updateItem;
+	private MenuItem useItem;
+
 	private ContentListItem currentItem;
 	private List<IContentItem> remoteList;
 
@@ -206,8 +207,6 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-		log.debug("Clicked{}", i);
-
 		ContentListItem listItem = adapter.getItem(i);
 		currentItem = listItem;
 
@@ -216,12 +215,15 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		case NEEDS_UPDATE:
 			updateItem = menu.getMenu().add("Update");
 			deleteItem = menu.getMenu().add("Delete");
+			useItem = menu.getMenu().add("Use");
+
 			break;
 		case NOT_EXISTS:
 			downloadItem = menu.getMenu().add("Download");
 			break;
 		case UP_TO_DATE:
 			deleteItem = menu.getMenu().add("Delete");
+			useItem = menu.getMenu().add("Use");
 			break;
 		}
 
@@ -303,12 +305,12 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 	}
 
 	private void asyncDownloadItem(final ContentListItem listItem) {
-		new Thread() {
+		executor.execute(new Runnable() {
 			@Override
 			public void run() {
 				downloadItem(listItem);
 			}
-		}.start();
+		});
 	}
 
 	private void deleteItem(IContentItem item) {
@@ -329,6 +331,10 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 			asyncDownloadItem(currentItem);
 		} else if (menuItem == deleteItem) {
 			deleteItem(currentItem.item);
+		} else if (menuItem == useItem) {
+			String path = remoteContent.getPath(currentItem.item);
+			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+			pref.edit().putString(SettingsActivity.OFFLINE_MAP, path).apply();
 		}
 
 		return true;

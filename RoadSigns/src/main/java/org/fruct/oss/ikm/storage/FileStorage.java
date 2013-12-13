@@ -112,4 +112,8 @@ public class FileStorage implements IStorage, IProvider {
 
 		return new FileStorage(storagePath);
 	}
+
+	public String getPath(IContentItem item) {
+		return storagePath + "/" + item.getName();
+	}
 }

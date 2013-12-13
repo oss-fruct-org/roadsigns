@@ -1,10 +1,14 @@
 package org.fruct.oss.ikm;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -12,8 +16,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.fruct.oss.ikm.storage.FileStorage;
+import org.fruct.oss.ikm.storage.IContentConnection;
 import org.fruct.oss.ikm.storage.IContentItem;
 import org.fruct.oss.ikm.storage.NetworkProvider;
 import org.fruct.oss.ikm.storage.RemoteContent;
@@ -91,7 +97,7 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 	}
 }
 
-public class OnlineContentActivity extends Activity implements AdapterView.OnItemClickListener {
+public class OnlineContentActivity extends ActionBarActivity implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
 	private static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -100,6 +106,12 @@ public class OnlineContentActivity extends Activity implements AdapterView.OnIte
 	private RemoteContent remoteContent;
 	private ListView listView;
 	private ContentAdapter adapter;
+
+	private MenuItem downloadItem;
+	private MenuItem deleteItem;
+	private MenuItem updateItem;
+	private IContentItem currentItem;
+	private List<IContentItem> remoteList;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -119,6 +131,7 @@ public class OnlineContentActivity extends Activity implements AdapterView.OnIte
 		}
 
 		loadContentList();
+		setUpActionBar();
 	}
 
 	private void initialize() throws IOException {
@@ -145,13 +158,13 @@ public class OnlineContentActivity extends Activity implements AdapterView.OnIte
 			@Override
 			public void run() {
 				try {
-					final List<IContentItem> list = remoteContent.getContentList(provider,
+					remoteList = remoteContent.getContentList(provider,
 							"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
-							log.debug("Received list size {}", list.size());
-							setContentList(list);
+							log.debug("Received list size {}", remoteList.size());
+							setContentList(remoteList);
 						}
 					});
 				} catch (IOException e) {
@@ -161,27 +174,85 @@ public class OnlineContentActivity extends Activity implements AdapterView.OnIte
 		});
 	}
 
-
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 		log.debug("Clicked{}", i);
 
 		ContentListItem listItem = adapter.getItem(i);
+		currentItem = listItem.item;
 
 		PopupMenu menu = new PopupMenu(this, view);
 		switch (listItem.state) {
 		case NEEDS_UPDATE:
-			menu.getMenu().add("Update");
-			menu.getMenu().add("Delete");
+			updateItem = menu.getMenu().add("Update");
+			deleteItem = menu.getMenu().add("Delete");
 			break;
 		case NOT_EXISTS:
-			menu.getMenu().add("Download");
+			downloadItem = menu.getMenu().add("Download");
 			break;
 		case UP_TO_DATE:
-			menu.getMenu().add("Delete");
+			deleteItem = menu.getMenu().add("Delete");
 			break;
 		}
 
+		menu.setOnMenuItemClickListener(this);
+		menu.setOnDismissListener(this);
+
 		menu.show();
+	}
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setUpActionBar() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			getActionBar().setDisplayHomeAsUpEnabled(true);
+		} else {
+			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		}
+	}
+
+	private void downloadItem(IContentItem item) {
+		IContentConnection conn = null;
+		try {
+			conn = provider.loadContentItem(item.getUrl());
+			remoteContent.storeContentItem(currentItem, storage, conn.getStream());
+
+			Toast.makeText(this, "Successfully loaded", Toast.LENGTH_SHORT).show();
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+		} finally {
+			if (conn != null)
+				conn.close();
+		}
+	}
+
+	private void deleteItem(IContentItem item) {
+		try {
+			remoteContent.deleteContentItem(item, storage);
+			Toast.makeText(this, "Successfully deleted", Toast.LENGTH_SHORT).show();
+		} catch (IOException e) {
+			e.printStackTrace();
+			Toast.makeText(this, "Can not delete", Toast.LENGTH_LONG).show();
+		}
+	}
+
+	@Override
+	public boolean onMenuItemClick(MenuItem menuItem) {
+		if (menuItem == downloadItem || menuItem == updateItem) {
+			downloadItem(currentItem);
+		} else if (menuItem == deleteItem) {
+			deleteItem(currentItem);
+		}
+
+		// Update list view
+		setContentList(remoteList);
+
+		return true;
+	}
+
+	@Override
+	public void onDismiss(PopupMenu popupMenu) {
+		downloadItem = deleteItem = updateItem = null;
+		currentItem = null;
 	}
 }

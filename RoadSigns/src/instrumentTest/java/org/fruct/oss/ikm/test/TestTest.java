@@ -93,7 +93,8 @@ public class TestTest extends AndroidTestCase {
 		RemoteContent rem = new RemoteContent(storage);
 		rem.initialize();
 
-		for (IContentItem item : rem.getContentList(provider, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml")) {
+		for (IContentItem item : rem.getContentList(provider,
+				"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml")) {
 			IContentConnection conn = provider.loadContentItem(item.getUrl());
 			rem.storeContentItem(item, storage, conn.getStream());
 			conn.close();

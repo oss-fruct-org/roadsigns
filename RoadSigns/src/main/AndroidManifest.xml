@@ -61,8 +61,11 @@
         </activity>
         <activity
             android:name=".OnlineContentActivity"
-            android:parentActivityName="org.fruct.oss.ikm.MainActivity"
-            />
+            android:parentActivityName="org.fruct.oss.ikm.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.fruct.oss.ikm.MainActivity" />
+        </activity>
 
         <service
             android:name="org.fruct.oss.ikm.service.DirectionService"

@@ -63,7 +63,12 @@ public class FileStorage implements IStorage, IProvider {
 				output.close();
 			}
 		}
+	}
 
+	@Override
+	public void deleteItem(String url) {
+		String fileStr = storagePath + "/" + url;
+		new File(fileStr).delete();
 	}
 
 	@Override

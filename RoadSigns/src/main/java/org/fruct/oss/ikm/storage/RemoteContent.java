@@ -56,35 +56,53 @@ public class RemoteContent {
 		}
 	}
 
+	public void deleteContentItem(IContentItem item, IStorage storage) throws IOException {
+		try {
+			storage.deleteItem(item.getName());
+			removeFromList(item);
+		} finally {
+			updateContentRecord(storage);
+		}
+	}
+
 	public void storeContentItem(IContentItem item, IStorage storage, InputStream stream) throws IOException {
 		try {
+			removeFromList(item);
+
 			storage.storeContentItem(item.getName(), stream);
 			storageContent.add(item);
 		} catch (IOException e) {
-			// Delete file record from content xml
-			for (Iterator<IContentItem> iter = storageContent.iterator(); iter.hasNext(); ) {
-				IContentItem exItem = iter.next();
-				if (item.getHash().equals(exItem.getHash())) {
-					iter.remove();
-					break;
-				}
-			}
-
 			throw e;
 		} finally {
 			// Update content record
-			Content content = new Content(storageContent);
+			updateContentRecord(storage);
+		}
+	}
 
-			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			Serializer serializer = new Persister();
-			try {
-				serializer.write(content, buffer);
-			} catch (Exception e) {
-				throw new IOException(e);
+	private void updateContentRecord(IStorage storage) throws IOException {
+		Content content = new Content(storageContent);
+
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		Serializer serializer = new Persister();
+		try {
+			serializer.write(content, buffer);
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+
+		ByteArrayInputStream inputBuffer = new ByteArrayInputStream(buffer.toByteArray());
+		storage.storeContentItem("content.xml", inputBuffer);
+	}
+
+	private void removeFromList(IContentItem item) {
+		// Remove existing item from content list
+		Iterator<IContentItem> iter = storageContent.iterator();
+		while (iter.hasNext()) {
+			IContentItem exItem = iter.next();
+			if (exItem.getName().equals(item.getName())) {
+				iter.remove();
+				break;
 			}
-
-			ByteArrayInputStream inputBuffer = new ByteArrayInputStream(buffer.toByteArray());
-			storage.storeContentItem("content.xml", inputBuffer);
 		}
 	}
 

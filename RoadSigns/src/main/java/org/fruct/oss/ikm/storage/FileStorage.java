@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class FileStorage implements IStorage, IProvider {
-	public static final int BUFFER_SIZE = 4096;
+	public static final int BUFFER_SIZE = 512 * 1024 * 1;
 
 	private final String storagePath;
 	private List<IContentItem> contentItems;

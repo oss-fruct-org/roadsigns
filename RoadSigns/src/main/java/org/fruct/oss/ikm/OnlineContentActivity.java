@@ -21,7 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.storage.FileStorage;
-import org.fruct.oss.ikm.storage.IContentConnection;
 import org.fruct.oss.ikm.storage.IContentItem;
 import org.fruct.oss.ikm.storage.NetworkProvider;
 import org.fruct.oss.ikm.storage.RemoteContent;
@@ -29,31 +28,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-class ContentListItem {
-	IContentItem item;
-	RemoteContent.LocalContentState state;
-	boolean isDownloading;
-	int downloaded;
-	View view;
-}
-
-class ContentAdapter extends ArrayAdapter<ContentListItem> {
+class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 	class Tag {
 		TextView text1;
 		TextView text2;
 		ImageView icon;
-		ContentListItem contentItem;
+		RemoteContent.StorageItem storageItem;
 	}
 
 	private final int resource;
 
-	public ContentAdapter(Context context, int resource, List<ContentListItem> objects) {
+	public ContentAdapter(Context context, int resource, List<RemoteContent.StorageItem> objects) {
 		super(context, resource, objects);
 		//int i = android.R.layout.
 		this.resource = resource;
@@ -61,7 +49,7 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		ContentListItem item = getItem(position);
+		RemoteContent.StorageItem item = getItem(position);
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
 		View view = null;
 		Tag tag = null;
@@ -79,26 +67,22 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			tag.text1 = (TextView) view.findViewById(android.R.id.text1);
 			tag.text2 = (TextView) view.findViewById(android.R.id.text2);
 			tag.icon = (ImageView) view.findViewById(android.R.id.icon1);
-			tag.contentItem = item;
+			tag.storageItem = item;
 			view.setTag(tag);
+			item.setTag(tag);
 		}
 
-		if (item.item.getDescription() != null)
-			tag.text1.setText(item.item.getDescription());
+		if (item.getItem().getDescription() != null)
+			tag.text1.setText(item.getItem().getDescription());
 		else
-			tag.text1.setText(item.item.getName());
+			tag.text1.setText(item.getItem().getName());
 
-		if (item.isDownloading) {
-			float mbMax = (float) item.item.getSize() / (1024 * 1024);
-			float mbCurrent = (float) item.downloaded / (1024 * 1024);
-			tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
-		} else {
-			float mbSize = (float) item.item.getSize() / (1024 * 1024);
-			tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
-		}
+		float mbSize = (float) item.getItem().getSize() / (1024 * 1024);
+		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
+		//}
 
 		int resId = 0;
-		switch (item.state) {
+		switch (item.getState()) {
 		case NOT_EXISTS:
 			resId = android.R.drawable.ic_input_add;
 			break;
@@ -108,20 +92,21 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 		case NEEDS_UPDATE:
 			resId = android.R.drawable.ic_input_delete;
 			break;
+		case DELETED_FROM_SERVER:
+			resId = android.R.drawable.ic_notification_clear_all;
 		}
 
 		tag.icon.setImageResource(resId);
-		item.view = view;
 
 		return view;
 	}
 }
 
-public class OnlineContentActivity extends ActionBarActivity implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener, PopupMenu.OnDismissListener {
+public class OnlineContentActivity extends ActionBarActivity
+		implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener,
+					PopupMenu.OnDismissListener, RemoteContent.Listener {
 	private static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
-	private NetworkProvider provider;
 	private FileStorage storage;
 	private RemoteContent remoteContent;
 	private ListView listView;
@@ -132,8 +117,8 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 	private MenuItem updateItem;
 	private MenuItem useItem;
 
-	private ContentListItem currentItem;
 	private List<IContentItem> remoteList;
+	private RemoteContent.StorageItem currentItem;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -142,18 +127,14 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		provider = new NetworkProvider();
+		NetworkProvider provider = new NetworkProvider();
 		storage = FileStorage.createExternalStorage("roadsigns-maps");
-		remoteContent = new RemoteContent(storage);
+		remoteContent = new RemoteContent(storage, provider, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
 
-		try {
-			initialize();
-		} catch (IOException e) {
-			// TODO: handle this exception
-		}
-
-		loadContentList();
 		setUpActionBar();
+
+		remoteContent.setListener(this);
+		remoteContent.startInitialize();
 	}
 
 	@Override
@@ -165,24 +146,11 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		super.onDestroy();
 	}
 
-	private void initialize() throws IOException {
-		remoteContent.initialize();
-	}
-
-	private void setContentList(List<IContentItem> list) {
-		List<ContentListItem> adapterList = Utils.map(list, new Utils.Function<ContentListItem, IContentItem>() {
-			@Override
-			public ContentListItem apply(IContentItem item) {
-				ContentListItem adapterItem = new ContentListItem();
-				adapterItem.item = item;
-				adapterItem.state = remoteContent.checkLocalState(item);
-				return adapterItem;
-			}
-		});
-
-		adapter = new ContentAdapter(this, R.layout.point_list_item, adapterList);
+	private void setContentList(List<RemoteContent.StorageItem> list) {
+		adapter = new ContentAdapter(this, R.layout.point_list_item, list);
 		listView.setAdapter(adapter);
 	}
+/*
 
 	private void loadContentList() {
 		executor.execute(new Runnable() {
@@ -204,24 +172,27 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 			}
 		});
 	}
+*/
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-		ContentListItem listItem = adapter.getItem(i);
+		RemoteContent.StorageItem listItem = adapter.getItem(i);
 		currentItem = listItem;
 
 		PopupMenu menu = new PopupMenu(this, view);
-		switch (listItem.state) {
+		switch (listItem.getState()) {
 		case NEEDS_UPDATE:
 			updateItem = menu.getMenu().add("Update");
 			deleteItem = menu.getMenu().add("Delete");
 			useItem = menu.getMenu().add("Use");
-
 			break;
+
 		case NOT_EXISTS:
 			downloadItem = menu.getMenu().add("Download");
 			break;
+
 		case UP_TO_DATE:
+		case DELETED_FROM_SERVER:
 			deleteItem = menu.getMenu().add("Delete");
 			useItem = menu.getMenu().add("Use");
 			break;
@@ -251,88 +222,25 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 		});
 	}
 
-	private void setItemDownloadStatus(final ContentListItem item, final int current) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				item.downloaded = current;
-				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.view.getTag();
-				float mbMax = (float) item.item.getSize() / (1024 * 1024);
-				float mbCurrent = (float) item.downloaded / (1024 * 1024);
-				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
-			}
-		});
-	}
-
-	private void downloadItem(final ContentListItem listItem) {
-		IContentItem item = listItem.item;
-		IContentConnection conn = null;
-		listItem.downloaded = 0;
-		listItem.isDownloading = true;
-
+	private void deleteItem(RemoteContent.StorageItem item) {
 		try {
-			conn = provider.loadContentItem(item.getUrl());
-
-			ProgressInputStream progressStream = new ProgressInputStream(conn.getStream(), item.getSize(),
-					10000, new ProgressInputStream.ProgressListener() {
-				@Override
-				public void update(int current, int max) {
-					setItemDownloadStatus(listItem, current);
-				}
-			});
-
-			remoteContent.storeContentItem(item, storage, progressStream);
-			showToast("Successfully downloaded");
-
-			runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					// Update list view
-					setContentList(remoteList);
-				}
-			});
-
-		} catch (InterruptedIOException ex) {
-			showToast("Downloading interupted");
-		} catch (IOException e) {
-			e.printStackTrace();
-			showToast("Error downloading");
-		} finally {
-			listItem.isDownloading = false;
-			if (conn != null)
-				conn.close();
-		}
-	}
-
-	private void asyncDownloadItem(final ContentListItem listItem) {
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				downloadItem(listItem);
-			}
-		});
-	}
-
-	private void deleteItem(IContentItem item) {
-		try {
-			remoteContent.deleteContentItem(item, storage);
+			remoteContent.deleteContentItem(item);
 			showToast("Successfully deleted");
-			// Update list view
-			setContentList(remoteList);
 		} catch (IOException e) {
 			e.printStackTrace();
 			showToast("Can not delete");
 		}
 	}
 
+
 	@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
 		if (menuItem == downloadItem || menuItem == updateItem) {
-			asyncDownloadItem(currentItem);
+			remoteContent.startDownloading(currentItem);
 		} else if (menuItem == deleteItem) {
-			deleteItem(currentItem.item);
+			deleteItem(currentItem);
 		} else if (menuItem == useItem) {
-			String path = remoteContent.getPath(currentItem.item);
+			String path = remoteContent.getPath(currentItem.getItem());
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 			pref.edit().putString(SettingsActivity.OFFLINE_MAP, path).apply();
 		}
@@ -344,5 +252,39 @@ public class OnlineContentActivity extends ActionBarActivity implements AdapterV
 	public void onDismiss(PopupMenu popupMenu) {
 		downloadItem = deleteItem = updateItem = null;
 		currentItem = null;
+	}
+
+	@Override
+	public void listReady(final List<RemoteContent.StorageItem> list) {
+		runOnUiThread(new Runnable() {
+			@Override
+				public void run() {
+				setContentList(list);
+			}
+		});
+	}
+
+	@Override
+	public void downloadStateUpdated(final RemoteContent.StorageItem item, final int downloaded, int max) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
+				float mbMax = (float) item.getItem().getSize() / (1024 * 1024);
+				float mbCurrent = (float) downloaded / (1024 * 1024);
+				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
+			}
+		});
+
+	}
+
+	@Override
+	public void downloadFinished(RemoteContent.StorageItem item) {
+		showToast("Download finished");
+	}
+
+	@Override
+	public void errorDownloading(RemoteContent.StorageItem item, IOException e) {
+		
 	}
 }

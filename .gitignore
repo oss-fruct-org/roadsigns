@@ -11,11 +11,7 @@
 bin/
 gen/
 
-gradle/
 /RoadSigns/build
 /RoadSigns/lib
-gradlew
-gradlew.bat
 
 *.ghz
-

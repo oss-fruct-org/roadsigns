@@ -23,7 +23,6 @@ public class FileStorage implements IStorage, IProvider {
 	public static final int BUFFER_SIZE = 512 * 1024 * 1;
 
 	private final String storagePath;
-	private List<IContentItem> contentItems;
 
 	private volatile boolean interrupt = false;
 
@@ -57,7 +56,8 @@ public class FileStorage implements IStorage, IProvider {
 				}
 			}
 
-			outputFile.renameTo(targetFile);
+			if (!outputFile.renameTo(targetFile))
+				throw new IOException("Can't replace original file with loaded file");
 		} catch (IOException e) {
 			outputFile.delete();
 			throw e;
@@ -85,11 +85,9 @@ public class FileStorage implements IStorage, IProvider {
 
 			@Override
 			public void close() {
-				if (stream != null) {
-					try {
-						stream.close();
-					} catch (IOException e) {
-					}
+				try {
+					stream.close();
+				} catch (IOException ignored) {
 				}
 			}
 		};

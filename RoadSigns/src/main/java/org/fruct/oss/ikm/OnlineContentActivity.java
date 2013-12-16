@@ -20,9 +20,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.storage.FileStorage;
-import org.fruct.oss.ikm.storage.IContentItem;
-import org.fruct.oss.ikm.storage.NetworkProvider;
 import org.fruct.oss.ikm.storage.RemoteContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +40,6 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 
 	public ContentAdapter(Context context, int resource, List<RemoteContent.StorageItem> objects) {
 		super(context, resource, objects);
-		//int i = android.R.layout.
 		this.resource = resource;
 	}
 
@@ -79,7 +75,6 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 
 		float mbSize = (float) item.getItem().getSize() / (1024 * 1024);
 		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
-		//}
 
 		int resId = 0;
 		switch (item.getState()) {
@@ -107,7 +102,6 @@ public class OnlineContentActivity extends ActionBarActivity
 					PopupMenu.OnDismissListener, RemoteContent.Listener {
 	private static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
-	private FileStorage storage;
 	private RemoteContent remoteContent;
 	private ListView listView;
 	private ContentAdapter adapter;
@@ -117,7 +111,6 @@ public class OnlineContentActivity extends ActionBarActivity
 	private MenuItem updateItem;
 	private MenuItem useItem;
 
-	private List<IContentItem> remoteList;
 	private RemoteContent.StorageItem currentItem;
 
 	public void onCreate(Bundle savedInstanceState) {
@@ -127,9 +120,7 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		NetworkProvider provider = new NetworkProvider();
-		storage = FileStorage.createExternalStorage("roadsigns-maps");
-		remoteContent = new RemoteContent(storage, provider, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
+		remoteContent = RemoteContent.getInstance("https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml", "roadsigns-maps");
 
 		setUpActionBar();
 
@@ -139,40 +130,14 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	protected void onDestroy() {
-		if (storage != null) {
-			storage.interrupt();
-		}
-
 		super.onDestroy();
+		remoteContent.setListener(null);
 	}
 
 	private void setContentList(List<RemoteContent.StorageItem> list) {
 		adapter = new ContentAdapter(this, R.layout.point_list_item, list);
 		listView.setAdapter(adapter);
 	}
-/*
-
-	private void loadContentList() {
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					remoteList = remoteContent.getContentList(provider,
-							"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							log.debug("Received list size {}", remoteList.size());
-							setContentList(remoteList);
-						}
-					});
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-*/
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
@@ -232,7 +197,6 @@ public class OnlineContentActivity extends ActionBarActivity
 		}
 	}
 
-
 	@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
 		if (menuItem == downloadItem || menuItem == updateItem) {
@@ -275,7 +239,6 @@ public class OnlineContentActivity extends ActionBarActivity
 				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
 			}
 		});
-
 	}
 
 	@Override
@@ -285,6 +248,6 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void errorDownloading(RemoteContent.StorageItem item, IOException e) {
-		
+		showToast("Error downloading");
 	}
 }

@@ -1,5 +1,7 @@
 package org.fruct.oss.ikm.storage;
 
+import android.util.Pair;
+
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,7 +34,6 @@ public class RemoteContent {
 	}
 
 	public class StorageItem {
-
 		public StorageItem(LocalContentState state, IContentItem item) {
 			this.state = state;
 			this.item = item;
@@ -184,6 +186,14 @@ public class RemoteContent {
 
 	// Async methods
 	public void startInitialize() {
+		if (storageItems != null) {
+			log.info("RemoteContent already initialized");
+			if (listener != null) {
+				listener.listReady(storageItems);
+			}
+			return;
+		}
+
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -273,5 +283,20 @@ public class RemoteContent {
 				conn.close();
 			}
 		}
+	}
+
+	private static Map<Pair<String, String>, RemoteContent> instances = new HashMap<Pair<String, String>, RemoteContent>();
+	public static RemoteContent getInstance(String contentUrl, String localPath) {
+		Pair<String, String> key = Pair.create(contentUrl, localPath);
+		RemoteContent instance = instances.get(key);
+		if (instance == null) {
+			log.info("New instance of RemoteContent created");
+			NetworkProvider provider = new NetworkProvider();
+			FileStorage storage = FileStorage.createExternalStorage(localPath);
+			RemoteContent ret = new RemoteContent(storage, provider, contentUrl);
+			instances.put(key, ret);
+			return ret;
+		} else
+			return instance;
 	}
 }

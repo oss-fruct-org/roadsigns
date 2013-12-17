@@ -17,6 +17,7 @@ public abstract class GHRouting implements IRouting {
 	private String path;
 	private GeoPoint oldGeoPoint = null;
 	private boolean isInitialized = false;
+	private boolean isInitializationFailed = false;
 	protected GraphHopper hopper;
 
 	public abstract void prepare(GeoPoint from);
@@ -27,14 +28,15 @@ public abstract class GHRouting implements IRouting {
 	}
 
 	public void reset(GeoPoint from) {
-		initialize();
+		if (!ensureInitialized())
+			return;
 		
 		if (!from.equals(oldGeoPoint))
 			prepare(from);
 	}
 	
 	public void initialize() {
-		if (isInitialized )
+		if (isInitialized || isInitializationFailed)
 			return;
 		
 		try {
@@ -43,19 +45,26 @@ public abstract class GHRouting implements IRouting {
 			boolean res = hopper.load(path);
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
+				isInitialized = true;
 			} else {
 				log.error("Cannot initialize graphhopper for path {}", path);
+				isInitializationFailed = true;
 			}
-			isInitialized = true;
 		} catch (Exception th) {
 			log.error("graphhopper initialization for path" + path + "finished with exception", th);
-
 			th.printStackTrace();
+			isInitializationFailed = true;
 		}
 	}
 
-	public GeoPoint getNearestRoadNode(GeoPoint current) {
+	protected boolean ensureInitialized() {
 		initialize();
+		return !isInitializationFailed;
+	}
+
+	public GeoPoint getNearestRoadNode(GeoPoint current) {
+		if (!ensureInitialized())
+			return null;
 		
 		Location2IDIndex index = hopper.getLocationIndex();
 		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
@@ -74,12 +83,12 @@ public abstract class GHRouting implements IRouting {
 	}
 
 	public PointList findPath(GeoPoint from, GeoPoint to) {
-		initialize();
+		if (!ensureInitialized())
+			return null;
 
 		log.debug("findPath enter");
 		try {
 			prepare(from);
-
 			return route(to);
 		} catch (Exception ex) {
 			ex.printStackTrace();

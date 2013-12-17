@@ -14,11 +14,17 @@ public class CHRouting extends GHRouting {
 
 	@Override
 	public void prepare(GeoPoint from) {
+		if (!ensureInitialized())
+			return;
+
 		this.from = from;
 	}
 
 	@Override
 	public PointList route(GeoPoint to) {
+		if (!ensureInitialized())
+			return null;
+
 		GHRequest req = new GHRequest(from.getLatitudeE6() / 1e6, from.getLongitudeE6() / 1e6,
 				to.getLatitudeE6() / 1e6, to.getLatitudeE6() / 1e6);
 		

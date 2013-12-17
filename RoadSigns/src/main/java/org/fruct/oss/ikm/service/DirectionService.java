@@ -86,7 +86,7 @@ public class DirectionService extends Service implements PointsListener,
 				.getFilteredPoints());
 
 		PointsManager.getInstance().addListener(this);
-		PreferenceManager.getDefaultSharedPreferences(App.getContext())
+		PreferenceManager.getDefaultSharedPreferences(this)
 				.registerOnSharedPreferenceChangeListener(this);
 
 		log.debug("DirectionService created");
@@ -108,7 +108,7 @@ public class DirectionService extends Service implements PointsListener,
 
 		dirManager = null;
 		
-		PreferenceManager.getDefaultSharedPreferences(App.getContext())
+		PreferenceManager.getDefaultSharedPreferences(this)
 				.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
@@ -217,6 +217,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	private void extractArchive(String path) {
+		log.info("Extracting archive {}", path);
 		File file = path == null ? null : new File(path);
 		if (file == null || !file.exists() || !file.canRead())
 			return;
@@ -239,18 +240,22 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
+		log.debug("DirectionService.onSharedPreferenceChanged");
 		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			dirManager.calculateForPoints(points);
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
 			final String archivePath = sharedPreferences.getString(SettingsActivity.NAVIGATION_DATA, null);
+			if (archivePath == null)
+				return;
 
+			log.debug("Starting thread");
 			new Thread() {
 				@Override
 				public void run() {
 					extractArchive(archivePath);
 				}
-			};
+			}.start();
 		}
 	}
 

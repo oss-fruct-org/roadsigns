@@ -92,15 +92,16 @@ public class DirectionManager {
 				GeoPoint current = new GeoPoint(location);
 				
 				// Find nearest road node
+				// Can throw in not initialized, ignoring
 				GeoPoint nearestNode = routing.getNearestRoadNode(current);				
 				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
 					return;
 
 				DirectionManager.this.userPosition = nearestNode;
-				routing.reset(userPosition);
-				
 				readyPoints.clear();
-				// doCalculateForPoints();
+
+				// Can throw if not initialized, ignore
+				routing.reset(userPosition);
 			}
 		});
 	}
@@ -125,7 +126,7 @@ public class DirectionManager {
 	private void doCalculateForPoints() {
 		if (activePoints == null || userPosition == null)
 			return;
-		
+
 		preparePoints();
 		
 		long last = System.nanoTime();

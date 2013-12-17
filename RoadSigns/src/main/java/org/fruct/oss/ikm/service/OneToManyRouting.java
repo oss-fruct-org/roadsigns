@@ -31,6 +31,9 @@ public class OneToManyRouting extends GHRouting {
 
 	@Override
 	public void prepare(GeoPoint from) {
+		if (!ensureInitialized())
+			return;
+
 		encodingManager = new EncodingManager("CAR");
 		encoder = encodingManager.getEncoder("CAR");
 		edgeFilter = new DefaultEdgeFilter(encoder);
@@ -47,6 +50,9 @@ public class OneToManyRouting extends GHRouting {
 
 	@Override
 	public PointList route(GeoPoint to) {
+		if (!ensureInitialized())
+			return null;
+
 		int toId = index.findClosest(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6, edgeFilter).getClosestNode();
 		
 		if (toId < 0 || toId == fromId)

@@ -1,7 +1,5 @@
 package org.fruct.oss.ikm;
 
-import java.util.Locale;
-
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -23,6 +21,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
 	private EditTextPreference offlineMapPref;
+	private EditTextPreference navigationDataPref;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,16 +31,19 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		offlineMapPref = (EditTextPreference) findPreference(OFFLINE_MAP);
+		navigationDataPref = (EditTextPreference) findPreference(NAVIGATION_DATA);
 	}
 	
 	@Override
 	protected void onResume() {
 		super.onResume();
-	
-		updateNearestPoints(getPreferenceScreen().getSharedPreferences());
-		updateOfflineMap(getPreferenceScreen().getSharedPreferences());
-		
-		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+
+		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		updateNearestPoints(sharedPreferences);
+		updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+		updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+
+		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}
 
 	@Override
@@ -59,10 +61,21 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);
 		} else if (key.equals(OFFLINE_MAP)) {
-			updateOfflineMap(sharedPreferences);
+			updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+		} else if (key.equals(NAVIGATION_DATA)) {
+			updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
 		}
 	}
-	
+
+	private void updateEditBoxPreference(SharedPreferences sharedPreferences, String key, EditTextPreference pref) {
+		String value = sharedPreferences.getString(key, "");
+		if (value == null || value.isEmpty()) {
+			pref.setSummary(android.R.string.no);
+		} else {
+			pref.setSummary(value);
+		}
+	}
+
 	private void updateNearestPoints(SharedPreferences sharedPreferences) {
 		int value = Integer.parseInt(sharedPreferences.getString(NEAREST_POINTS, "0"));
 		
@@ -74,14 +87,5 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		}
 		
 		nearestPointsPref.setSummary(summary);
-	}
-	
-	private void updateOfflineMap(SharedPreferences sharedPreferences) {
-		String value = sharedPreferences.getString(OFFLINE_MAP, "");
-		if (value == null || value.isEmpty()) {
-			offlineMapPref.setSummary(android.R.string.no);
-		} else {
-			offlineMapPref.setSummary(value);
-		}
 	}
 }

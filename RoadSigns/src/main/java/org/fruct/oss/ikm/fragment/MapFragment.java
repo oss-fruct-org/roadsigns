@@ -246,6 +246,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				log.debug("New location speed " + location.getSpeed());
 
 				myPositionOverlay.setLocation(myLocation);
+				mapView.invalidate();
 
 				if (isTracking) {
 					assert getActivity() != null;
@@ -793,12 +794,17 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
+		log.debug("MapFragment.onSharedPreferenceChanged");
+
 		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
 		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
-			String value = sharedPreferences.getString(key, "");
+			String value = sharedPreferences.getString(key, null);
+			if (value == null)
+				return;
+
 			tileProviderManager.setFile(value);
 
 			mapView.invalidate();

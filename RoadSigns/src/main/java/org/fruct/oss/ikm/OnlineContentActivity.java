@@ -214,7 +214,9 @@ public class OnlineContentActivity extends ActionBarActivity
 			deleteItem(currentItem);
 		} else if (menuItem == useItem) {
 			String path = remoteContent.getPath(currentItem.getItem());
+
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+			pref.edit().remove(pref_key).apply(); // Force notification
 			pref.edit().putString(pref_key, path).apply();
 			finish();
 		}

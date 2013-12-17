@@ -40,7 +40,7 @@ public class DirectionManager {
 	public final int BATCH_SIZE = 10;
 	
 	private int radius = 45;
-	private Routing routing;
+	private IRouting routing;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
 	private Location location;
@@ -51,7 +51,12 @@ public class DirectionManager {
 	// POI, that pass filters
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
 	
-	public DirectionManager(Routing routing) {
+	public DirectionManager(IRouting routing) {
+		this.routing = routing;
+	}
+
+	public void setRouting(IRouting routing) {
+		// TODO: no thread safe
 		this.routing = routing;
 	}
 	
@@ -110,7 +115,7 @@ public class DirectionManager {
 			nearest = 0;
 		}
 		
-		// Retaing only ${nearest} POI's 		
+		// Retain only ${nearest} POI's
 		if (nearest > 0 && activePoints.size() > nearest) {
 			Collections.sort(activePoints, distanceComparator);			
 			activePoints = activePoints.subList(0, nearest);
@@ -158,7 +163,7 @@ public class DirectionManager {
 		}
 		
 		long curr = System.nanoTime();
-		log.info("Routing results " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
+		log.info("GHRouting results " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
 		
 		sendResult();
 		

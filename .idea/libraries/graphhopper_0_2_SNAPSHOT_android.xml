@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/RoadSigns/lib/graphhopper-0.2-SNAPSHOT-android.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file:///tmp/graphhopper/core/src/main/java" />
+    </SOURCES>
   </library>
 </component>

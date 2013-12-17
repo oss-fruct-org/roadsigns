@@ -100,6 +100,10 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 public class OnlineContentActivity extends ActionBarActivity
 		implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener,
 					PopupMenu.OnDismissListener, RemoteContent.Listener {
+	public static final String ARG_REMOTE_CONTENT_URL = "org.fruct.oss.ikm.REMOTE_CONTENT_URL";
+	public static final String ARG_LOCAL_STORAGE = "org.fruct.oss.ikm.LOCAL_STORAGE";
+	public static final String ARG_PREF_KEY = "org.fruct.oss.ikm.PREF_KEY";
+
 	private static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
 	private RemoteContent remoteContent;
@@ -112,6 +116,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	private MenuItem useItem;
 
 	private RemoteContent.StorageItem currentItem;
+	private String pref_key;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -120,7 +125,11 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		remoteContent = RemoteContent.getInstance("https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml", "roadsigns-maps");
+		String remoteContentUrl = getIntent().getStringExtra(ARG_REMOTE_CONTENT_URL);
+		String localContentUrl = getIntent().getStringExtra(ARG_LOCAL_STORAGE);
+		pref_key = getIntent().getStringExtra(ARG_PREF_KEY);
+
+		remoteContent = RemoteContent.getInstance(remoteContentUrl, localContentUrl);
 
 		setUpActionBar();
 
@@ -206,7 +215,8 @@ public class OnlineContentActivity extends ActionBarActivity
 		} else if (menuItem == useItem) {
 			String path = remoteContent.getPath(currentItem.getItem());
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-			pref.edit().putString(SettingsActivity.OFFLINE_MAP, path).apply();
+			pref.edit().putString(pref_key, path).apply();
+			finish();
 		}
 
 		return true;

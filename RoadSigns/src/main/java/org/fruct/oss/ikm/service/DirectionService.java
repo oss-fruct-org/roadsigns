@@ -13,6 +13,8 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import com.graphhopper.util.PointList;
+import com.graphhopper.util.Unzipper;
+
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -23,6 +25,8 @@ import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +47,7 @@ public class DirectionService extends Service implements PointsListener,
 	private static final String MOCK_PROVIDER = "mock-provider";
 
 	private DirectionManager dirManager;
-	private Routing routing;
+	private GHRouting routing;
 	private IBinder binder = new DirectionBinder();
 	
 	private LocationReceiver locationReceiver;
@@ -54,6 +58,8 @@ public class DirectionService extends Service implements PointsListener,
 	private Location lastResultLocation;
 	
 	private Location lastLocation;
+
+	private String navigationPath;
 	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -70,10 +76,11 @@ public class DirectionService extends Service implements PointsListener,
 	public void onCreate() {
 		super.onCreate();
 
+		navigationPath = getFilesDir().getPath() + "/graphhopper/karelia.ghz";
+
 		locationReceiver = new LocationReceiver(this);
-		
-		routing = new OneToManyRouting();
-		dirManager = new DirectionManager(routing);
+
+		dirManager = new DirectionManager(createRouting());
 		dirManager.setListener(this);
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
@@ -84,13 +91,22 @@ public class DirectionService extends Service implements PointsListener,
 
 		log.debug("DirectionService created");
 	}
-	
+
+	private IRouting createRouting() {
+		if (new File(navigationPath + "/nodes").exists())
+			return new OneToManyRouting(navigationPath);
+		else
+			return new StubRouting();
+	}
+
 	@Override
 	public void onDestroy() {
 		log.debug("DirectionService destroyed");
 		if (locationReceiver != null && locationReceiver.isStarted()) {
 			locationReceiver.stop();
 		}
+
+		dirManager = null;
 		
 		PreferenceManager.getDefaultSharedPreferences(App.getContext())
 				.unregisterOnSharedPreferenceChangeListener(this);
@@ -199,17 +215,45 @@ public class DirectionService extends Service implements PointsListener,
 			List<PointDesc> added, List<PointDesc> removed) {
 		dirManager.calculateForPoints(newList);
 	}
-	
+
+	private void extractArchive(String path) {
+		File file = path == null ? null : new File(path);
+		if (file == null || !file.exists() || !file.canRead())
+			return;
+
+		// Use name 'karelia.ghz' only for backward compatibility
+		String targetDirectory = null;
+		try {
+			targetDirectory = navigationPath;
+			new Unzipper().unzip(path, targetDirectory, false);
+			log.info("Archive file {} successfully extracted", path);
+
+			// Check whether DirectionService active
+			if (this.dirManager != null)
+				dirManager.setRouting(createRouting());
+		} catch (IOException e) {
+			log.warn("Can not extract archive file {} to {}", path, targetDirectory);
+		}
+	}
+
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
 		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			dirManager.calculateForPoints(points);
+		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
+			final String archivePath = sharedPreferences.getString(SettingsActivity.NAVIGATION_DATA, null);
+
+			new Thread() {
+				@Override
+				public void run() {
+					extractArchive(archivePath);
+				}
+			};
 		}
 	}
 
-	
 	@Override
 	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
 		this.lastResultDirections = new ArrayList<Direction>(directions);
@@ -224,6 +268,7 @@ public class DirectionService extends Service implements PointsListener,
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);
 		intent.putExtra(CENTER, (Parcelable) center);
 		intent.putExtra(LOCATION, location);
+
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 

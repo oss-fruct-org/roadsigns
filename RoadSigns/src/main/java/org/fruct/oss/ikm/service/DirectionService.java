@@ -12,10 +12,10 @@ import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
-import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -38,8 +38,7 @@ public class DirectionService extends Service implements PointsListener,
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
 	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
-	public static final String POINTS = "org.fruct.oss.ikm.POINTS";
-	
+
 	// Broadcasts
 	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
@@ -47,7 +46,6 @@ public class DirectionService extends Service implements PointsListener,
 	private static final String MOCK_PROVIDER = "mock-provider";
 
 	private DirectionManager dirManager;
-	private GHRouting routing;
 	private IBinder binder = new DirectionBinder();
 	
 	private LocationReceiver locationReceiver;
@@ -75,6 +73,9 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onCreate() {
 		super.onCreate();
+
+		File internalDir = getFilesDir();
+		assert internalDir != null;
 
 		navigationPath = getFilesDir().getPath() + "/graphhopper/karelia.ghz";
 

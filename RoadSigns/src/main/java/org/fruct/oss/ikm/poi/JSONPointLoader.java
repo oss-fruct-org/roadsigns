@@ -61,7 +61,7 @@ public class JSONPointLoader extends PointLoader {
 			reader = new BufferedReader(new InputStreamReader(input));
 			StringBuilder builder = new StringBuilder();
 
-			String line = null;
+			String line;
 
 			while ((line = reader.readLine()) != null) {
 				builder.append(line).append('\n');
@@ -77,7 +77,7 @@ public class JSONPointLoader extends PointLoader {
 			if (reader != null) {
 				try {
 					reader.close();
-				} catch (IOException e) {
+				} catch (IOException ignored) {
 				}
 			}
 		}

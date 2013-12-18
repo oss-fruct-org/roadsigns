@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +26,6 @@ public class DetailsFragment extends Fragment {
 		super.onCreateView(inflater, container, savedInstanceState);
 		View view = inflater.inflate(R.layout.details_fragment, null, false);
 		return view;
-	
 	}
 	
 	@Override
@@ -33,6 +33,8 @@ public class DetailsFragment extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 
 		final PointDesc desc = (PointDesc) getArguments().getParcelable(DetailsActivity.POINT_ARG);
+		assert desc != null;
+
 		TextView titleView = (TextView) getActivity().findViewById(R.id.title_text);
 		TextView descView = (TextView) getActivity().findViewById(R.id.details_text);
 		
@@ -62,9 +64,8 @@ public class DetailsFragment extends Fragment {
 			}
 		});
 
-		
-		
 		titleView.setText(desc.getName());
+		//descView.setText(Html.fromHtml(desc.getDescription()));
 		descView.setText(desc.getDescription());
 	}
 }

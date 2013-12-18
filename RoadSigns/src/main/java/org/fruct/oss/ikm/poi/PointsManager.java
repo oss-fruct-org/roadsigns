@@ -1,27 +1,23 @@
 package org.fruct.oss.ikm.poi;
 
+import android.content.SharedPreferences;
+import android.content.res.AssetManager;
+import android.preference.PreferenceManager;
+
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import android.animation.Animator;
-import android.animation.ValueAnimator;
-import android.content.res.AssetManager;
-import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.Utils;
-
-import android.util.Log;
-
-import org.fruct.oss.ikm.poi.gets.Gets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PointsManager {
 	private static Logger log = LoggerFactory.getLogger(PointsManager.class);
@@ -50,6 +46,8 @@ public class PointsManager {
 
 	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
 
+	private GetsPointLoader getsPointsLoader;
+
 	public void addPointLoader(final PointLoader pointLoader) {
         log.trace("addPointLoader");
 		loaders.add(pointLoader);
@@ -58,13 +56,44 @@ public class PointsManager {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				pointLoader.loadPoints();
+				try {
+					pointLoader.loadPoints();
+				} catch (Exception ex) {
+					log.warn("Can not load points from loader " + pointLoader.getClass().getName(), ex);
+					return;
+				}
 
 				// When previous method returns, points guaranteed to be ready
 				List<PointDesc> newPoints = pointLoader.getPoints();
 				addPoints(newPoints);
 			}
 		});
+	}
+
+	public void ensureGetsState() {
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
+
+		if (!pref.getBoolean(SettingsActivity.GETS_ENABLE, false)) {
+			if (getsPointsLoader != null) {
+				final List<PointDesc> getsPoints = getsPointsLoader.getPoints();
+
+				if (getsPoints != null)
+					removePoints(getsPoints);
+
+				getsPointsLoader = null;
+			}
+			return;
+		}
+
+		getsPointsLoader = new GetsPointLoader("http://oss.fruct.org/projects/gets/service");
+		addPointLoader(getsPointsLoader);
+	}
+
+	private synchronized void removePoints(List<PointDesc> points) {
+		log.trace("Removing points");
+		this.points.removeAll(points);
+
+		notifyFiltersUpdated();
 	}
 
 	private synchronized void addPoints(List<PointDesc> points) {
@@ -75,6 +104,8 @@ public class PointsManager {
         createFiltersFromPoints(this.points);
         notifyFiltersUpdated();
     }
+
+
 
 	private void createFiltersFromPoints(List<PointDesc> points) {
         log.trace("Recreating filters");
@@ -166,6 +197,7 @@ public class PointsManager {
 
 			if (true) {
 				instance.addPointLoader(new StubPointLoader());
+				instance.ensureGetsState();
 				return instance;
 			}
 
@@ -193,10 +225,6 @@ public class PointsManager {
 				}
 				instance.addPointLoader(jsonLoader);
 			}
-
-			// Load gets
-
-
 		}
 		return instance;
 	}

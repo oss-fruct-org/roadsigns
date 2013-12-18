@@ -7,7 +7,6 @@ import android.net.NetworkInfo;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointLoader;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -33,19 +32,18 @@ public class Gets implements IGets {
 				"<login>%s</login>" +
 				"<password>%s</password>" +
 			"</params></request>";
-	public static final String LOAD_POINTS_REQUEST =
-			"<request><params>" +
-				"<auth_token>%s</auth_token>" +
-				"<category_name>%s</category_name>" +
-			"</params></request>";
 
-	private String token = "notoken";
+	private String token = null;
 	private String getsServerUrl;
 	private Context context;
 	private Logger log =  LoggerFactory.getLogger(Gets.class);
 
 	public Gets(String getsServerUrl) {
-		this.getsServerUrl = getsServerUrl;
+		if (getsServerUrl.endsWith("/")) {
+			this.getsServerUrl = getsServerUrl;
+		} else {
+			this.getsServerUrl = getsServerUrl + "/";
+		}
 		context = App.getContext();
 	}
 
@@ -109,9 +107,25 @@ public class Gets implements IGets {
 	}
 
 	@Override
-	public List<PointDesc> getPoints(final String category) throws IOException, LoginException{
+	public List<PointDesc> getPoints(final String category) throws IOException, LoginException {
 		try {
-			String responseStr = downloadUrl(getsServerUrl + "loadPoints.php", String.format(LOAD_POINTS_REQUEST, token, category));
+			StringBuilder requestBuilder = new StringBuilder();
+			requestBuilder.append("<request><params>");
+
+			if (token != null)
+				requestBuilder.append("<auth_token>").append(token).append("</auth_token>");
+
+			if (category != null) {
+				requestBuilder.append("<category_name>").append(category).append("</category_name>");
+			} else {
+				requestBuilder.append("<latitude>").append(61).append("</latitude>");
+				requestBuilder.append("<longitude>").append(34).append("</longitude>");
+				requestBuilder.append("<radius>").append(10000).append("</radius>");
+			}
+
+			requestBuilder.append("</params></request>");
+
+			String responseStr = downloadUrl(getsServerUrl + "loadPoints.php",requestBuilder.toString());
 			Response resp = processResponse(responseStr);
 			if (resp.getCode() != 0) {
 				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
@@ -123,13 +137,15 @@ public class Gets implements IGets {
 			List<PointDesc> pointList = Utils.map(document.getPlacemarks(), new Utils.Function<PointDesc, Kml.Placemark>() {
 				@Override
 				public PointDesc apply(Kml.Placemark placemark) {
-					return placemark.toPointDesc().setCategory(category);
+					return placemark.toPointDesc().setCategory(category == null ? "Unclassified" : category);
 				}
 			});
 			return pointList;
 		} catch (RuntimeException ex) {
+			// simple-xml throws too generic Exception
 			throw ex;
 		} catch (Exception e) {
+			log.warn("Incorrect answer from server", e);
 			throw new IOException("Incorrect answer from server");
 		}
 	}

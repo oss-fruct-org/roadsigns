@@ -9,7 +9,7 @@ public abstract class PointLoader {
 	 * Perform points loading
 	 * This method can block
 	 */
-	public abstract void loadPoints();
+	public abstract void loadPoints() throws Exception;
 
 	/**
 	 * Should be called by implementation

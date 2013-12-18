@@ -808,6 +808,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			tileProviderManager.setFile(value);
 
 			mapView.invalidate();
+		} else if (key.equals(SettingsActivity.GETS_ENABLE)) {
+			PointsManager.getInstance().ensureGetsState();
 		}
 	}
 }

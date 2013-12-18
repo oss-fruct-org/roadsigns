@@ -42,7 +42,7 @@ public class Kml implements IContent {
 		@Element(name = "open")
 		private int open;
 
-		@Element(name = "description", data=true)
+		@Element(name = "description", data=true, required = false)
 		private String description;
 
 		@ElementList(inline = true, entry = "Placemark")
@@ -65,8 +65,8 @@ public class Kml implements IContent {
 		public void setCoordinates(String coordinates) {
 			StringTokenizer tok = new StringTokenizer(coordinates, ",", false);
 
-			latitude = Double.parseDouble(tok.nextToken());
 			longitude = Double.parseDouble(tok.nextToken());
+			latitude = Double.parseDouble(tok.nextToken());
 		}
 
 		@Element(name="coordinates")

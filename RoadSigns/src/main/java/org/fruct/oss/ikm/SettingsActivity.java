@@ -17,6 +17,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String OFFLINE_MAP = "offline_map";
 	public static final String AUTOZOOM = "autozoom";
 	public static final String NAVIGATION_DATA = "navigation_data";
+	public static final String GETS_ENABLE = "gets_enable";
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;

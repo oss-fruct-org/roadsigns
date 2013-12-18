@@ -19,8 +19,10 @@ public class LocationReceiver implements LocationListener {
 	private LocationManager locationManager;
 	private Location oldLocation;
 	private Listener listener;
+
 	private boolean isDisableRealLocation = false;
 	private boolean isStarted = false;
+
 	private String lastReason = "";
 	
 	public LocationReceiver(Context context) {
@@ -58,7 +60,7 @@ public class LocationReceiver implements LocationListener {
 	 * Retrieves last location from LocationManager and sends it to listener
 	 */
 	public void sendLastLocation() {
-		if (listener == null)
+		if (listener == null && isStarted())
 			return;
 		
 		Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -98,9 +100,8 @@ public class LocationReceiver implements LocationListener {
 		if (isBetterLocation(location, oldLocation)) {
 			oldLocation = location;
 			
-			if (listener != null) {
+			if (listener != null && isStarted())
 				listener.newLocation(location);
-			}
 
 			log.info(dbg + " accepted. Reason = " + lastReason);
 		} else {

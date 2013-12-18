@@ -309,11 +309,45 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		
 		setHardwareAccelerationOff();
     }
+
+	private void setupOverlays() {
+		// Setup device position overlay
+		Overlay overlay = new Overlay(getActivity()) {
+			Paint paint = new Paint();
+			{
+				paint.setColor(Color.GRAY);
+				paint.setStrokeWidth(2);
+				paint.setStyle(Style.FILL);
+				paint.setAntiAlias(true);
+			}
+
+			@Override
+			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
+				if (shadow)
+					return;
+
+				Projection proj = mapView.getProjection();
+				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
+				canvas.drawCircle(mapCenter.x, mapCenter.y, 5, paint);
+			}
+		};
+
+		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
+		mapView.getOverlays().add(myPositionOverlay);
+
+		// Apply SHOW_ACCURACY preference
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
+
+		mapView.getOverlays().add(overlay);
+		createPOIOverlay();
+	}
     
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		Context context = getActivity();
+
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		// Initialize map		
 		createMapView(getView());
@@ -337,7 +371,9 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			GeoPoint target = getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
 			showPath(target);
 		}
-		
+
+		setupOverlays();
+
 		// Restore saved instance state
 		if (savedInstanceState == null) {
 			mapView.getController().setZoom(DEFAULT_ZOOM);
@@ -361,37 +397,6 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				startTracking();
 		}
 
-		// Setup device position overlay
-		Overlay overlay = new Overlay(context) {
-			Paint paint = new Paint();
-			{
-				paint.setColor(Color.GRAY);
-				paint.setStrokeWidth(2);
-				paint.setStyle(Style.FILL);
-				paint.setAntiAlias(true);
-			}
-
-			@Override
-			protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
-				if (shadow)
-					return;
-					
-				Projection proj = mapView.getProjection();
-				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
-				canvas.drawCircle(mapCenter.x, mapCenter.y, 5, paint);
-			}
-		};
-		
-		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
-		mapView.getOverlays().add(myPositionOverlay);
-		
-		// Apply SHOW_ACCURACY preference
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
-		
-		mapView.getOverlays().add(overlay);
-		createPOIOverlay();
-
 		setState(State.CREATED);
 		
 		checkProvidersEnabled();
@@ -408,6 +413,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 		// Listen for mapView shown
 		ViewTreeObserver vto = mapView.getViewTreeObserver();
+		assert vto != null;
 		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
 			@Override
 			public void onGlobalLayout() {

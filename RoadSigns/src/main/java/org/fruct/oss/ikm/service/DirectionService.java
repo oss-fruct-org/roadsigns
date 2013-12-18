@@ -106,12 +106,12 @@ public class DirectionService extends Service implements PointsListener,
 			locationReceiver.stop();
 		}
 
-		dirManager = null;
-		
 		PreferenceManager.getDefaultSharedPreferences(this)
 				.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
+
+		dirManager = null;
 	}
 		
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)

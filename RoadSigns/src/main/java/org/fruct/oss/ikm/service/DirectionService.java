@@ -203,7 +203,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	public PointList findPath(GeoPoint from, GeoPoint to) {
-		return routing.findPath(from, to);
+		return dirManager.findPath(from, to);
 	}
 	
 	public Location getLastLocation() {

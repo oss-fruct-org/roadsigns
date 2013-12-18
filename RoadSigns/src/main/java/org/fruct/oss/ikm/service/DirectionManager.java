@@ -251,4 +251,13 @@ public class DirectionManager {
 			sendResult();
 		}
 	}
+
+	public PointList findPath(GeoPoint from, GeoPoint to) {
+		if (routing instanceof GHRouting) {
+			return ((GHRouting) routing).findPath(from, to);
+		} else {
+			return null;
+		}
+	}
+
 }

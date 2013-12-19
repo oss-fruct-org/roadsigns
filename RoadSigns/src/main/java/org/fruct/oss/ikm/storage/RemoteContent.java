@@ -42,6 +42,7 @@ public class RemoteContent {
 		private LocalContentState state;
 		private IContentItem item;
 		private Object tag;
+		private boolean isDownloading;
 
 		public LocalContentState getState() {
 			return state;
@@ -57,6 +58,14 @@ public class RemoteContent {
 
 		public void setTag(Object tag) {
 			this.tag = tag;
+		}
+
+		public boolean isDownloading() {
+			return isDownloading;
+		}
+
+		public void setDownloading(boolean isDownloading) {
+			this.isDownloading = isDownloading;
 		}
 	}
 
@@ -242,6 +251,7 @@ public class RemoteContent {
 	}
 
 	public void startDownloading(final StorageItem item) {
+		item.setDownloading(true);
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -279,6 +289,7 @@ public class RemoteContent {
 				listener.errorDownloading(sItem, e);
 			}
 		} finally {
+			sItem.setDownloading(false);
 			if (conn != null) {
 				conn.close();
 			}

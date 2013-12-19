@@ -59,6 +59,8 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 
 		if (view == null) {
 			view = inflater.inflate(resource, parent, false);
+			assert view != null;
+
 			tag = new Tag();
 			tag.text1 = (TextView) view.findViewById(android.R.id.text1);
 			tag.text2 = (TextView) view.findViewById(android.R.id.text2);
@@ -154,6 +156,10 @@ public class OnlineContentActivity extends ActionBarActivity
 		currentItem = listItem;
 
 		PopupMenu menu = new PopupMenu(this, view);
+
+		if (currentItem.isDownloading())
+			return;
+
 		switch (listItem.getState()) {
 		case NEEDS_UPDATE:
 			updateItem = menu.getMenu().add("Update");

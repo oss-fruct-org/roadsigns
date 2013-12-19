@@ -14,6 +14,8 @@ import org.fruct.oss.ikm.poi.AllFilter;
 import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -40,8 +42,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 class PointAdapter extends ArrayAdapter<PointDesc> {
+	private static Logger log = LoggerFactory.getLogger(PointAdapter.class);
+
 	private int resource;
 	private List<PointDesc> points;
+
+	class Tag {
+		TextView textView;
+		TextView distanceView;
+		ImageView imageView;
+	}
 
 	public PointAdapter(Context context, int resource, List<PointDesc> points) {
 		super(context, resource, points);
@@ -53,33 +63,48 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
-		View view;
-		
-		if (convertView != null)
-			view = convertView;
-		else
+		View view = null;
+
+		Tag tag = null;
+
+		if (convertView != null && convertView.getTag() != null) {
+			tag = (Tag) convertView.getTag();
+			if (tag instanceof Tag) {
+				view = convertView;
+			}
+		}
+
+		if (view == null) {
 			view = inflater.inflate(resource, parent, false);
-		
-		ImageView imageView = (ImageView) view.findViewById(android.R.id.icon1);
-		
-		TextView textView = (TextView) view.findViewById(android.R.id.text1);
-		TextView distanceView = (TextView) view.findViewById(android.R.id.text2);
-		
+			assert view != null;
+
+			tag = new Tag();
+			tag.textView = (TextView) view.findViewById(android.R.id.text1);
+			tag.distanceView = (TextView) view.findViewById(android.R.id.text2);
+			tag.imageView = (ImageView) view.findViewById(android.R.id.icon1);
+			view.setTag(tag);
+		}
+
 		PointDesc point = points.get(position);
-		
-		textView.setText(point.getName());
+
+		if (point.getName().equals("Voenkomat")) {
+			log.debug("VOEN: {}", point.getRelativeDirection());
+		}
+
+		tag.textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
-			imageView.setImageResource(point.getRelativeDirection().getIconId());
-			imageView.setContentDescription(point.getRelativeDirection().getDescription());
-			distanceView.setVisibility(View.VISIBLE);
+			tag.imageView.setImageResource(point.getRelativeDirection().getIconId());
+			tag.imageView.setContentDescription(point.getRelativeDirection().getDescription());
+			tag.imageView.setVisibility(View.VISIBLE);
+			tag.distanceView.setVisibility(View.VISIBLE);
 		} else {
-			imageView.setVisibility(View.GONE);
+			tag.imageView.setVisibility(View.GONE);
 		}
 		if (point.getDistance() > 0) {
-			distanceView.setText(Utils.stringMeters(point.getDistance()));
-			distanceView.setVisibility(View.VISIBLE);
+			tag.distanceView.setText(Utils.stringMeters(point.getDistance()));
+			tag.distanceView.setVisibility(View.VISIBLE);
 		} else {
-			distanceView.setVisibility(View.GONE);
+			tag.distanceView.setVisibility(View.GONE);
 		}
 		
 		return view;
@@ -87,6 +112,8 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 }
 
 public class PointsFragment extends ListFragment implements TextWatcher {
+	private static Logger log = LoggerFactory.getLogger(PointsFragment.class);
+
 	private List<PointDesc> poiList;
 	private List<PointDesc> shownList = new ArrayList<PointDesc>();
 	private Filter currentFilter = null;

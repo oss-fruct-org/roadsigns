@@ -119,6 +119,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	private RemoteContent.StorageItem currentItem;
 	private String pref_key;
+	//private String currentActiveName;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

@@ -34,13 +34,19 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 		TextView text2;
 		ImageView icon;
 		RemoteContent.StorageItem storageItem;
+		TextView text3;
 	}
 
 	private final int resource;
+	private String currentActiveName;
 
 	public ContentAdapter(Context context, int resource, List<RemoteContent.StorageItem> objects) {
 		super(context, resource, objects);
 		this.resource = resource;
+	}
+
+	public void setCurrentItemName(String currentActiveName) {
+		this.currentActiveName = currentActiveName;
 	}
 
 	@Override
@@ -64,6 +70,7 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 			tag = new Tag();
 			tag.text1 = (TextView) view.findViewById(android.R.id.text1);
 			tag.text2 = (TextView) view.findViewById(android.R.id.text2);
+			tag.text3 = (TextView) view.findViewById(R.id.text3);
 			tag.icon = (ImageView) view.findViewById(android.R.id.icon1);
 			tag.storageItem = item;
 			view.setTag(tag);
@@ -93,6 +100,16 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 			resId = android.R.drawable.ic_notification_clear_all;
 		}
 
+		OnlineContentActivity.log.trace("{} {} " + item.getState().toString(), item.getItem().getName(), currentActiveName);
+		if (item.getItem().getName().equals(currentActiveName)
+				&& (item.getState() == RemoteContent.LocalContentState.UP_TO_DATE
+					|| item.getState() == RemoteContent.LocalContentState.NEEDS_UPDATE)) {
+			tag.text3.setVisibility(View.VISIBLE);
+			tag.text3.setText("Current item");
+		} else {
+			tag.text3.setVisibility(View.GONE);
+		}
+
 		tag.icon.setImageResource(resId);
 
 		return view;
@@ -106,7 +123,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	public static final String ARG_LOCAL_STORAGE = "org.fruct.oss.ikm.LOCAL_STORAGE";
 	public static final String ARG_PREF_KEY = "org.fruct.oss.ikm.PREF_KEY";
 
-	private static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
+	static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
 	private RemoteContent remoteContent;
 	private ListView listView;
@@ -119,10 +136,13 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	private RemoteContent.StorageItem currentItem;
 	private String pref_key;
-	//private String currentActiveName;
+	private String currentActiveName;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		log.trace("onCreate");
+
 		setContentView(R.layout.online_content_layout);
 
 		listView = (ListView) findViewById(R.id.list);
@@ -137,6 +157,20 @@ public class OnlineContentActivity extends ActionBarActivity
 		setUpActionBar();
 
 		remoteContent.setListener(this);
+
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+		String currentPath = pref.getString(pref_key, null);
+
+		log.trace("currentPath {}", currentPath);
+		if (currentPath != null) {
+			assert currentPath.lastIndexOf('/') + 1 <= currentPath.length();
+			currentActiveName = currentPath.substring(currentPath.lastIndexOf('/') + 1);
+			log.trace("currentActiveName {}", currentActiveName);
+
+			if (currentActiveName.isEmpty())
+				currentActiveName = null;
+		}
+
 		remoteContent.startInitialize();
 	}
 
@@ -147,7 +181,10 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	private void setContentList(List<RemoteContent.StorageItem> list) {
+		log.trace("setContentList");
+
 		adapter = new ContentAdapter(this, R.layout.point_list_item, list);
+		adapter.setCurrentItemName(currentActiveName);
 		listView.setAdapter(adapter);
 	}
 

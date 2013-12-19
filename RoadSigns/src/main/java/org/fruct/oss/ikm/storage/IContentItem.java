@@ -6,6 +6,11 @@ public interface IContentItem {
 	String getDescription();
 
 	int getSize();
+
+	int getDownloadSize();
+
 	String getUrl();
 	String getHash();
+
+	String getCompression();
 }

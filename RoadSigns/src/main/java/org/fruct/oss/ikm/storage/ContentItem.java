@@ -1,7 +1,10 @@
 package org.fruct.oss.ikm.storage;
 
+import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
+import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
+import org.simpleframework.xml.Text;
 
 @Root(name = "file")
 public class ContentItem implements IContentItem {
@@ -15,7 +18,7 @@ public class ContentItem implements IContentItem {
 	private int size;
 
 	@Element(name = "url")
-	private String url;
+	private Url url;
 
 	@Element(name = "hash")
 	private String hash;
@@ -23,6 +26,7 @@ public class ContentItem implements IContentItem {
 	@Element(name = "description", required = false)
 	private String description;
 
+	/*
 	public ContentItem(@Element(name = "name") String name,
 					   @Element(name = "type") String type,
 					   @Element(name = "size") int size,
@@ -36,6 +40,7 @@ public class ContentItem implements IContentItem {
 		this.hash = hash;
 		this.description = description;
 	}
+	*/
 
 	@Override
 	public String getName() {
@@ -53,8 +58,13 @@ public class ContentItem implements IContentItem {
 	}
 
 	@Override
+	public int getDownloadSize() {
+		return url.size == -1 ? size : url.size;
+	}
+
+	@Override
 	public String getUrl() {
-		return url;
+		return url.url;
 	}
 
 	@Override
@@ -67,4 +77,20 @@ public class ContentItem implements IContentItem {
 		return description;
 	}
 
+	@Override
+	public String getCompression() {
+		return url.compression;
+	}
+
+	@Root
+	private static class Url {
+		@Attribute(name = "compression", required = false)
+		String compression;
+
+		@Attribute(name = "size", required = false)
+		int size = -1;
+
+		@Text
+		String url;
+	}
 }

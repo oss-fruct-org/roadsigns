@@ -44,6 +44,7 @@ public class ContentTest extends AndroidTestCase {
 			assertEquals("karelia.map", item.getName());
 			assertEquals("http://www.dropbox.com/sh/p92qawz4omqnfxd/9WTLh0z-su/karelia.map", item.getUrl());
 			assertEquals(34482377, item.getSize());
+			assertEquals(34482377, item.getDownloadSize());
 			assertEquals("mapsforge-map", item.getType());
 			assertEquals("77b9ecd66b2153f211de887c02fc157b", item.getHash());
 		} finally {

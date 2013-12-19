@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.storage;
 
 import android.util.Pair;
 
+import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
@@ -13,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 public class RemoteContent {
 	public enum LocalContentState {
@@ -246,6 +249,7 @@ public class RemoteContent {
 			}
 
 		} catch (IOException e) {
+			log.warn("Cannot download file", e);
 			e.printStackTrace();
 		}
 	}
@@ -266,7 +270,7 @@ public class RemoteContent {
 			IContentItem item = sItem.item;
 			conn = provider.loadContentItem(item.getUrl());
 
-			ProgressInputStream progressStream = new ProgressInputStream(conn.getStream(), item.getSize(),
+			InputStream inputStream = new ProgressInputStream(conn.getStream(), item.getDownloadSize(),
 					80000, new ProgressInputStream.ProgressListener() {
 				@Override
 				public void update(int current, int max) {
@@ -277,14 +281,28 @@ public class RemoteContent {
 				}
 			});
 
-			storeContentItem(item, storage, progressStream);
+			// Setup gzip compression
+			if ("gzip".equals(item.getCompression())) {
+				log.info("Using gzip compression");
+				inputStream = new GZIPInputStream(inputStream);
+			}
+
+			// Setup content validation
+			try {
+				// TODO: de-hardcode hash algorithm
+				inputStream = new DigestInputStream(inputStream, "sha1", item.getHash());
+			} catch (NoSuchAlgorithmException e) {
+				log.warn("Unsupported hash algorithm");
+			}
+
+			storeContentItem(item, storage, inputStream);
 			sItem.state = LocalContentState.UP_TO_DATE;
 			if (listener != null) {
 				listener.downloadFinished(sItem);
 				listener.listReady(storageItems);
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.warn("Error downloading", e);
 			if (listener != null) {
 				listener.errorDownloading(sItem, e);
 			}

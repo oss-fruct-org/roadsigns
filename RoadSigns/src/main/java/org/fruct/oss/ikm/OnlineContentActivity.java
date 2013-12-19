@@ -82,7 +82,7 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 		else
 			tag.text1.setText(item.getItem().getName());
 
-		float mbSize = (float) item.getItem().getSize() / (1024 * 1024);
+		float mbSize = (float) item.getItem().getDownloadSize() / (1024 * 1024);
 		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
 
 		int resId = 0;
@@ -285,12 +285,12 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
-	public void downloadStateUpdated(final RemoteContent.StorageItem item, final int downloaded, int max) {
+	public void downloadStateUpdated(final RemoteContent.StorageItem item, final int downloaded, final int max) {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
-				float mbMax = (float) item.getItem().getSize() / (1024 * 1024);
+				float mbMax = (float) max / (1024 * 1024);
 				float mbCurrent = (float) downloaded / (1024 * 1024);
 				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
 			}

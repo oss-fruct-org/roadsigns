@@ -49,7 +49,7 @@ public class FileStorage implements IStorage, IProvider {
 			// Write file
 			int readed;
 			byte[] buf = new byte[BUFFER_SIZE];
-			while ((readed = input.read(buf)) > 0) {
+			while ((readed = input.read(buf)) != -1) {
 				output.write(buf, 0, readed);
 				if (interrupt) {
 					throw new InterruptedIOException();

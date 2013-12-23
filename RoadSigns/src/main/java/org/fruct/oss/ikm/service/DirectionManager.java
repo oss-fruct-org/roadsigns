@@ -212,18 +212,15 @@ public class DirectionManager {
 	private Pair<GeoPoint, GeoPoint> getDirectionNode(final GeoPoint current, PointList path) {				
 		GeoPoint point = new GeoPoint(0, 0);
 		GeoPoint prev = Utils.copyGeoPoint(current);
-		
-		//point.
-		
+
 		for (int i = 1; i < path.getSize(); i++) {
 			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
 			
 			final int dist = current.distanceTo(point);
 			if (dist > radius) {
 				final GeoPoint a = prev;
-				final GeoPoint b = point;
-				final double d = a.distanceTo(b) + 2;
-				final float bearing = (float) a.bearingTo(b);
+				final double d = a.distanceTo(point) + 2;
+				final float bearing = (float) a.bearingTo(point);
 				
 				// TODO: catch exceptions
 				double sol = Utils.solve(0, d, 0.1, new Utils.FunctionDouble() {
@@ -253,9 +250,14 @@ public class DirectionManager {
 	}
 
 	public PointList findPath(GeoPoint from, GeoPoint to) {
-		if (routing instanceof GHRouting) {
-			return ((GHRouting) routing).findPath(from, to);
-		} else {
+		try {
+			if (routing instanceof GHRouting) {
+				return ((GHRouting) routing).findPath(from, to);
+			} else {
+				return null;
+			}
+		} catch (Exception ex) {
+			log.error("findPath throw exception", ex);
 			return null;
 		}
 	}

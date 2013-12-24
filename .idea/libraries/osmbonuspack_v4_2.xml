@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/RoadSigns/lib/osmbonuspack_v4.2.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$USER_HOME$/tmp/osmbonuspack-read-only/OSMBonusPack/src" />
+    </SOURCES>
   </library>
 </component>

@@ -29,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -129,6 +130,7 @@ class MapState implements Parcelable {
 
 public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener, MyPositionOverlay.OnScrollListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
+	private DefaultInfoWindow infoWindow;
 
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
@@ -601,8 +603,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private void createPOIOverlay() {
 		log.trace("MapFragment.createPOIOverlay");
 		final Context context = getActivity();
-		
-		
+
 		List<PointDesc> points = PointsManager.getInstance()
 				.getFilteredPoints();
 		List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
@@ -614,10 +615,17 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 					}
 				});
 
-		final DefaultInfoWindow infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);		
+		infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);
 		ItemizedOverlayWithBubble<ExtendedOverlayItem> overlay2 = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
-				context, items2, mapView, infoWindow);
-		
+				context, items2, mapView, infoWindow) {
+			@Override
+			public boolean onSingleTapUp(MotionEvent e, MapView mapView) {
+				if (infoWindow.isOpen())
+					infoWindow.close();
+				return super.onSingleTapUp(e, mapView);
+			}
+		};
+
 		mapView.getOverlays().add(overlay2);
 		log.trace("MapFragment.createPOIOverlay EXIT");
 	}

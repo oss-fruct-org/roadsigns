@@ -1,11 +1,15 @@
 package org.fruct.oss.ikm.poi;
 
 import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.util.GeoPoint;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -26,7 +30,7 @@ public class PointDesc implements Serializable, Parcelable {
 	private RelativeDirection dir;
 
 	private int distance;
-	
+
 	public PointDesc(String name, int latE6, int lonE6) {
 		this.name = name;
 		this.latE6 = latE6;
@@ -42,6 +46,15 @@ public class PointDesc implements Serializable, Parcelable {
 	
 	public PointDesc setDescription(String d) {
 		this.desc = d;
+
+		Pattern pattern = Pattern.compile("\\\"(https?://.+?)\\\"");
+		Matcher match = pattern.matcher(desc);
+
+		if (match.find()) {
+			String str = match.group(1);
+			desc = str;
+		}
+
 		return this;
 	}
 	
@@ -98,9 +111,7 @@ public class PointDesc implements Serializable, Parcelable {
 		if (getClass() != obj.getClass())
 			return false;
 		PointDesc other = (PointDesc) obj;
-		if (internalId != other.internalId)
-			return false;
-		return true;
+		return internalId == other.internalId;
 	}
 
 	@Override
@@ -156,7 +167,6 @@ public class PointDesc implements Serializable, Parcelable {
 				ret.dir = RelativeDirection.values()[dirOrd];
 			
 			ret.distance = source.readInt();
-			
 			return ret;
 		}
 	};

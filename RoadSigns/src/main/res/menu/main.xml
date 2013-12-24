@@ -31,11 +31,4 @@
         android:icon="@drawable/filter"
         yourapp:showAsAction="never"
         android:title="@string/action_download_map"/>
-
-    <item
-        android:id="@+id/action_download_navigation_data"
-        android:icon="@drawable/filter"
-        yourapp:showAsAction="never"
-        android:title="@string/action_download_navigation_data"/>
-
 </menu>

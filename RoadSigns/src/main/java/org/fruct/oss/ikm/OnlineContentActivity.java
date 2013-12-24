@@ -2,11 +2,15 @@ package org.fruct.oss.ikm;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -25,10 +29,82 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
+class ContentDialog extends DialogFragment implements DialogInterface.OnClickListener, DialogInterface.OnMultiChoiceClickListener {
+	private boolean[] active;
+
+	interface Listener {
+		void downloadsSelected(List<RemoteContent.StorageItem> items);
+	}
+	
+	private List<RemoteContent.StorageItem> storageItems;
+	private Listener listener;
+	
+	ContentDialog(List<RemoteContent.StorageItem> storageItem, Listener listener) {
+		this.storageItems = storageItem;
+		this.listener = listener;
+	}
+
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
+		builder.setPositiveButton("Download", this);
+		builder.setNegativeButton(android.R.string.cancel, this);
+
+		builder.setTitle("Downloads");
+
+		String[] strings = new String[storageItems.size()];
+		active = new boolean[storageItems.size()];
+
+		for (int i = 0; i < storageItems.size(); i++) {
+			RemoteContent.StorageItem sItem = storageItems.get(i);
+
+			String type = sItem.getItem().getType();
+			if (type.equals("mapsforge-map"))
+				strings[i] = "Offline map";
+			else if (type.equals("graphhopper-map"))
+				strings[i] = "Navigation data";
+
+			active[i] = (sItem.getState() != RemoteContent.LocalContentState.UP_TO_DATE);
+		}
+
+		builder.setMultiChoiceItems(strings, active, this);
+
+		return builder.create();
+	}
+
+	@Override
+	public void onClick(DialogInterface dialogInterface, int i) {
+		if (i == DialogInterface.BUTTON_POSITIVE && listener != null) {
+			List<RemoteContent.StorageItem> ret = new ArrayList<RemoteContent.StorageItem>();
+
+			for (int j = 0; j < active.length; j++) {
+				if (active[j])
+					ret.add(storageItems.get(j));
+			}
+			
+			listener.downloadsSelected(ret);
+		}
+	}
+
+	@Override
+	public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+		active[i] = b;
+	}
+}
+
+class ContentListItem {
+	List<RemoteContent.StorageItem> contentItems;
+	String name;
+}
+
+class ContentAdapter extends ArrayAdapter<ContentListItem> {
 	class Tag {
 		TextView text1;
 		TextView text2;
@@ -40,7 +116,7 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 	private final int resource;
 	private String currentActiveName;
 
-	public ContentAdapter(Context context, int resource, List<RemoteContent.StorageItem> objects) {
+	public ContentAdapter(Context context, int resource, List<ContentListItem> objects) {
 		super(context, resource, objects);
 		this.resource = resource;
 	}
@@ -51,7 +127,7 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		RemoteContent.StorageItem item = getItem(position);
+		ContentListItem item = getItem(position);
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
 		View view = null;
 		Tag tag = null;
@@ -72,20 +148,20 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 			tag.text2 = (TextView) view.findViewById(android.R.id.text2);
 			tag.text3 = (TextView) view.findViewById(R.id.text3);
 			tag.icon = (ImageView) view.findViewById(android.R.id.icon1);
-			tag.storageItem = item;
 			view.setTag(tag);
-			item.setTag(tag);
+			for (RemoteContent.StorageItem sItem : item.contentItems)
+				sItem.setTag(tag);
+			/*for (IContentItem contentItem : item) {
+				item.contentItem(tag);
+			}*/
 		}
 
-		if (item.getItem().getDescription() != null)
-			tag.text1.setText(item.getItem().getDescription());
-		else
-			tag.text1.setText(item.getItem().getName());
+		tag.text1.setText(item.name);
+		tag.icon.setVisibility(View.GONE);
+		/*float mbSize = (float) item.getItem().getDownloadSize() / (1024 * 1024);
+		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));*/
 
-		float mbSize = (float) item.getItem().getDownloadSize() / (1024 * 1024);
-		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));
-
-		int resId = 0;
+		/*int resId = 0;
 		switch (item.getState()) {
 		case NOT_EXISTS:
 			resId = android.R.drawable.ic_input_add;
@@ -98,19 +174,19 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 			break;
 		case DELETED_FROM_SERVER:
 			resId = android.R.drawable.ic_notification_clear_all;
-		}
+		}*/
 
-		OnlineContentActivity.log.trace("{} {} " + item.getState().toString(), item.getItem().getName(), currentActiveName);
-		if (item.getItem().getName().equals(currentActiveName)
+		//OnlineContentActivity.log.trace("{} {} " + item.getState().toString(), item.getItem().getName(), currentActiveName);
+		/*if (item.getName().equals(currentActiveName)
 				&& (item.getState() == RemoteContent.LocalContentState.UP_TO_DATE
 					|| item.getState() == RemoteContent.LocalContentState.NEEDS_UPDATE)) {
 			tag.text3.setVisibility(View.VISIBLE);
 			tag.text3.setText("Current item");
 		} else {
 			tag.text3.setVisibility(View.GONE);
-		}
+		}*/
 
-		tag.icon.setImageResource(resId);
+		//tag.icon.setImageResource(resId);
 
 		return view;
 	}
@@ -118,7 +194,7 @@ class ContentAdapter extends ArrayAdapter<RemoteContent.StorageItem> {
 
 public class OnlineContentActivity extends ActionBarActivity
 		implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener,
-					PopupMenu.OnDismissListener, RemoteContent.Listener {
+					PopupMenu.OnDismissListener, RemoteContent.Listener, ContentDialog.Listener {
 	public static final String ARG_REMOTE_CONTENT_URL = "org.fruct.oss.ikm.REMOTE_CONTENT_URL";
 	public static final String ARG_LOCAL_STORAGE = "org.fruct.oss.ikm.LOCAL_STORAGE";
 	public static final String ARG_PREF_KEY = "org.fruct.oss.ikm.PREF_KEY";
@@ -130,11 +206,9 @@ public class OnlineContentActivity extends ActionBarActivity
 	private ContentAdapter adapter;
 
 	private MenuItem downloadItem;
-	private MenuItem deleteItem;
-	private MenuItem updateItem;
 	private MenuItem useItem;
 
-	private RemoteContent.StorageItem currentItem;
+	private ContentListItem currentItem;
 	private String pref_key;
 	private String currentActiveName;
 
@@ -183,41 +257,35 @@ public class OnlineContentActivity extends ActionBarActivity
 	private void setContentList(List<RemoteContent.StorageItem> list) {
 		log.trace("setContentList");
 
-		adapter = new ContentAdapter(this, R.layout.point_list_item, list);
+		Map<String /* name */, ContentListItem> listItems = new HashMap<String, ContentListItem>();
+		for (RemoteContent.StorageItem item : list) {
+			final String description = item.getItem().getDescription();
+			ContentListItem listItem = listItems.get(description);
+			if (listItem == null) {
+				listItem = new ContentListItem();
+				listItems.put(description, listItem);
+				listItem.name = description;
+				listItem.contentItems = new ArrayList<RemoteContent.StorageItem>();
+			}
+
+			listItem.contentItems.add(item);
+		}
+
+		adapter = new ContentAdapter(this, R.layout.point_list_item, new ArrayList<ContentListItem>(listItems.values()));
 		adapter.setCurrentItemName(currentActiveName);
 		listView.setAdapter(adapter);
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-		RemoteContent.StorageItem listItem = adapter.getItem(i);
-		currentItem = listItem;
-
 		PopupMenu menu = new PopupMenu(this, view);
+		currentItem = adapter.getItem(i);
 
-		if (currentItem.isDownloading())
-			return;
+		useItem = menu.getMenu().add("Use");
+		downloadItem = menu.getMenu().add("Download");
 
-		switch (listItem.getState()) {
-		case NEEDS_UPDATE:
-			updateItem = menu.getMenu().add("Update");
-			deleteItem = menu.getMenu().add("Delete");
-			useItem = menu.getMenu().add("Use");
-			break;
-
-		case NOT_EXISTS:
-			downloadItem = menu.getMenu().add("Download");
-			break;
-
-		case UP_TO_DATE:
-		case DELETED_FROM_SERVER:
-			deleteItem = menu.getMenu().add("Delete");
-			useItem = menu.getMenu().add("Use");
-			break;
-		}
-
-		menu.setOnMenuItemClickListener(this);
 		menu.setOnDismissListener(this);
+		menu.setOnMenuItemClickListener(this);
 
 		menu.show();
 	}
@@ -252,16 +320,22 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
-		if (menuItem == downloadItem || menuItem == updateItem) {
-			remoteContent.startDownloading(currentItem);
-		} else if (menuItem == deleteItem) {
-			deleteItem(currentItem);
+		if (menuItem == downloadItem) {
+			final ContentDialog dialog = new ContentDialog(currentItem.contentItems, this);
+			dialog.show(getSupportFragmentManager(), "content-dialog");
 		} else if (menuItem == useItem) {
-			String path = remoteContent.getPath(currentItem.getItem());
-
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 			pref.edit().remove(pref_key).apply(); // Force notification
-			pref.edit().putString(pref_key, path).apply();
+
+			final SharedPreferences.Editor edit = pref.edit();
+			for (RemoteContent.StorageItem sItem : currentItem.contentItems) {
+				if (sItem.getItem().getType().equals("mapsforge-map"))
+					edit.putString(SettingsActivity.OFFLINE_MAP, remoteContent.getPath(sItem.getItem()));
+				if (sItem.getItem().getType().equals("graphhopper-map"))
+					edit.putString(SettingsActivity.NAVIGATION_DATA, remoteContent.getPath(sItem.getItem()));
+			}
+			edit.apply();
+
 			finish();
 		}
 
@@ -270,7 +344,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void onDismiss(PopupMenu popupMenu) {
-		downloadItem = deleteItem = updateItem = null;
+		downloadItem = null;
 		currentItem = null;
 	}
 
@@ -305,5 +379,12 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	public void errorDownloading(RemoteContent.StorageItem item, IOException e) {
 		showToast("Error downloading");
+	}
+
+	@Override
+	public void downloadsSelected(List<RemoteContent.StorageItem> items) {
+		for (RemoteContent.StorageItem item : items) {
+			remoteContent.startDownloading(item);
+		}
 	}
 }

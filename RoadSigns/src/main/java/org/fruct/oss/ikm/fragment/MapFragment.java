@@ -531,17 +531,11 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 
 		case R.id.action_download_map:
 			intent = new Intent(getActivity(), OnlineContentActivity.class);
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
+			//intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
+			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml");
+
 			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
-			startActivity(intent);
-			break;
-
-		case R.id.action_download_navigation_data:
-			intent = new Intent(getActivity(), OnlineContentActivity.class);
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/Qot0fRS6AH/content2.xml");
-			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "graphhopper-maps");
-			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
 			startActivity(intent);
 			break;
 

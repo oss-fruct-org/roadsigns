@@ -43,7 +43,7 @@
         android:title="@string/pref_navigation_data" />
     
     <CheckBoxPreference 
-        android:defaultValue="false" 
+        android:defaultValue="true"
         android:key="autozoom"
         android:title="@string/pref_autozoom"
         android:summaryOn="@string/pref_autozoom_sumon"

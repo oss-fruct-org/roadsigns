@@ -14,6 +14,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -245,13 +246,33 @@ public class OnlineContentActivity extends ActionBarActivity
 				currentActiveName = null;
 		}
 
-		remoteContent.startInitialize();
+		remoteContent.startInitialize(false);
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		remoteContent.setListener(null);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.online_content, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.action_refresh:
+			if (remoteContent != null) {
+				remoteContent.startInitialize(true);
+			}
+			break;
+		}
+
+		return super.onOptionsItemSelected(item);
 	}
 
 	private void setContentList(List<RemoteContent.StorageItem> list) {
@@ -382,8 +403,8 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
-	public void errorInitializin(IOException e) {
-		showToast("Error initializing");
+	public void errorInitializing(IOException e) {
+		showToast("No network available. Switching to offline mode");
 	}
 
 	@Override

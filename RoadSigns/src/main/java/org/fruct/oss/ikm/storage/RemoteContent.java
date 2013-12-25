@@ -34,7 +34,7 @@ public class RemoteContent {
 		void downloadStateUpdated(StorageItem item, int downloaded, int max);
 		void downloadFinished(StorageItem item);
 		void errorDownloading(StorageItem item, IOException e);
-		void errorInitializin(IOException e);
+		void errorInitializing(IOException e);
 	}
 
 	public class StorageItem {
@@ -198,8 +198,8 @@ public class RemoteContent {
 	}
 
 	// Async methods
-	public void startInitialize() {
-		if (storageItems != null) {
+	public void startInitialize(boolean forceInitialization) {
+		if (storageItems != null && !forceInitialization) {
 			log.info("RemoteContent already initialized");
 			if (listener != null) {
 				listener.listReady(storageItems);
@@ -216,18 +216,28 @@ public class RemoteContent {
 	}
 
 	private void doAsyncInitialize() {
+		List<IContentItem> remoteContent = null;
+		List<IContentItem> localContent = null;
 		try {
 			initialize();
+			localContent = storageContent;
 
-			List<IContentItem> localContent = storageContent;
-			List<IContentItem> remoteContent = getContentList(provider, contentUrl);
-
-			HashMap<String, StorageItem> allItems = new HashMap<String, StorageItem>();
-			for (IContentItem item : localContent) {
-				log.debug("Local item {}", item.getName());
-				allItems.put(item.getName(), new StorageItem(LocalContentState.DELETED_FROM_SERVER, item));
+			remoteContent = getContentList(provider, contentUrl);
+		} catch (IOException e) {
+			log.warn("Cannot download file", e);
+			if (listener != null) {
+				listener.errorInitializing(e);
 			}
+			e.printStackTrace();
+		}
 
+		HashMap<String, StorageItem> allItems = new HashMap<String, StorageItem>();
+		for (IContentItem item : localContent) {
+			log.debug("Local item {}", item.getName());
+			allItems.put(item.getName(), new StorageItem(LocalContentState.DELETED_FROM_SERVER, item));
+		}
+
+		if (remoteContent != null) {
 			for (IContentItem item : remoteContent) {
 				log.debug("Remote item {}", item.getName());
 
@@ -244,17 +254,10 @@ public class RemoteContent {
 					sItem.state = LocalContentState.NEEDS_UPDATE;
 				}
 			}
+		}
 
-			if (listener != null) {
-				listener.listReady(storageItems = new ArrayList<StorageItem>(allItems.values()));
-			}
-
-		} catch (IOException e) {
-			log.warn("Cannot download file", e);
-			if (listener != null) {
-				listener.errorInitializin(e);
-			}
-			e.printStackTrace();
+		if (listener != null) {
+			listener.listReady(storageItems = new ArrayList<StorageItem>(allItems.values()));
 		}
 	}
 

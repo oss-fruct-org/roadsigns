@@ -290,8 +290,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void setHardwareAccelerationOff() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-            mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+			mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
     
     private void createMapView(View view) {
@@ -438,7 +438,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	private void checkNetworkAvailable() {
 		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
 
-		if (!networkToastShown && !networkActive) {
+		if (!networkToastShown && !networkActive && tileProviderManager.isOnline()) {
 			SharedPreferences pref = PreferenceManager
 					.getDefaultSharedPreferences(getActivity());
 

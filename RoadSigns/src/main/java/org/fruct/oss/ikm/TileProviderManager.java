@@ -25,7 +25,8 @@ public class TileProviderManager {
 	private MapTileProviderArray provider;
 	private MFTileSource mfSource;
 	private XYTileSource webSource;
-	
+	private boolean isOnline;
+
 	public TileProviderManager(Context context) {
     	SimpleRegisterReceiver register = new SimpleRegisterReceiver(context.getApplicationContext());		
     	
@@ -51,8 +52,10 @@ public class TileProviderManager {
 		
 		if (!mapPath.isEmpty() && mapFile.exists()) {
 			provider.setTileSource(mfSource);
+			isOnline = false;
 		} else {
 			provider.setTileSource(webSource);
+			isOnline = true;
 		}
 	}
 	
@@ -65,10 +68,15 @@ public class TileProviderManager {
 
 		if (path == null || path.isEmpty() || !file.exists()) {
 			provider.setTileSource(webSource);
+			isOnline = true;
 			return;
 		}
-	
+
 		mfSource.setFile(file);
 		provider.setTileSource(mfSource);
+	}
+
+	public boolean isOnline() {
+		return isOnline;
 	}
 }

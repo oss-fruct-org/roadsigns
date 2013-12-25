@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -159,6 +160,39 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 
 		tag.text1.setText(item.name);
 		tag.icon.setVisibility(View.GONE);
+
+		int idx = 0;
+		TextView[] views = {tag.text2, tag.text3};
+		for (TextView view2 : views)
+			view2.setVisibility(View.GONE);
+
+		for (RemoteContent.StorageItem sItem : item.contentItems) {
+			boolean active = false;
+			if (sItem.getState() == RemoteContent.LocalContentState.NOT_EXISTS)
+				active = true;
+
+			if (idx >= views.length)
+				break;
+
+			if (sItem.getItem().getType().equals("graphhopper-map")) {
+				views[idx].setText("Navigation data");
+				views[idx].setVisibility(View.VISIBLE);
+				if (active)
+					views[idx].setTypeface(null, Typeface.BOLD);
+				else
+					views[idx].setTypeface(null, Typeface.NORMAL);
+				idx++;
+			} else if (sItem.getItem().getType().equals("mapsforge-map")) {
+				views[idx].setText("Offline map");
+				views[idx].setVisibility(View.VISIBLE);
+				if (active)
+					views[idx].setTypeface(null, Typeface.BOLD);
+				else
+					views[idx].setTypeface(null, Typeface.NORMAL);
+				idx++;
+			}
+		}
+
 		/*float mbSize = (float) item.getItem().getDownloadSize() / (1024 * 1024);
 		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));*/
 

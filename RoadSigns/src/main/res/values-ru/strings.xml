@@ -16,6 +16,7 @@
     <string name="configure_providers">Настроить</string>
     <string name="warn_providers_disable">Больше не показывать</string>
     <string name="pref_navigation_data">Данные навигации</string>
+    <string name="warn_no_network">Сеть недоступна</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

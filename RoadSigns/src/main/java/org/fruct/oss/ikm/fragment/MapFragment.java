@@ -129,6 +129,7 @@ class MapState implements Parcelable {
 public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener, MyPositionOverlay.OnScrollListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 	private DefaultInfoWindow infoWindow;
+	private boolean networkToastShown;
 
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
@@ -238,6 +239,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			public void onReceive(Context context, Intent intent) {
 				log.debug("MapFragment LOCATION_CHANGED");
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
+				assert location != null;
+
 				myLocation = location;
 
 				log.debug("New location provider " + location.getProvider());
@@ -399,6 +402,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		setState(State.CREATED);
 		
 		checkProvidersEnabled();
+		checkNetworkAvailable();
 		
 		// Start tracking if preference set
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
@@ -414,6 +418,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		ViewTreeObserver vto = mapView.getViewTreeObserver();
 		assert vto != null;
 		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+			@SuppressWarnings("deprecation")
 			@Override
 			public void onGlobalLayout() {
 				log.debug("New size {} {}", mapView.getWidth(), mapView.getHeight());
@@ -430,7 +435,27 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			}
 		});
 	}
-	
+
+	private void checkNetworkAvailable() {
+		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
+
+		if (!networkToastShown && networkActive) {
+			SharedPreferences pref = PreferenceManager
+					.getDefaultSharedPreferences(getActivity());
+
+			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
+				NetworkDialog dialog = new NetworkDialog();
+				dialog.show(getFragmentManager(), "network-dialog");
+			} else {
+				Toast toast = Toast.makeText(getActivity(),
+						R.string.warn_no_network, Toast.LENGTH_SHORT);
+				toast.show();
+			}
+
+			networkToastShown = true;
+		}
+	}
+
 	private void checkProvidersEnabled() {
 		LocationManager locationManager = (LocationManager) getActivity()
 				.getSystemService(Context.LOCATION_SERVICE);

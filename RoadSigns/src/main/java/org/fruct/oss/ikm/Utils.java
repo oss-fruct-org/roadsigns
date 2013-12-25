@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 public class Utils {
 	private static Logger log = LoggerFactory.getLogger(Utils.class);
 
+	private Utils() {
+	}
+
 	public static interface Predicate<T> {
 		public boolean apply(T t);
 	}
@@ -337,7 +340,7 @@ public class Utils {
 		return r;
 	}
 
-	public boolean checkNetworkAvailability(Context context) {
+	public static boolean checkNetworkAvailability(Context context) {
 		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo info = connManager.getActiveNetworkInfo();
 		return info != null && info.isConnected();

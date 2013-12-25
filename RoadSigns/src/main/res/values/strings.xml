@@ -16,6 +16,8 @@
     <string name="configure_providers">Configure</string>
     <string name="warn_providers_disable">Don\'t show this dialog again</string>
     <string name="pref_navigation_data">Navigation data</string>
+    <string name="warn_no_network">Network not available</string>
+
 
     <plurals  name="distance_meters">
         <item quantity="one">Distance: %d meter</item>

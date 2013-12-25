@@ -4,7 +4,7 @@
     <string name="pref_store_location_sum">Загружать предыдущее местоположение при запуске приложения</string>
     
     <string name="pref_disable_warn_providers">Отключенные источники местоположения</string>
-    <string name="pref_disable_warn_providers_sum">Не выводить предупреждение об отключенных источниках местоположения</string>
+    <string name="pref_disable_warn_providers_sum">Не предупреждать об отключенных источниках местоположения</string>
     <string name="pref_show_accuracy">Показывать точность определения местоположения</string>
     
     <string name="pref_offline_map_path">Путь к файлу карты</string>
@@ -12,7 +12,9 @@
     <string name="pref_autozoom">Автоматический масштаб</string>
     <string name="pref_autozoom_sumon">Включено</string>
     <string name="pref_autozoom_sumoff">Выключено</string>
-    
+
+    <string name="pref_disable_warn_network_sum">Не предупреждать о недоступной сети</string>
+    <string name="pref_disable_warn_network">Недоступная сеть</string>
     
     <string name="pref_all">Все</string>
 </resources>

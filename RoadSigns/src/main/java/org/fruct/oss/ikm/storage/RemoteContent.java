@@ -34,6 +34,7 @@ public class RemoteContent {
 		void downloadStateUpdated(StorageItem item, int downloaded, int max);
 		void downloadFinished(StorageItem item);
 		void errorDownloading(StorageItem item, IOException e);
+		void errorInitializin(IOException e);
 	}
 
 	public class StorageItem {
@@ -250,6 +251,9 @@ public class RemoteContent {
 
 		} catch (IOException e) {
 			log.warn("Cannot download file", e);
+			if (listener != null) {
+				listener.errorInitializin(e);
+			}
 			e.printStackTrace();
 		}
 	}

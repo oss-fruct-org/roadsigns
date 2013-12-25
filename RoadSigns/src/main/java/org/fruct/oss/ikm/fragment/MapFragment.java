@@ -52,7 +52,6 @@ import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
 import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
@@ -61,7 +60,6 @@ import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
-import org.osmdroid.views.MapController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
@@ -145,8 +143,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		
 		private int idx;
 	}
-	
-	
+
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final GeoPoint ICELAND = new GeoPoint(64.133038, -21.898337);
 	public static final int DEFAULT_ZOOM = 18;
@@ -180,7 +177,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
-	private boolean toastShown;
+	private boolean providersToastShown;
 	private TileProviderManager tileProviderManager;
 
 	public MapFragment() {
@@ -387,7 +384,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			assert mapState != null;
 			mapView.getController().setZoom(mapState.zoomLevel);
 			mapView.getController().setCenter(mapState.center);
-			toastShown = mapState.providerWarningShown;
+			providersToastShown = mapState.providerWarningShown;
 
 			if (!mapState.directions.isEmpty())
 				updateDirectionOverlay(mapState.directions);
@@ -439,7 +436,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				.getSystemService(Context.LOCATION_SERVICE);
 
 		// Check if all providers disabled and show warning
-		if (!toastShown
+		if (!providersToastShown
 				&& !locationManager
 						.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 				&& !locationManager
@@ -455,7 +452,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 						R.string.warn_no_providers, Toast.LENGTH_SHORT);
 				toast.show();
 			}
-			toastShown = true;
+			providersToastShown = true;
 		}
 	}
 	
@@ -660,7 +657,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		mapState.center = Utils.copyGeoPoint(mapView.getMapCenter());
 		mapState.zoomLevel = mapView.getZoomLevel();
 		mapState.isTracking = isTracking;
-		mapState.providerWarningShown = toastShown;
+		mapState.providerWarningShown = providersToastShown;
 		//mapState.mapOrientation = mapView.getMapOrientation();
 		outState.putParcelable("map-state", mapState);
 	}

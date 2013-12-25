@@ -75,12 +75,6 @@ public class Gets implements IGets {
 		}
 	}
 
-	public boolean checkAvailability() {
-		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo info = connManager.getActiveNetworkInfo();
-		return info != null && info.isConnected();
-	}
-
 	/**
 	 * Receive list of categories
 	 * @return list of categories

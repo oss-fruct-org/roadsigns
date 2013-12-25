@@ -22,6 +22,8 @@ import org.osmdroid.util.GeoPoint;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 import android.util.TypedValue;
 import org.slf4j.Logger;
@@ -333,5 +335,11 @@ public class Utils {
 		}
 		
 		return r;
+	}
+
+	public boolean checkNetworkAvailability(Context context) {
+		ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo info = connManager.getActiveNetworkInfo();
+		return info != null && info.isConnected();
 	}
 }

@@ -382,6 +382,11 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
+	public void errorInitializin(IOException e) {
+		showToast("Error initializing");
+	}
+
+	@Override
 	public void downloadsSelected(List<RemoteContent.StorageItem> items) {
 		for (RemoteContent.StorageItem item : items) {
 			remoteContent.startDownloading(item);

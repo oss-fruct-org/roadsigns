@@ -36,7 +36,7 @@ public class Gets implements IGets {
 	private String token = null;
 	private String getsServerUrl;
 	private Context context;
-	private Logger log =  LoggerFactory.getLogger(Gets.class);
+	private static Logger log =  LoggerFactory.getLogger(Gets.class);
 
 	public Gets(String getsServerUrl) {
 		if (getsServerUrl.endsWith("/")) {

@@ -10,7 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class NetworkProvider implements IProvider {
-	private Logger log = LoggerFactory.getLogger(NetworkProvider.class);
+	private static Logger log = LoggerFactory.getLogger(NetworkProvider.class);
 
 	@Override
 	public IContentConnection loadContentItem(String urlStr) throws IOException {

@@ -24,7 +24,7 @@ class Entity {
 }
 
 public class TestTest extends AndroidTestCase {
-	private Logger log = LoggerFactory.getLogger(TestTest.class);
+	private static Logger log = LoggerFactory.getLogger(TestTest.class);
 
 	public void testXml() throws Exception {
 		String xml =

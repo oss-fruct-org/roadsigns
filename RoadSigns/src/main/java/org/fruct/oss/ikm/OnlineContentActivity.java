@@ -302,7 +302,8 @@ public class OnlineContentActivity extends ActionBarActivity
 		PopupMenu menu = new PopupMenu(this, view);
 		currentItem = adapter.getItem(i);
 
-		useItem = menu.getMenu().add("Use");
+		if (currentItem.contentItems.size() > 0)
+			useItem = menu.getMenu().add("Use");
 		downloadItem = menu.getMenu().add("Download");
 
 		menu.setOnDismissListener(this);

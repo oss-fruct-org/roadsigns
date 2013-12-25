@@ -3,28 +3,40 @@ package org.fruct.oss.ikm.fragment;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
+import android.view.ContextThemeWrapper;
 import android.widget.CheckBox;
 
+import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 
 public class NetworkDialog extends DialogFragment implements DialogInterface.OnClickListener{
 	private CheckBox checkbox;
 
+	private int getDialogTheme() {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			return android.R.style.Theme_Dialog;
+		} else {
+			return android.R.style.Theme_Holo_Light_Dialog;
+		}
+	}
+
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		AlertDialog.Builder builder = new AlertDialog.Builder(
+				new ContextThemeWrapper(getActivity(), getDialogTheme()));
 
-		builder.setTitle("Network unavailable");
+		builder.setMessage("Network unavailable");
 		builder.setPositiveButton("Use offline map", this);
 		builder.setNegativeButton("Keep using online map", this);
 
-		checkbox = new CheckBox(getActivity());
-
+		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), getDialogTheme()));
 		checkbox.setText(R.string.warn_providers_disable);
 		builder.setView(checkbox);
 
@@ -36,6 +48,14 @@ public class NetworkDialog extends DialogFragment implements DialogInterface.OnC
 		if (checkbox.isChecked()) {
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 			pref.edit().putBoolean(SettingsActivity.WARN_NETWORK_DISABLED, true).commit();
+		}
+
+		if (i == AlertDialog.BUTTON_POSITIVE) {
+			Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
+			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml");
+			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
+			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
+			getActivity().startActivity(intent);
 		}
 	}
 }

@@ -6,4 +6,9 @@
           android:title="@string/action_refresh"
           yourapp:showAsAction="ifRoom"
           android:icon="@drawable/ic_action_refresh"/>
+
+    <item android:id="@+id/action_stop"
+          android:title="@string/action_stop"
+          yourapp:showAsAction="ifRoom"
+          android:icon="@drawable/ic_action_stop"/>
 </menu>

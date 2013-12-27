@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
 public class RemoteContent {
@@ -35,6 +37,7 @@ public class RemoteContent {
 		void downloadFinished(StorageItem item);
 		void errorDownloading(StorageItem item, IOException e);
 		void errorInitializing(IOException e);
+		void downloadInterrupted(StorageItem sItem);
 	}
 
 	public class StorageItem {
@@ -80,6 +83,8 @@ public class RemoteContent {
 
 	private Listener listener;
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+	private List<Future<?>> currentTasks = new ArrayList<Future<?>>();
 
 	// Local storage content
 	private List<IContentItem> storageContent;
@@ -197,6 +202,18 @@ public class RemoteContent {
 		}
 	}
 
+	private synchronized void startTask(Runnable run) {
+		Future<?> future = executor.submit(run);
+		currentTasks.add(future);
+
+		// Delete old tasks
+		for (Iterator<Future<?>> iterator = currentTasks.iterator(); iterator.hasNext(); ) {
+			Future<?> task = iterator.next();
+			if (task.isDone())
+				iterator.remove();
+		}
+	}
+
 	// Async methods
 	public void startInitialize(boolean forceInitialization) {
 		if (storageItems != null && !forceInitialization) {
@@ -207,7 +224,7 @@ public class RemoteContent {
 			return;
 		}
 
-		executor.execute(new Runnable() {
+		startTask(new Runnable() {
 			@Override
 			public void run() {
 				doAsyncInitialize();
@@ -263,7 +280,7 @@ public class RemoteContent {
 
 	public void startDownloading(final StorageItem item) {
 		item.setDownloading(true);
-		executor.execute(new Runnable() {
+		startTask(new Runnable() {
 			@Override
 			public void run() {
 				doAsyncStartDownloading(item);
@@ -308,6 +325,11 @@ public class RemoteContent {
 				listener.downloadFinished(sItem);
 				listener.listReady(storageItems);
 			}
+		} catch (InterruptedIOException ex) {
+			log.info("Downloading interrupted");
+			if (listener != null) {
+				listener.downloadInterrupted(sItem);
+			}
 		} catch (IOException e) {
 			log.warn("Error downloading", e);
 			if (listener != null) {
@@ -319,6 +341,11 @@ public class RemoteContent {
 				conn.close();
 			}
 		}
+	}
+
+	public void stopAll() {
+		for (Future future : currentTasks)
+			future.cancel(true);
 	}
 
 	private static Map<Pair<String, String>, RemoteContent> instances = new HashMap<Pair<String, String>, RemoteContent>();

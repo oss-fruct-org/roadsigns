@@ -345,4 +345,11 @@ public class Utils {
 		NetworkInfo info = connManager.getActiveNetworkInfo();
 		return info != null && info.isConnected();
 	}
+
+	public static <T, R extends T> R safeCast(T t, Class<? extends R> cls) {
+		if (t == null || !cls.isInstance(t))
+			return null;
+		else
+			return cls.cast(t);
+	}
 }

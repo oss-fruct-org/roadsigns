@@ -24,20 +24,12 @@ public class FileStorage implements IStorage, IProvider {
 
 	private final String storagePath;
 
-	private volatile boolean interrupt = false;
-
 	public FileStorage(String storagePath) {
 		this.storagePath = storagePath;
 	}
 
 	@Override
-	public void interrupt() {
-		interrupt = true;
-	}
-
-	@Override
 	public void storeContentItem(String url, InputStream input) throws IOException {
-		interrupt = false;
 		OutputStream output = null;
 		String fileStr = storagePath + "/" + url;
 		File outputFile = new File(fileStr + ".roadsignsdownload");
@@ -51,7 +43,7 @@ public class FileStorage implements IStorage, IProvider {
 			byte[] buf = new byte[BUFFER_SIZE];
 			while ((readed = input.read(buf)) != -1) {
 				output.write(buf, 0, readed);
-				if (interrupt) {
+				if (Thread.interrupted()) {
 					throw new InterruptedIOException();
 				}
 			}

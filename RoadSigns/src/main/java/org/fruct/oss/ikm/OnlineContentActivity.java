@@ -2,16 +2,12 @@ package org.fruct.oss.ikm;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.widget.PopupMenu;
 import android.view.LayoutInflater;
@@ -37,70 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-class ContentDialog extends DialogFragment implements DialogInterface.OnClickListener, DialogInterface.OnMultiChoiceClickListener {
-	private boolean[] active;
-
-	interface Listener {
-		void downloadsSelected(List<RemoteContent.StorageItem> items);
-	}
-	
-	private List<RemoteContent.StorageItem> storageItems;
-	private Listener listener;
-	
-	ContentDialog(List<RemoteContent.StorageItem> storageItem, Listener listener) {
-		this.storageItems = storageItem;
-		this.listener = listener;
-	}
-
-	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-		builder.setPositiveButton("Download", this);
-		builder.setNegativeButton(android.R.string.cancel, this);
-
-		builder.setTitle("Downloads");
-
-		String[] strings = new String[storageItems.size()];
-		active = new boolean[storageItems.size()];
-
-		for (int i = 0; i < storageItems.size(); i++) {
-			RemoteContent.StorageItem sItem = storageItems.get(i);
-
-			String type = sItem.getItem().getType();
-			if (type.equals("mapsforge-map"))
-				strings[i] = "Offline map";
-			else if (type.equals("graphhopper-map"))
-				strings[i] = "Navigation data";
-
-			active[i] = (sItem.getState() != RemoteContent.LocalContentState.UP_TO_DATE);
-		}
-
-		builder.setMultiChoiceItems(strings, active, this);
-
-		return builder.create();
-	}
-
-	@Override
-	public void onClick(DialogInterface dialogInterface, int i) {
-		if (i == DialogInterface.BUTTON_POSITIVE && listener != null) {
-			List<RemoteContent.StorageItem> ret = new ArrayList<RemoteContent.StorageItem>();
-
-			for (int j = 0; j < active.length; j++) {
-				if (active[j])
-					ret.add(storageItems.get(j));
-			}
-			
-			listener.downloadsSelected(ret);
-		}
-	}
-
-	@Override
-	public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-		active[i] = b;
-	}
-}
-
 class ContentListItem {
 	List<RemoteContent.StorageItem> contentItems;
 	String name;
@@ -108,10 +40,10 @@ class ContentListItem {
 
 class ContentAdapter extends ArrayAdapter<ContentListItem> {
 	class Tag {
+		View parent;
 		TextView text1;
 		TextView text2;
 		ImageView icon;
-		RemoteContent.StorageItem storageItem;
 		TextView text3;
 	}
 
@@ -151,12 +83,15 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			tag.text3 = (TextView) view.findViewById(R.id.text3);
 			tag.icon = (ImageView) view.findViewById(android.R.id.icon1);
 			view.setTag(tag);
-			for (RemoteContent.StorageItem sItem : item.contentItems)
-				sItem.setTag(tag);
+			tag.parent = view;
+
 			/*for (IContentItem contentItem : item) {
 				item.contentItem(tag);
 			}*/
 		}
+
+		for (RemoteContent.StorageItem sItem : item.contentItems)
+			sItem.setTag(tag);
 
 		tag.text1.setText(item.name);
 		tag.icon.setVisibility(View.GONE);
@@ -243,7 +178,10 @@ public class OnlineContentActivity extends ActionBarActivity
 	private MenuItem downloadItem;
 	private MenuItem useItem;
 
+	// Last selected item
 	private ContentListItem currentItem;
+	private String currentItemName;
+
 	private String pref_key;
 	private String currentActiveName;
 
@@ -251,6 +189,9 @@ public class OnlineContentActivity extends ActionBarActivity
 		super.onCreate(savedInstanceState);
 
 		log.trace("onCreate");
+
+		if (savedInstanceState != null)
+			currentItemName = savedInstanceState.getString("current-item-idx");
 
 		setContentView(R.layout.online_content_layout);
 
@@ -262,10 +203,9 @@ public class OnlineContentActivity extends ActionBarActivity
 		pref_key = getIntent().getStringExtra(ARG_PREF_KEY);
 
 		remoteContent = RemoteContent.getInstance(remoteContentUrl, localContentUrl);
+		remoteContent.setListener(this);
 
 		setUpActionBar();
-
-		remoteContent.setListener(this);
 
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 		String currentPath = pref.getString(pref_key, null);
@@ -281,6 +221,12 @@ public class OnlineContentActivity extends ActionBarActivity
 		}
 
 		remoteContent.startInitialize(false);
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString("current-item-idx", currentItemName);
 	}
 
 	@Override
@@ -304,6 +250,10 @@ public class OnlineContentActivity extends ActionBarActivity
 				remoteContent.startInitialize(true);
 			}
 			break;
+
+		case R.id.action_stop:
+			remoteContent.stopAll();
+			break;
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -326,6 +276,10 @@ public class OnlineContentActivity extends ActionBarActivity
 			listItem.contentItems.add(item);
 		}
 
+		// Restore saved currentItem
+		if (currentItemName != null)
+			currentItem = listItems.get(currentItemName);
+
 		adapter = new ContentAdapter(this, R.layout.point_list_item, new ArrayList<ContentListItem>(listItems.values()));
 		adapter.setCurrentItemName(currentActiveName);
 		listView.setAdapter(adapter);
@@ -335,6 +289,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 		PopupMenu menu = new PopupMenu(this, view);
 		currentItem = adapter.getItem(i);
+		currentItemName = currentItem.name;
 
 		if (currentItem.contentItems.size() > 0)
 			useItem = menu.getMenu().add("Use");
@@ -377,18 +332,23 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
 		if (menuItem == downloadItem) {
-			final ContentDialog dialog = new ContentDialog(currentItem.contentItems, this);
+			final ContentDialog dialog = new ContentDialog(currentItem.contentItems);
+
 			dialog.show(getSupportFragmentManager(), "content-dialog");
 		} else if (menuItem == useItem) {
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-			pref.edit().remove(pref_key).apply(); // Force notification
 
 			final SharedPreferences.Editor edit = pref.edit();
 			for (RemoteContent.StorageItem sItem : currentItem.contentItems) {
-				if (sItem.getItem().getType().equals("mapsforge-map"))
+				if (sItem.getItem().getType().equals("mapsforge-map")) {
+					pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply(); // Force notification
 					edit.putString(SettingsActivity.OFFLINE_MAP, remoteContent.getPath(sItem.getItem()));
-				if (sItem.getItem().getType().equals("graphhopper-map"))
+				}
+
+				if (sItem.getItem().getType().equals("graphhopper-map")) {
+					pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply(); // Force notification
 					edit.putString(SettingsActivity.NAVIGATION_DATA, remoteContent.getPath(sItem.getItem()));
+				}
 			}
 			edit.apply();
 
@@ -400,8 +360,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void onDismiss(PopupMenu popupMenu) {
-		downloadItem = null;
-		currentItem = null;
+		downloadItem = useItem = null;
 	}
 
 	@Override
@@ -443,9 +402,23 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
-	public void downloadsSelected(List<RemoteContent.StorageItem> items) {
-		for (RemoteContent.StorageItem item : items) {
-			remoteContent.startDownloading(item);
-		}
+	public void downloadInterrupted(RemoteContent.StorageItem sItem) {
+		showToast("Download interrupted");
+
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				adapter.notifyDataSetChanged();
+			}
+		});
+	}
+
+	@Override
+	public void downloadsSelected(List<Integer> items) {
+		if (currentItem == null)
+			return;
+
+		for (int i : items)
+			remoteContent.startDownloading(currentItem.contentItems.get(i));
 	}
 }

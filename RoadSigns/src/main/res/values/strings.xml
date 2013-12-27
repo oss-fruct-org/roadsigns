@@ -18,6 +18,7 @@
     <string name="pref_navigation_data">Navigation data</string>
     <string name="warn_no_network">Network not available</string>
     <string name="action_refresh">Refresh</string>
+    <string name="action_stop">Stop</string>
 
 
     <plurals  name="distance_meters">

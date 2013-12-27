@@ -19,6 +19,7 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
@@ -126,10 +127,13 @@ class MapState implements Parcelable {
 	};
 }
 
-public class MapFragment extends Fragment implements MapListener, OnSharedPreferenceChangeListener, MyPositionOverlay.OnScrollListener {
+public class MapFragment extends Fragment implements MapListener,
+		OnSharedPreferenceChangeListener,
+		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 	private DefaultInfoWindow infoWindow;
 	private boolean networkToastShown;
+	private Overlay poiOverlay;
 
 	static enum State {
 		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
@@ -341,7 +345,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 
 		mapView.getOverlays().add(overlay);
-		createPOIOverlay();
+		updatePOIOverlay();
 	}
     
 	@Override
@@ -374,6 +378,9 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		}
 
 		setupOverlays();
+
+		// Listen for new points in PointManager
+		PointsManager.getInstance().addListener(this);
 
 		// Restore saved instance state
 		if (savedInstanceState == null) {
@@ -494,6 +501,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		getActivity().unbindService(serviceConnection);
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
+
+		PointsManager.getInstance().removeListener(this);
 
 		super.onDestroy();
 	}
@@ -621,9 +630,12 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		mapView.invalidate();
 	}
 	
-	private void createPOIOverlay() {
-		log.trace("MapFragment.createPOIOverlay");
+	private void updatePOIOverlay() {
+		log.trace("MapFragment.updatePOIOverlay");
 		final Context context = getActivity();
+
+		if (poiOverlay != null)
+			mapView.getOverlays().remove(poiOverlay);
 
 		List<PointDesc> points = PointsManager.getInstance()
 				.getFilteredPoints();
@@ -637,7 +649,7 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 				});
 
 		infoWindow = new POIInfoWindow(R.layout.bonuspack_bubble, mapView);
-		ItemizedOverlayWithBubble<ExtendedOverlayItem> overlay2 = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
+		poiOverlay = new ItemizedOverlayWithBubble<ExtendedOverlayItem>(
 				context, items2, mapView, infoWindow) {
 			@Override
 			public boolean onSingleTapUp(MotionEvent e, MapView mapView) {
@@ -647,8 +659,8 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			}
 		};
 
-		mapView.getOverlays().add(overlay2);
-		log.trace("MapFragment.createPOIOverlay EXIT");
+		mapView.getOverlays().add(poiOverlay);
+		log.trace("MapFragment.updatePOIOverlay EXIT");
 	}
 	
 	public void startTracking() {
@@ -788,7 +800,6 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 			stopTracking();
 	}
 
-
 	private void updateRadius() {
 		Projection proj = mapView.getProjection();
 
@@ -840,5 +851,11 @@ public class MapFragment extends Fragment implements MapListener, OnSharedPrefer
 		} else if (key.equals(SettingsActivity.GETS_ENABLE)) {
 			PointsManager.getInstance().ensureGetsState();
 		}
+	}
+
+	@Override
+	public void filterStateChanged(List<PointDesc> newList, List<PointDesc> added, List<PointDesc> removed) {
+		assert Looper.getMainLooper().getThread() == Thread.currentThread();
+		updatePOIOverlay();
 	}
 }

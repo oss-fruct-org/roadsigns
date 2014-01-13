@@ -77,14 +77,14 @@ public class GetsTest extends AndroidTestCase {
 			Placemark mark1 = doc.getPlacemarks().get(0);
 			assertEquals("test place 1", mark1.getName());
 			assertEquals("test description 1", mark1.getDescription());
-			assertEquals(12.0, mark1.getLatitude(), 0.01);
-			assertEquals(34.0, mark1.getLongitude(), 0.01);
+			assertEquals(12.0, mark1.getLongitude(), 0.01);
+			assertEquals(34.0, mark1.getLatitude(), 0.01);
 
 			Placemark mark2 = doc.getPlacemarks().get(1);
 			assertEquals("test place 2", mark2.getName());
 			assertEquals("test description 2", mark2.getDescription());
-			assertEquals(34.1, mark2.getLatitude(), 0.01);
-			assertEquals(56.0, mark2.getLongitude(), 0.01);
+			assertEquals(34.1, mark2.getLongitude(), 0.01);
+			assertEquals(56.0, mark2.getLatitude(), 0.01);
 		} finally {
 			if (stream != null)
 				stream.close();

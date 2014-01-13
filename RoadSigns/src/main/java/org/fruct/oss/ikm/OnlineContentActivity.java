@@ -45,6 +45,12 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 		TextView text2;
 		ImageView icon;
 		TextView text3;
+
+		// Item corresponding second text line
+		RemoteContent.StorageItem item1;
+
+		// Item corresponding third text line
+		RemoteContent.StorageItem item2;
 	}
 
 	private final int resource;
@@ -108,6 +114,11 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 
 			if (idx >= views.length)
 				break;
+
+			if (idx == 0)
+				tag.item1 = sItem;
+			else
+				tag.item2 = sItem;
 
 			if (sItem.getItem().getType().equals("graphhopper-map")) {
 				views[idx].setText("Navigation data");
@@ -379,9 +390,13 @@ public class OnlineContentActivity extends ActionBarActivity
 			@Override
 			public void run() {
 				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
+
+				TextView textView = tag.item1 == item ? tag.text2 : tag.text3;
+				textView.setTypeface(null, Typeface.NORMAL);
+
 				float mbMax = (float) max / (1024 * 1024);
 				float mbCurrent = (float) downloaded / (1024 * 1024);
-				tag.text2.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
+				textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
 			}
 		});
 	}

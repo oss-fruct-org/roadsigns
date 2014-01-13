@@ -44,7 +44,7 @@
             android:layout_height="64dp"
             android:layout_marginLeft="16dp"
             android:contentDescription="Search button"
-            android:src="@drawable/ic_action_search" />
+            android:src="@drawable/ic_action_directions" />
 
     </LinearLayout>
 

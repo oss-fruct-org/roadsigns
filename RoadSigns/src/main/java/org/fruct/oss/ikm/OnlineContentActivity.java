@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -109,8 +110,15 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 
 		for (RemoteContent.StorageItem sItem : item.contentItems) {
 			boolean active = false;
+			boolean needUpdate = false;
+
 			if (sItem.getState() == RemoteContent.LocalContentState.NOT_EXISTS)
 				active = true;
+
+			if (sItem.getState() == RemoteContent.LocalContentState.NEEDS_UPDATE) {
+				active = true;
+				needUpdate = true;
+			}
 
 			if (idx >= views.length)
 				break;
@@ -120,54 +128,25 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			else
 				tag.item2 = sItem;
 
+			String text = "";
 			if (sItem.getItem().getType().equals("graphhopper-map")) {
-				views[idx].setText("Navigation data");
-				views[idx].setVisibility(View.VISIBLE);
-				if (active)
-					views[idx].setTypeface(null, Typeface.BOLD);
-				else
-					views[idx].setTypeface(null, Typeface.NORMAL);
-				idx++;
+				text = getContext().getString(R.string.navigation_data);
 			} else if (sItem.getItem().getType().equals("mapsforge-map")) {
-				views[idx].setText("Offline map");
-				views[idx].setVisibility(View.VISIBLE);
-				if (active)
-					views[idx].setTypeface(null, Typeface.BOLD);
-				else
-					views[idx].setTypeface(null, Typeface.NORMAL);
-				idx++;
+				text = getContext().getString(R.string.offline_map);
 			}
+
+			if (needUpdate)
+				text += " (" + getContext().getString(R.string.update_availabe) +")";
+			views[idx].setText(text);
+
+			views[idx].setVisibility(View.VISIBLE);
+			if (active)
+				views[idx].setTypeface(null, Typeface.BOLD);
+			else
+				views[idx].setTypeface(null, Typeface.NORMAL);
+
+			idx++;
 		}
-
-		/*float mbSize = (float) item.getItem().getDownloadSize() / (1024 * 1024);
-		tag.text2.setText(String.format(Locale.getDefault(), "%.3f MB", mbSize));*/
-
-		/*int resId = 0;
-		switch (item.getState()) {
-		case NOT_EXISTS:
-			resId = android.R.drawable.ic_input_add;
-			break;
-		case UP_TO_DATE:
-			resId = android.R.drawable.ic_input_get;
-			break;
-		case NEEDS_UPDATE:
-			resId = android.R.drawable.ic_input_delete;
-			break;
-		case DELETED_FROM_SERVER:
-			resId = android.R.drawable.ic_notification_clear_all;
-		}*/
-
-		//OnlineContentActivity.log.trace("{} {} " + item.getState().toString(), item.getItem().getName(), currentActiveName);
-		/*if (item.getName().equals(currentActiveName)
-				&& (item.getState() == RemoteContent.LocalContentState.UP_TO_DATE
-					|| item.getState() == RemoteContent.LocalContentState.NEEDS_UPDATE)) {
-			tag.text3.setVisibility(View.VISIBLE);
-			tag.text3.setText("Current item");
-		} else {
-			tag.text3.setVisibility(View.GONE);
-		}*/
-
-		//tag.icon.setImageResource(resId);
 
 		return view;
 	}
@@ -303,8 +282,8 @@ public class OnlineContentActivity extends ActionBarActivity
 		currentItemName = currentItem.name;
 
 		if (currentItem.contentItems.size() > 0)
-			useItem = menu.getMenu().add("Use");
-		downloadItem = menu.getMenu().add("Download");
+			useItem = menu.getMenu().add(R.string.use);
+		downloadItem = menu.getMenu().add(R.string.download);
 
 		menu.setOnDismissListener(this);
 		menu.setOnMenuItemClickListener(this);
@@ -403,22 +382,22 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void downloadFinished(RemoteContent.StorageItem item) {
-		showToast("Download finished");
+		showToast(getString(R.string.download_finished));
 	}
 
 	@Override
 	public void errorDownloading(RemoteContent.StorageItem item, IOException e) {
-		showToast("Error downloading");
+		showToast(getString(R.string.error_downloading));
 	}
 
 	@Override
 	public void errorInitializing(IOException e) {
-		showToast("No network available. Switching to offline mode");
+		showToast(getString(R.string.no_networks_offline));
 	}
 
 	@Override
 	public void downloadInterrupted(RemoteContent.StorageItem sItem) {
-		showToast("Download interrupted");
+		showToast(getString(R.string.download_interrupted));
 
 		runOnUiThread(new Runnable() {
 			@Override

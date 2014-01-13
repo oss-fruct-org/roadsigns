@@ -15,6 +15,7 @@ import java.util.List;
 public class ContentDialog extends DialogFragment implements DialogInterface.OnClickListener, DialogInterface.OnMultiChoiceClickListener {
 	private boolean[] active;
 	private String[] strings;
+	private List<RemoteContent.StorageItem> storageItems;
 
 	interface Listener {
 		void downloadsSelected(List<Integer> items);
@@ -26,21 +27,7 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	}
 
 	public ContentDialog(List<RemoteContent.StorageItem> storageItems) {
-		strings = new String[storageItems.size()];
-		active = new boolean[storageItems.size()];
-
-		for (int i = 0; i < storageItems.size(); i++) {
-			RemoteContent.StorageItem sItem = storageItems.get(i);
-
-			String type = sItem.getItem().getType();
-			if (type.equals("mapsforge-map"))
-				strings[i] = "Offline map";
-			else if (type.equals("graphhopper-map"))
-				strings[i] = "Navigation data";
-
-			active[i] = (sItem.getState() != RemoteContent.LocalContentState.UP_TO_DATE);
-		}
-
+		this.storageItems = storageItems;
 	}
 
 	@Override
@@ -55,6 +42,21 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
 
+		strings = new String[storageItems.size()];
+		active = new boolean[storageItems.size()];
+
+		for (int i = 0; i < storageItems.size(); i++) {
+			RemoteContent.StorageItem sItem = storageItems.get(i);
+
+			String type = sItem.getItem().getType();
+			if (type.equals("mapsforge-map"))
+				strings[i] = getString(R.string.offline_map);
+			else if (type.equals("graphhopper-map"))
+				strings[i] = getString(R.string.navigation_data);
+
+			active[i] = (sItem.getState() != RemoteContent.LocalContentState.UP_TO_DATE);
+		}
+
 		try {
 			listener = (Listener) activity;
 		} catch (ClassCastException ex) {
@@ -66,10 +68,10 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-		builder.setPositiveButton("Download", this);
+		builder.setPositiveButton(R.string.download, this);
 		builder.setNegativeButton(android.R.string.cancel, this);
 
-		builder.setTitle("Downloads");
+		builder.setTitle(R.string.download);
 
 		if (savedInstanceState != null) {
 			strings = savedInstanceState.getStringArray("strings");

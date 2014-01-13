@@ -4,7 +4,7 @@
     <string name="action_settings">Настройки</string>
     <string name="action_search">Поиск</string>
     <string name="action_place">Показать достопримечательности</string>
-    <string name="action_download_map">Скачать карты</string>
+    <string name="action_download_map">Карты</string>
     <string name="action_download_navigation_data">Скачать данные навигации</string>
 
     <string name="title_activity_points">Достопримечательности</string>
@@ -17,8 +17,20 @@
     <string name="warn_providers_disable">Больше не показывать</string>
     <string name="pref_navigation_data">Данные навигации</string>
     <string name="warn_no_network">Сеть недоступна</string>
-    <string name="action_refresh">Refresh</string>
-    <string name="action_stop">Stop</string>
+    <string name="action_refresh">Обновить</string>
+    <string name="action_stop">Остановить</string>
+
+    <string name="no_networks_offline">Сеть недоступна</string>
+    <string name="download_interrupted">Загрузка прервана</string>
+    <string name="error_downloading">Ошибка загрузки</string>
+    <string name="download_finished">Загрузка завершена</string>
+
+    <string name="navigation_data">Данные навигации</string>
+    <string name="offline_map">Карта</string>
+
+    <string name="use">Использовать</string>
+    <string name="download">Загрузить</string>
+    <string name="update_availabe">доступно обновление</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

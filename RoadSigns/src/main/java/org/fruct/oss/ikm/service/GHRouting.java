@@ -3,9 +3,9 @@ package org.fruct.oss.ikm.service;
 import org.osmdroid.util.GeoPoint;
 
 import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.util.AbstractFlagEncoder;
+import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
-import com.graphhopper.storage.index.Location2IDIndex;
+import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
 import org.slf4j.Logger;
@@ -66,8 +66,8 @@ public abstract class GHRouting implements IRouting {
 		if (!ensureInitialized())
 			return null;
 		
-		Location2IDIndex index = hopper.getLocationIndex();
-		AbstractFlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
+		LocationIndex index = hopper.getLocationIndex();
+		FlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
 		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
 		
 		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,

@@ -31,6 +31,7 @@ public class UtilsTest extends AndroidTestCase {
 	public void testHash() {
 		assertEquals("76d80224611fc919a5d54f0ff9fba446", Utils.hashString("qwe"));
 		assertEquals("d41d8cd98f00b204e9800998ecf8427e", Utils.hashString(""));
+		assertEquals("0887f50642254837dfedb5bbbc0a1e66", Utils.hashString("a1aaaaaa"));
 	}
 	
 	public void testHashStream() throws Exception {

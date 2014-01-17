@@ -8,10 +8,10 @@ import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.routing.util.ShortestCalc;
-import com.graphhopper.routing.util.WeightCalculation;
+import com.graphhopper.routing.util.ShortestWeighting;
+import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
-import com.graphhopper.storage.index.Location2IDIndex;
+import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
 public class OneToManyRouting extends GHRouting {
@@ -19,10 +19,10 @@ public class OneToManyRouting extends GHRouting {
 	private EncodingManager encodingManager;
 	private FlagEncoder encoder;
 	private EdgeFilter edgeFilter;
-	private WeightCalculation weightCalc;
+	private Weighting weightCalc;
 	private Graph graph;
 	
-	private Location2IDIndex index;
+	private LocationIndex index;
 	private com.graphhopper.routing.DijkstraOneToMany algo;
 
 	public OneToManyRouting(String filePath) {
@@ -42,7 +42,7 @@ public class OneToManyRouting extends GHRouting {
 		
 		index = hopper.getLocationIndex();
 		
-		weightCalc = new ShortestCalc();
+		weightCalc = new ShortestWeighting();
 		
 		fromId = index.findClosest(from.getLatitudeE6() / 1e6, from.getLongitudeE6() / 1e6, edgeFilter).getClosestNode();
 		algo = new DijkstraOneToMany(graph, encoder, weightCalc);
@@ -62,5 +62,4 @@ public class OneToManyRouting extends GHRouting {
 		
 		return path.calcPoints();
 	}
-
 }

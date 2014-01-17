@@ -8,14 +8,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
@@ -64,14 +61,27 @@ public class Utils {
 		return (float) (StrictMath.IEEEremainder(degree, 360));
 	}
 
-	public static String toHex(byte[] arr) {
+	/*public static String toHex(byte[] arr) {
 		StringBuilder builder = new StringBuilder();
 		for (byte b : arr) {
 			builder.append(Integer.toHexString((b & 0xff) + 0x100).substring(1));
 		}
 		return builder.toString();
+	}*/
+
+	private static final char[] hexDigits = "0123456789abcdef".toCharArray();
+	public static String toHex(byte[] arr) {
+		final char[] str = new char[arr.length * 2];
+
+		for (int i = 0; i < arr.length; i++) {
+			final int v = arr[i] & 0xff;
+			str[2 * i] = hexDigits[v >>> 4];
+			str[2 * i + 1] = hexDigits[v & 0x0f];
+		}
+
+		return new String(str);
 	}
-	
+
 	public static String hashString(String input) {
 		MessageDigest md5;
 		try {

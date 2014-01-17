@@ -152,8 +152,8 @@ public class DirectionManager {
 				continue;
 			
 			readyPoints.put(point, path);
-			
-			int dist = (int) path.calculateDistance(new DistanceCalc3D());
+
+			int dist = (int) path.calcDistance(new DistanceCalc3D());
 			point.setDistance(dist);
 			
 			pointsProcessed++;

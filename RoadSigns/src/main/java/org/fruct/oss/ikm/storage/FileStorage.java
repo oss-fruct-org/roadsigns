@@ -54,9 +54,8 @@ public class FileStorage implements IStorage, IProvider {
 			outputFile.delete();
 			throw e;
 		} finally {
-			if (output != null) {
+			if (output != null)
 				output.close();
-			}
 		}
 	}
 

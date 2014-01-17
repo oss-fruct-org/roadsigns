@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/RoadSigns/lib/osmdroid-android-4.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="file://$USER_HOME$/tmp/osmdroid-read-only/osmdroid-android/src/main/java" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

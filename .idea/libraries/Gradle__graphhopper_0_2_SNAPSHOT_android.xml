@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: graphhopper-0.2-SNAPSHOT-android">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/RoadSigns/lib/graphhopper-0.2-SNAPSHOT-android.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

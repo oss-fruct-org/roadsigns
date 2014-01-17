@@ -148,9 +148,11 @@ public class DirectionManager {
 			}
 
 			PointList path = routing.route(point.toPoint());
-			if (path == null || path.getSize() < 2)
+			if (path == null || path.getSize() < 2) {
+				log.warn("No path found for point {}", point.getName());
 				continue;
-			
+			}
+
 			readyPoints.put(point, path);
 
 			int dist = (int) path.calcDistance(new DistanceCalc3D());
@@ -158,7 +160,7 @@ public class DirectionManager {
 			
 			pointsProcessed++;
 			if (pointsProcessed >= BATCH_SIZE) {
-				needContinue = true;
+				needContinue = !Thread.interrupted();
 				break;
 			}
 		}

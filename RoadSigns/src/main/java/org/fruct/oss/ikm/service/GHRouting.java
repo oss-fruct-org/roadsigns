@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.service;
 import org.osmdroid.util.GeoPoint;
 
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.storage.index.LocationIndex;
@@ -12,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class GHRouting implements IRouting {
-	private static Logger log = LoggerFactory.getLogger(GHRouting.class);
+	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
 
 	private String path;
 	private GeoPoint oldGeoPoint = null;
@@ -42,6 +43,10 @@ public abstract class GHRouting implements IRouting {
 		try {
 			hopper = new GraphHopper().forMobile();
 			hopper.disableCHShortcuts();
+			hopper.setPreciseIndexResolution(0);
+			//hopper.setMemoryMapped();
+
+			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
@@ -68,7 +73,7 @@ public abstract class GHRouting implements IRouting {
 		
 		LocationIndex index = hopper.getLocationIndex();
 		FlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
-		DefaultEdgeFilter filter = new DefaultEdgeFilter(encoder);
+		EdgeFilter filter = EdgeFilter.ALL_EDGES;
 		
 		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
 				current.getLongitudeE6()/1e6, filter).getClosestNode();

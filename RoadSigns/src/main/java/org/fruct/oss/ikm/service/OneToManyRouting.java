@@ -13,6 +13,7 @@ import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
+import com.graphhopper.util.StopWatch;
 
 public class OneToManyRouting extends GHRouting {
 	private int fromId;
@@ -36,7 +37,7 @@ public class OneToManyRouting extends GHRouting {
 
 		encodingManager = new EncodingManager("CAR");
 		encoder = encodingManager.getEncoder("CAR");
-		edgeFilter = new DefaultEdgeFilter(encoder);
+		edgeFilter = EdgeFilter.ALL_EDGES;
 
 		graph = hopper.getGraph();
 		
@@ -48,18 +49,19 @@ public class OneToManyRouting extends GHRouting {
 		algo = new DijkstraOneToMany(graph, encoder, weightCalc);
 	}
 
+	StopWatch sw = new StopWatch("Routing");
+
 	@Override
 	public PointList route(GeoPoint to) {
 		if (!ensureInitialized())
 			return null;
 
 		int toId = index.findClosest(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6, edgeFilter).getClosestNode();
-		
 		if (toId < 0 || toId == fromId)
 			return null;
 		
 		Path path = algo.calcPath(fromId, toId);
-		
+
 		return path.calcPoints();
 	}
 }

@@ -45,6 +45,9 @@ public class PointDesc implements Serializable, Parcelable {
 	}
 	
 	public PointDesc setDescription(String d) {
+		if (d == null)
+			d = "";
+
 		this.desc = d;
 
 		Pattern pattern = Pattern.compile("\\\"(https?://.+?)\\\"");

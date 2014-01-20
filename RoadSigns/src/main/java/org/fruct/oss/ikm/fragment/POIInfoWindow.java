@@ -48,6 +48,10 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 
 	private void activate(Context context) {
 		Pattern pattern = Pattern.compile("(https?://.+)");
+
+		if (point.getDescription() == null)
+			return;
+
 		Matcher match = pattern.matcher(point.getDescription());
 
 		if (match.find()) {

@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.poi;
 
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
@@ -70,10 +71,12 @@ public class PointsManager {
 		});
 	}
 
+	// Ensure that GeTS loader state matches GETS_ENABLE preference
 	public void ensureGetsState() {
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
 
 		if (!pref.getBoolean(SettingsActivity.GETS_ENABLE, false)) {
+			// If GETS_ENABLE is off and and GETS loaded, unload it
 			if (getsPointsLoader != null) {
 				final List<PointDesc> getsPoints = getsPointsLoader.getPoints();
 
@@ -85,7 +88,15 @@ public class PointsManager {
 			return;
 		}
 
-		getsPointsLoader = new GetsPointLoader("http://oss.fruct.org/projects/gets/service");
+		String getsServer = pref.getString(SettingsActivity.GETS_SERVER, SettingsActivity.GETS_SERVER_DEFAULT);
+		if (getsServer == null || getsServer.isEmpty()) {
+			log.trace("GETS_SERVER argument is empty");
+			getsServer = SettingsActivity.GETS_SERVER_DEFAULT;
+		}
+
+		getsPointsLoader = new GetsPointLoader(getsServer);
+		//getsPointsLoader = new GetsPointLoader("http://172.20.46.186/gets");
+
 		addPointLoader(getsPointsLoader);
 	}
 
@@ -195,7 +206,7 @@ public class PointsManager {
 		if (instance == null) {
 			instance = new PointsManager();
 
-			if (false) {
+			if (true) {
 				instance.addPointLoader(new StubPointLoader());
 				instance.ensureGetsState();
 				return instance;

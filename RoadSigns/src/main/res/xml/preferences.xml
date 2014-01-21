@@ -63,7 +63,16 @@
             android:key="gets_enable"
             android:title="Enable GeTS"/>
 
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="gets_server"
+            android:title="GeTS Server"
+            android:inputType="textUri"
+            />
+
         <org.fruct.oss.ikm.AccountPreference
+            android:enabled="false"
+
             android:title="Account setup"
             />
     </PreferenceCategory>

@@ -87,10 +87,6 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 
 		PointDesc point = points.get(position);
 
-		if (point.getName().equals("Voenkomat")) {
-			log.debug("VOEN: {}", point.getRelativeDirection());
-		}
-
 		tag.textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
 			tag.imageView.setImageResource(point.getRelativeDirection().getIconId());

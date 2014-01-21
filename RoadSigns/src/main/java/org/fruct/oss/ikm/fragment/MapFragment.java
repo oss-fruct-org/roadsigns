@@ -826,7 +826,7 @@ public class MapFragment extends Fragment implements MapListener,
 	
 	@Override
 	public boolean onZoom(ZoomEvent event) {
-		log.debug("MapFragment.onZoom");
+		log.trace("MapFragment.onZoom");
 		updateRadius();
 		return false;
 	}
@@ -834,7 +834,7 @@ public class MapFragment extends Fragment implements MapListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		log.debug("MapFragment.onSharedPreferenceChanged");
+		log.trace("MapFragment.onSharedPreferenceChanged");
 
 		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
 			if (myPositionOverlay != null)
@@ -848,7 +848,7 @@ public class MapFragment extends Fragment implements MapListener,
 			tileProviderManager.setFile(value);
 
 			mapView.invalidate();
-		} else if (key.equals(SettingsActivity.GETS_ENABLE)) {
+		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();
 		}
 	}

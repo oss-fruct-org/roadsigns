@@ -34,7 +34,6 @@ public class JSONPointLoader extends PointLoader {
 				JSONObject obj = arr.getJSONObject(i).getJSONObject("GeoObject");
 				loadObject(obj, collectionName);
 			}
-
 		} catch (JSONException e) {
 			e.printStackTrace();
 			throw new IOException();
@@ -51,6 +50,10 @@ public class JSONPointLoader extends PointLoader {
 
 		PointDesc poi = new PointDesc(name, (int) (lon * 1e6), (int) (lat * 1e6));
 		poi.setCategory(collectionName);
+
+		String desc = obj.getString("description");
+		poi.setDescription(desc);
+
 		points.add(poi);
 	}
 

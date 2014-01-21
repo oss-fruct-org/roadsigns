@@ -19,12 +19,16 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String AUTOZOOM = "autozoom";
 	public static final String NAVIGATION_DATA = "navigation_data";
 	public static final String GETS_ENABLE = "gets_enable";
+	public static final String GETS_SERVER = "gets_server";
+
+	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
 	private EditTextPreference offlineMapPref;
 	private EditTextPreference navigationDataPref;
-	
+	private EditTextPreference getsServerPref;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -34,6 +38,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		offlineMapPref = (EditTextPreference) findPreference(OFFLINE_MAP);
 		navigationDataPref = (EditTextPreference) findPreference(NAVIGATION_DATA);
+		getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 	
 	@Override
@@ -44,6 +49,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		updateNearestPoints(sharedPreferences);
 		updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+		updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}
@@ -66,13 +72,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		} else if (key.equals(NAVIGATION_DATA)) {
 			updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+		} else if (key.equals(GETS_SERVER)) {
+			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		}
 	}
 
 	private void updateEditBoxPreference(SharedPreferences sharedPreferences, String key, EditTextPreference pref) {
 		String value = sharedPreferences.getString(key, "");
 		if (value == null || value.isEmpty()) {
-			pref.setSummary(android.R.string.no);
+			pref.setSummary(GETS_SERVER_DEFAULT);
 		} else {
 			pref.setSummary(value);
 		}
@@ -81,7 +89,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private void updateNearestPoints(SharedPreferences sharedPreferences) {
 		int value = Integer.parseInt(sharedPreferences.getString(NEAREST_POINTS, "0"));
 		
-		String summary = "";
+		String summary;
 		if (value <= 0) {
 			summary = "Show all points";
 		} else {

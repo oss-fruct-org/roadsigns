@@ -6,8 +6,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -41,9 +44,11 @@ public class DirectionManager {
 	
 	private int radius = 45;
 	private IRouting routing;
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private GeoPoint userPosition;
 	private Location location;
+
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private Future<?> calculationTask;
 
 	// POI, for that directions ready
 	private Map<PointDesc, PointList> readyPoints = new HashMap<PointDesc, PointList>();
@@ -73,9 +78,20 @@ public class DirectionManager {
 			return d1 - d2;
 		}
 	};
-	
+
+	private void interruptCurrentCalculation() {
+		synchronized (executor) {
+			if (calculationTask != null) {
+				calculationTask.cancel(true);
+				calculationTask = null;
+			}
+		}
+	}
+
 	public void calculateForPoints(final List<PointDesc> points) {
-		executor.execute(new Runnable() {
+		interruptCurrentCalculation();
+
+		calculationTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				activePoints = new ArrayList<PointDesc>(points);
@@ -85,6 +101,8 @@ public class DirectionManager {
 	}
 	
 	public void updateLocation(final Location location) {
+		interruptCurrentCalculation();
+
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -160,7 +178,7 @@ public class DirectionManager {
 			
 			pointsProcessed++;
 			if (pointsProcessed >= BATCH_SIZE) {
-				needContinue = !Thread.interrupted();
+				needContinue = true;
 				break;
 			}
 		}
@@ -171,12 +189,18 @@ public class DirectionManager {
 		sendResult();
 		
 		if (needContinue) {
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					doCalculateForPoints();
+			synchronized (executor) {
+				if (!Thread.interrupted()) {
+					calculationTask = executor.submit(new Runnable() {
+						@Override
+						public void run() {
+							doCalculateForPoints();
+						}
+					});
+				} else {
+					log.info("Directions thread interrupted");
 				}
-			});
+			}
 		}
 	}
 	

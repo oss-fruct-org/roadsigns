@@ -1,5 +1,7 @@
 package org.fruct.oss.ikm.poi;
 
+import org.osmdroid.util.GeoPoint;
+
 import java.util.List;
 
 public abstract class PointLoader {
@@ -25,5 +27,14 @@ public abstract class PointLoader {
 	 */
 	public final List<PointDesc> getPoints() {
 		return points;
+	}
+
+	/**
+	 * Notify loader about position change
+	 * @param geoPoint new position
+	 * @return true if loader can be updated
+	 */
+	public boolean updatePosition(GeoPoint geoPoint) {
+		return false;
 	}
 }

@@ -1,12 +1,11 @@
 package org.fruct.oss.ikm.poi.gets;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.osmdroid.util.GeoPoint;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -101,7 +100,7 @@ public class Gets implements IGets {
 	}
 
 	@Override
-	public List<PointDesc> getPoints(final String category) throws IOException, LoginException {
+	public List<PointDesc> getPoints(final String category, GeoPoint position) throws IOException, LoginException {
 		try {
 			StringBuilder requestBuilder = new StringBuilder();
 			requestBuilder.append("<request><params>");
@@ -112,8 +111,8 @@ public class Gets implements IGets {
 			if (category != null) {
 				requestBuilder.append("<category_name>").append(category).append("</category_name>");
 			} else {
-				requestBuilder.append("<latitude>").append(61).append("</latitude>");
-				requestBuilder.append("<longitude>").append(34).append("</longitude>");
+				requestBuilder.append("<latitude>").append(position.getLatitude()).append("</latitude>");
+				requestBuilder.append("<longitude>").append(position.getLongitude()).append("</longitude>");
 				requestBuilder.append("<radius>").append(10000).append("</radius>");
 			}
 

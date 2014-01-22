@@ -8,6 +8,7 @@ import android.preference.PreferenceManager;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Utils;
+import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public class PointsManager {
 	private boolean needUpdate = true;
 
 	private List<PointLoader> loaders = new ArrayList<PointLoader>();
-	private ExecutorService executor = Executors.newFixedThreadPool(1);
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
 	/**
 	 * All points fetched from loaders
@@ -57,16 +58,39 @@ public class PointsManager {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					pointLoader.loadPoints();
-				} catch (Exception ex) {
-					log.warn("Can not load points from loader " + pointLoader.getClass().getName(), ex);
-					return;
-				}
+				updatePointLoader(pointLoader);
+			}
+		});
+	}
 
-				// When previous method returns, points guaranteed to be ready
-				List<PointDesc> newPoints = pointLoader.getPoints();
-				addPoints(newPoints);
+	private void updatePointLoader(PointLoader pointLoader) {
+		try {
+			// Remove old points
+			List<PointDesc> oldPoints = pointLoader.getPoints();
+			if (oldPoints != null)
+				this.points.removeAll(oldPoints);
+
+			pointLoader.loadPoints();
+		} catch (Exception ex) {
+			log.warn("Can not load points from loader " + pointLoader.getClass().getName(), ex);
+			return;
+		}
+
+		// When previous method returns, points guaranteed to be ready
+		List<PointDesc> newPoints = pointLoader.getPoints();
+		addPoints(newPoints);
+	}
+
+	public void updatePosition(final GeoPoint position) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				for (PointLoader loader : loaders) {
+					boolean needUpdate = loader.updatePosition(position);
+					if (needUpdate) {
+						updatePointLoader(loader);
+					}
+				}
 			}
 		});
 	}

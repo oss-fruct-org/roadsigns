@@ -251,6 +251,8 @@ public class MapFragment extends Fragment implements MapListener,
 				log.debug("New location accuracy " + location.getAccuracy());
 				log.debug("New location speed " + location.getSpeed());
 
+				PointsManager.getInstance().updatePosition(new GeoPoint(location));
+
 				myPositionOverlay.setLocation(myLocation);
 				mapView.invalidate();
 
@@ -855,7 +857,12 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void filterStateChanged(List<PointDesc> newList, List<PointDesc> added, List<PointDesc> removed) {
-		assert Looper.getMainLooper().getThread() == Thread.currentThread();
-		updatePOIOverlay();
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				assert Looper.getMainLooper().getThread() == Thread.currentThread();
+				updatePOIOverlay();
+			}
+		});
 	}
 }

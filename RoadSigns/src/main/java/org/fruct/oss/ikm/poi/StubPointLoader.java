@@ -31,9 +31,9 @@ public class StubPointLoader extends PointLoader {
 						.setCategory("culture")
 						.setDescription("Music theater"));
 
-		stubPoints.add(new PointDesc("Kuopio", 62892570, 27678393)
-				.setCategory("culture")
-				.setDescription("Kuopio"));
+		stubPoints.add(new PointDesc("Forest", 63845966,33973846)
+				.setCategory("health")
+				.setDescription("Forest"));
 	}
 
 	@Override

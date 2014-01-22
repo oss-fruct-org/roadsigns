@@ -28,7 +28,6 @@ public class PointDesc implements Serializable, Parcelable {
 	private int internalId;
 
 	private RelativeDirection dir;
-
 	private int distance;
 
 	public PointDesc(String name, int latE6, int lonE6) {

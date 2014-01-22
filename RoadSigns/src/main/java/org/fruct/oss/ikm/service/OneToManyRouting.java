@@ -12,6 +12,7 @@ import com.graphhopper.routing.util.ShortestWeighting;
 import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.storage.index.LocationIndex;
+import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.StopWatch;
 
@@ -44,8 +45,9 @@ public class OneToManyRouting extends GHRouting {
 		index = hopper.getLocationIndex();
 		
 		weightCalc = new ShortestWeighting();
-		
-		fromId = index.findClosest(from.getLatitudeE6() / 1e6, from.getLongitudeE6() / 1e6, edgeFilter).getClosestNode();
+
+		QueryResult queryResult = index.findClosest(from.getLatitudeE6() / 1e6, from.getLongitudeE6() / 1e6, edgeFilter);
+		fromId = queryResult.getClosestNode();
 		algo = new DijkstraOneToMany(graph, encoder, weightCalc);
 	}
 
@@ -56,7 +58,18 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return null;
 
-		int toId = index.findClosest(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6, edgeFilter).getClosestNode();
+		QueryResult queryResult = index.findClosest(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6, edgeFilter);
+
+		if (!queryResult.isValid()) {
+			assert queryResult.getClosestNode() == -1;
+			assert queryResult.getClosestEdge() == null;
+			log.debug("Can't find target road not for point {}", to);
+		} else {
+			assert queryResult.getClosestNode() != -1;
+			assert queryResult.getClosestEdge() != null;
+		}
+
+		int toId = queryResult.getClosestNode();
 		if (toId < 0 || toId == fromId)
 			return null;
 		

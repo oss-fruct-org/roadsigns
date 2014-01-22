@@ -43,7 +43,7 @@ public abstract class GHRouting implements IRouting {
 		try {
 			hopper = new GraphHopper().forMobile();
 			hopper.disableCHShortcuts();
-			hopper.setPreciseIndexResolution(0);
+			//hopper.setPreciseIndexResolution(0);
 			//hopper.setMemoryMapped();
 
 			//hopper.setCHShortcuts("shortest");

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class GetsPointLoader extends PointLoader {
@@ -15,7 +16,7 @@ public class GetsPointLoader extends PointLoader {
 	public static final int POINT_UPDATE_DISTANCE = 10000;
 
 	private Gets gets;
-	private GeoPoint lastPosition = new GeoPoint(61, 34);
+	private GeoPoint lastPosition;
 
 	public GetsPointLoader(String url) {
 		gets = new Gets(url);
@@ -25,17 +26,20 @@ public class GetsPointLoader extends PointLoader {
 	public void loadPoints() throws IOException, LoginException {
 		log.trace("GetsPointLoader.loadPoints");
 
-		final List<PointDesc> points = gets.getPoints(null, lastPosition);
-		notifyPointsReady(points);
+		if (lastPosition == null) {
+			notifyPointsReady(new ArrayList<PointDesc>());
+		} else {
+			final List<PointDesc> points = gets.getPoints(null, lastPosition);
+			notifyPointsReady(points);
+		}
 	}
 
 	@Override
 	public boolean updatePosition(GeoPoint geoPoint) {
 		super.updatePosition(geoPoint);
 		log.trace("GetsPointLoader.updatePosition {}", geoPoint);
-		int distance = lastPosition.distanceTo(geoPoint);
 
-		if (distance > POINT_UPDATE_DISTANCE) {
+		if (lastPosition == null || lastPosition.distanceTo(geoPoint) > POINT_UPDATE_DISTANCE) {
 			log.trace("Updating position");
 			lastPosition = Utils.copyGeoPoint(geoPoint);
 			return true;

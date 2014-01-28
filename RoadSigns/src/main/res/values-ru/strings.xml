@@ -31,6 +31,7 @@
     <string name="use">Использовать</string>
     <string name="download">Загрузить</string>
     <string name="update_availabe">доступно обновление</string>
+    <string name="action_about">О программе</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

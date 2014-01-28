@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.fragment;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -36,6 +37,7 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
@@ -573,12 +575,31 @@ public class MapFragment extends Fragment implements MapListener,
 			startActivity(intent);
 			break;
 
+		case R.id.action_about:
+			showAboutDialog();
+			break;
+
 		default:
 			//mapView.getOverlayManager().onOptionsItemSelected(item, 4, mapView);
 			return super.onOptionsItemSelected(item);
 		}
 
 		return true;
+	}
+
+	private void showAboutDialog() {
+		View view = getActivity().getLayoutInflater().inflate(R.layout.about, null, false);
+
+		TextView textView = (TextView) view.findViewById(R.id.about_text);
+		int defaultColor = textView.getTextColors().getDefaultColor();
+		textView.setTextColor(defaultColor);
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setIcon(R.drawable.ic_launcher);
+		builder.setTitle(R.string.app_name);
+		builder.setView(view);
+		builder.create();
+		builder.show();
 	}
 
 	private void showFilterDialog() {

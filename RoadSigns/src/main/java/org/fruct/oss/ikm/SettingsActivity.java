@@ -38,7 +38,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		offlineMapPref = (EditTextPreference) findPreference(OFFLINE_MAP);
 		navigationDataPref = (EditTextPreference) findPreference(NAVIGATION_DATA);
-		getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
+		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 	
 	@Override
@@ -49,7 +49,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		updateNearestPoints(sharedPreferences);
 		updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
-		updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
+		//updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}

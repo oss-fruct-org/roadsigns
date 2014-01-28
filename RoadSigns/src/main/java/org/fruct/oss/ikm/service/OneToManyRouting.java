@@ -85,9 +85,10 @@ public class OneToManyRouting extends GHRouting {
 			long time = System.currentTimeMillis();
 			// Fallback to linear index search
 			Integer cachedIndex = fallbackPointsMap.get(to);
-			if (cachedIndex != null)
+			if (cachedIndex != null) {
+				log.warn("Using cached index");
 				toId = cachedIndex;
-			else {
+			} else {
 				toId = fallbackIndex.findID(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6);
 				if (toId == -1) {
 					log.warn("Linear search can't find index");

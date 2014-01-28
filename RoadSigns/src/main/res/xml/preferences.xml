@@ -55,7 +55,9 @@
         android:summaryOff="@string/pref_autozoom_sumoff"
         />
 
+    <!--
     <PreferenceCategory
+        android:enabled="false"
         android:title="GeTS preferences"
         android:key="gets_preferences">
         <CheckBoxPreference
@@ -76,5 +78,5 @@
             android:title="Account setup"
             />
     </PreferenceCategory>
-    
+    -->
 </PreferenceScreen>

@@ -501,7 +501,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
-		
+
 		getActivity().unbindService(serviceConnection);
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);

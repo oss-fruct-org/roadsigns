@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class GHRouting implements IRouting {
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
+	protected final LocationIndexCache locationIndexCache;
 
 	private String path;
 	private GeoPoint oldGeoPoint = null;
@@ -24,8 +25,9 @@ public abstract class GHRouting implements IRouting {
 	public abstract void prepare(GeoPoint from);
 	public abstract PointList route(GeoPoint to);
 
-	public GHRouting(String path) {
+	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
+		this.locationIndexCache = locationIndexCache;
 	}
 
 	public void reset(GeoPoint from) {

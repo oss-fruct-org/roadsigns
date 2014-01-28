@@ -58,6 +58,8 @@ public class DirectionService extends Service implements PointsListener,
 	private Location lastLocation;
 
 	private String navigationPath;
+
+	private LocationIndexCache locationIndexCache;
 	
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -81,6 +83,8 @@ public class DirectionService extends Service implements PointsListener,
 
 		locationReceiver = new LocationReceiver(this);
 
+		locationIndexCache = new LocationIndexCache(this);
+
 		dirManager = new DirectionManager(createRouting());
 		dirManager.setListener(this);
 		dirManager.calculateForPoints(PointsManager.getInstance()
@@ -95,7 +99,7 @@ public class DirectionService extends Service implements PointsListener,
 
 	private IRouting createRouting() {
 		if (new File(navigationPath + "/nodes").exists())
-			return new OneToManyRouting(navigationPath);
+			return new OneToManyRouting(navigationPath, locationIndexCache);
 		else
 			return new StubRouting();
 	}
@@ -114,6 +118,9 @@ public class DirectionService extends Service implements PointsListener,
 
 		dirManager.interrupt();
 		dirManager = null;
+
+		locationIndexCache.close();
+		locationIndexCache = null;
 	}
 		
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -252,6 +259,7 @@ public class DirectionService extends Service implements PointsListener,
 				return;
 
 			log.debug("Starting thread");
+			locationIndexCache.reset();
 			new Thread() {
 				@Override
 				public void run() {

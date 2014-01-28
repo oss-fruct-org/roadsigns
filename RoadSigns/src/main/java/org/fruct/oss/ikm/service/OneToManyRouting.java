@@ -4,7 +4,6 @@ import org.osmdroid.util.GeoPoint;
 
 import com.graphhopper.routing.DijkstraOneToMany;
 import com.graphhopper.routing.Path;
-import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FlagEncoder;
@@ -34,8 +33,8 @@ public class OneToManyRouting extends GHRouting {
 
 	private com.graphhopper.routing.DijkstraOneToMany algo;
 
-	public OneToManyRouting(String filePath) {
-		super(filePath);
+	public OneToManyRouting(String filePath, LocationIndexCache li) {
+		super(filePath, li);
 		log.debug("OneToManyRouting created");
 	}
 
@@ -85,9 +84,9 @@ public class OneToManyRouting extends GHRouting {
 		if (toId == -1) {
 			long time = System.currentTimeMillis();
 			// Fallback to linear index search
-			Integer cachedIndex = fallbackPointsMap.get(to);
-			if (cachedIndex != null) {
-				log.info("Using cached index");
+			int cachedIndex = locationIndexCache.get(to);
+			if (cachedIndex != -1) {
+				log.info("Using cached index {}", cachedIndex);
 				toId = cachedIndex;
 			} else {
 				toId = fallbackIndex.findID(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6);
@@ -97,7 +96,7 @@ public class OneToManyRouting extends GHRouting {
 				}
 
 				log.info("Linear index search took {} ms", System.currentTimeMillis() - time);
-				fallbackPointsMap.put(to, toId);
+				locationIndexCache.put(to, toId);
 			}
 		}
 		

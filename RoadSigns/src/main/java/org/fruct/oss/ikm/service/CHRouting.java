@@ -9,8 +9,8 @@ import com.graphhopper.util.PointList;
 public class CHRouting extends GHRouting {
 	private GeoPoint from;
 
-	public CHRouting(String filePath) {
-		super(filePath);
+	public CHRouting(String filePath, LocationIndexCache li) {
+		super(filePath, li);
 	}
 
 	@Override

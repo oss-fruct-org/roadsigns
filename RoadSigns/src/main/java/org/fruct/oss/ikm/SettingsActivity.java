@@ -80,7 +80,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private void updateEditBoxPreference(SharedPreferences sharedPreferences, String key, EditTextPreference pref) {
 		String value = sharedPreferences.getString(key, "");
 		if (value == null || value.isEmpty()) {
-			pref.setSummary(GETS_SERVER_DEFAULT);
+			pref.setSummary(key.equals(GETS_SERVER) ? GETS_SERVER_DEFAULT : "");
 		} else {
 			pref.setSummary(value);
 		}

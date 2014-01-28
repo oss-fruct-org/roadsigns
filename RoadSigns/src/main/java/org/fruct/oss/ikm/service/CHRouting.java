@@ -39,5 +39,4 @@ public class CHRouting extends GHRouting {
 			return null;
 		}
 	}
-
 }

@@ -36,6 +36,7 @@ public class OneToManyRouting extends GHRouting {
 
 	public OneToManyRouting(String filePath) {
 		super(filePath);
+		log.debug("OneToManyRouting created");
 	}
 
 	@Override
@@ -86,7 +87,7 @@ public class OneToManyRouting extends GHRouting {
 			// Fallback to linear index search
 			Integer cachedIndex = fallbackPointsMap.get(to);
 			if (cachedIndex != null) {
-				log.warn("Using cached index");
+				log.info("Using cached index");
 				toId = cachedIndex;
 			} else {
 				toId = fallbackIndex.findID(to.getLatitudeE6() / 1e6, to.getLongitudeE6() / 1e6);

@@ -112,6 +112,7 @@ public class DirectionService extends Service implements PointsListener,
 
 		PointsManager.getInstance().removeListener(this);
 
+		dirManager.interrupt();
 		dirManager = null;
 	}
 		

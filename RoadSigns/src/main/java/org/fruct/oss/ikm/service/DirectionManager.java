@@ -288,4 +288,7 @@ public class DirectionManager {
 		}
 	}
 
+	public void interrupt() {
+		interruptCurrentCalculation();
+	}
 }

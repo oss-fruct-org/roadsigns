@@ -54,8 +54,11 @@ public class OnlineContentPreference extends ListPreference implements RemoteCon
 			}
 		});
 
-		setEntries(entries.first.toArray(new String[0]));
-		setEntryValues(entries.second.toArray(new String[0]));
+		entries.first.add(getContext().getString(android.R.string.no));
+		entries.second.add("");
+
+		setEntries(entries.first.toArray(new String[1]));
+		setEntryValues(entries.second.toArray(new String[1]));
 	}
 
 	@Override

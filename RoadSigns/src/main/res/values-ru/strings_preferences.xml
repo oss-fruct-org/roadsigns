@@ -7,7 +7,7 @@
     <string name="pref_disable_warn_providers_sum">Не предупреждать об отключенных источниках местоположения</string>
     <string name="pref_show_accuracy">Показывать точность определения местоположения</string>
     
-    <string name="pref_offline_map_path">Путь к файлу карты</string>
+    <string name="pref_offline_map_path">Карта</string>
     
     <string name="pref_autozoom">Автоматический масштаб</string>
     <string name="pref_autozoom_sumon">Включено</string>

@@ -25,9 +25,9 @@ public class NetworkDialog extends DialogFragment implements DialogInterface.OnC
 		AlertDialog.Builder builder = new AlertDialog.Builder(
 				new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 
-		builder.setMessage("Network unavailable");
-		builder.setPositiveButton("Use offline map", this);
-		builder.setNegativeButton("Keep using online map", this);
+		builder.setMessage(R.string.warn_network_unavailable);
+		builder.setPositiveButton(R.string.configure_use_offline_map, this);
+		builder.setNegativeButton(android.R.string.cancel, this);
 
 		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		checkbox.setText(R.string.warn_providers_disable);
@@ -37,15 +37,15 @@ public class NetworkDialog extends DialogFragment implements DialogInterface.OnC
 	}
 
 	@Override
-	public void onClick(DialogInterface dialogInterface, int i) {
+	public void onClick(DialogInterface dialogInterface, int which) {
 		if (checkbox.isChecked()) {
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 			pref.edit().putBoolean(SettingsActivity.WARN_NETWORK_DISABLED, true).commit();
 		}
 
-		if (i == AlertDialog.BUTTON_POSITIVE) {
+		if (which == AlertDialog.BUTTON_POSITIVE) {
 			Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml");
+			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
 			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
 			getActivity().startActivity(intent);

@@ -23,8 +23,10 @@
     <string name="download_interrupted">Download interrupted</string>
     <string name="error_downloading">Error downloading</string>
     <string name="download_finished">Download finished</string>
+
     <string name="navigation_data">Navigation data</string>
     <string name="offline_map">Offline map</string>
+
     <string name="use">Use</string>
     <string name="download">Download</string>
     <string name="update_availabe">update available</string>
@@ -33,6 +35,8 @@
     Application uses map data from http://openstreetmap.org\n\n
     This application is a part of grant KA322 of Karelia ENPI CBC programme, which is co-funded by the European Union, the Russian Federation and the Republic of Finland
     </string>
+    <string name="warn_network_unavailable">Network unavailable</string>
+    <string name="configure_use_offline_map">Use offline map</string>
 
 
     <plurals  name="distance_meters">

@@ -31,7 +31,6 @@ public class ProvidersDialog extends DialogFragment implements OnClickListener {
 		builder.setPositiveButton(R.string.configure_providers, this);
 		builder.setNegativeButton(android.R.string.cancel, this);
 		
-		// TODO: get checkbox style from current theme
 		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		checkbox.setText(R.string.warn_providers_disable);
 		builder.setView(checkbox);
@@ -41,14 +40,14 @@ public class ProvidersDialog extends DialogFragment implements OnClickListener {
 	
 	@Override
 	public void onClick(DialogInterface dialog, int which) {
-		if (which == DialogInterface.BUTTON_POSITIVE) {
-			Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-			startActivity(intent);
-		}
-		
 		if (checkbox.isChecked()) {
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 			pref.edit().putBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, true).commit();
+		}
+
+		if (which == DialogInterface.BUTTON_POSITIVE) {
+			Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+			startActivity(intent);
 		}
 	}
 }

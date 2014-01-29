@@ -36,13 +36,15 @@
         android:summary="Show all"
         android:title="Nearest points" />
 
-    <EditTextPreference 
+    <org.fruct.oss.ikm.OnlineContentPreference
+        contentType="mapsforge-map"
         android:key="offline_map"
         android:defaultValue=""
         android:title="@string/pref_offline_map_path" />
 
 
-    <EditTextPreference
+    <org.fruct.oss.ikm.OnlineContentPreference
+        contentType="graphhopper-map"
         android:key="navigation_data"
         android:defaultValue=""
         android:title="@string/pref_navigation_data" />

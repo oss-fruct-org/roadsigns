@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.7.+'
+        classpath 'com.android.tools.build:gradle:0.8.+'
     }
 }
 apply plugin: 'android'
@@ -42,6 +42,7 @@ android {
 dependencies {
     compile 'com.android.support:support-v4:19.0.0'
     compile 'com.android.support:appcompat-v7:19.0.0'
+
     compile files('lib/graphhopper-0.3-SNAPSHOT-android.jar')
     compile files('lib/mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies.jar')
     compile files('lib/osmbonuspack_v4.2.jar')

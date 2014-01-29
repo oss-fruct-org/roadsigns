@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.fragment;
 
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Utils;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -21,25 +22,17 @@ import android.widget.CheckBox;
 public class ProvidersDialog extends DialogFragment implements OnClickListener {
 	private CheckBox checkbox;
 
-	private int getDialogTheme() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-			return android.R.style.Theme_Dialog;
-		} else {
-			return android.R.style.Theme_Holo_Light_Dialog;
-		}
-	}
-
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(
-				new ContextThemeWrapper(getActivity(), getDialogTheme()));
+				new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		
 		builder.setMessage(R.string.warn_no_providers);
 		builder.setPositiveButton(R.string.configure_providers, this);
 		builder.setNegativeButton(android.R.string.cancel, this);
 		
 		// TODO: get checkbox style from current theme
-		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), getDialogTheme()));
+		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		checkbox.setText(R.string.warn_providers_disable);
 		builder.setView(checkbox);
 		

@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.storage;
 import android.util.Pair;
 
 import org.fruct.oss.ikm.DigestInputStream;
+import org.fruct.oss.ikm.OnlineContentPreference;
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
@@ -81,8 +82,9 @@ public class RemoteContent {
 	private final IProvider provider;
 	private final String contentUrl;
 
-	private Listener listener;
+	private ArrayList<Listener> listeners = new ArrayList<Listener>();
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private volatile boolean initializationStarted = false;
 
 	private List<Future<?>> currentTasks = new ArrayList<Future<?>>();
 
@@ -187,8 +189,12 @@ public class RemoteContent {
 		}
 	}
 
-	public void setListener(Listener listener) {
-		this.listener = listener;
+	public void addListener(Listener listener) {
+		listeners.add(listener);
+	}
+
+	public void removeListener(Listener listener) {
+		listeners.remove(listener);
 	}
 
 	public void deleteContentItem(StorageItem item) throws IOException {
@@ -197,9 +203,8 @@ public class RemoteContent {
 		item.state = checkLocalState(item.item);
 		updateContentRecord(storage);
 
-		if (listener != null) {
+		for (Listener listener : listeners)
 			listener.listReady(storageItems);
-		}
 	}
 
 	private synchronized void startTask(Runnable run) {
@@ -216,18 +221,23 @@ public class RemoteContent {
 
 	// Async methods
 	public void startInitialize(boolean forceInitialization) {
+		if (initializationStarted)
+			return;
+
 		if (storageItems != null && !forceInitialization) {
 			log.info("RemoteContent already initialized");
-			if (listener != null) {
+			for (Listener listener : listeners)
 				listener.listReady(storageItems);
-			}
+
 			return;
 		}
 
 		startTask(new Runnable() {
 			@Override
 			public void run() {
+				initializationStarted = true;
 				doAsyncInitialize();
+				initializationStarted = false;
 			}
 		});
 	}
@@ -242,9 +252,9 @@ public class RemoteContent {
 			remoteContent = getContentList(provider, contentUrl);
 		} catch (IOException e) {
 			log.warn("Cannot download file", e);
-			if (listener != null) {
+			for (Listener listener : listeners)
 				listener.errorInitializing(e);
-			}
+
 			e.printStackTrace();
 		}
 
@@ -273,9 +283,9 @@ public class RemoteContent {
 			}
 		}
 
-		if (listener != null) {
+		for (Listener listener : listeners)
 			listener.listReady(storageItems = new ArrayList<StorageItem>(allItems.values()));
-		}
+
 	}
 
 	public void startDownloading(final StorageItem item) {
@@ -299,10 +309,10 @@ public class RemoteContent {
 				@Override
 				public void update(int current, int max) {
 					log.trace("Downloaded {}/{}", current, max);
-					if (listener != null) {
+					for (Listener listener : listeners)
 						listener.downloadStateUpdated(sItem, current, max);
-					}
 				}
+
 			});
 
 			// Setup gzip compression
@@ -321,18 +331,18 @@ public class RemoteContent {
 
 			storeContentItem(item, storage, inputStream);
 			sItem.state = LocalContentState.UP_TO_DATE;
-			if (listener != null) {
+			for (Listener listener : listeners) {
 				listener.downloadFinished(sItem);
 				listener.listReady(storageItems);
 			}
 		} catch (InterruptedIOException ex) {
 			log.info("Downloading interrupted");
-			if (listener != null) {
+			for (Listener listener : listeners) {
 				listener.downloadInterrupted(sItem);
 			}
 		} catch (IOException e) {
 			log.warn("Error downloading", e);
-			if (listener != null) {
+			for (Listener listener : listeners) {
 				listener.errorDownloading(sItem, e);
 			}
 		} finally {

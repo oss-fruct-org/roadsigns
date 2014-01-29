@@ -15,28 +15,21 @@ import android.widget.CheckBox;
 import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Utils;
 
 public class NetworkDialog extends DialogFragment implements DialogInterface.OnClickListener{
 	private CheckBox checkbox;
 
-	private int getDialogTheme() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-			return android.R.style.Theme_Dialog;
-		} else {
-			return android.R.style.Theme_Holo_Light_Dialog;
-		}
-	}
-
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(
-				new ContextThemeWrapper(getActivity(), getDialogTheme()));
+				new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 
 		builder.setMessage("Network unavailable");
 		builder.setPositiveButton("Use offline map", this);
 		builder.setNegativeButton("Keep using online map", this);
 
-		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), getDialogTheme()));
+		checkbox = new CheckBox(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		checkbox.setText(R.string.warn_providers_disable);
 		builder.setView(checkbox);
 

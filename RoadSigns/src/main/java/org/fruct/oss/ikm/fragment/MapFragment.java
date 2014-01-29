@@ -26,7 +26,9 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.util.Linkify;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -133,6 +135,8 @@ public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
+	public static final String REMOTE_CONTENT_URL = "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml";
+
 	private DefaultInfoWindow infoWindow;
 	private boolean networkToastShown;
 	private Overlay poiOverlay;
@@ -568,7 +572,7 @@ public class MapFragment extends Fragment implements MapListener,
 		case R.id.action_download_map:
 			intent = new Intent(getActivity(), OnlineContentActivity.class);
 			//intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml");
+			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, REMOTE_CONTENT_URL);
 
 			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
@@ -588,16 +592,20 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void showAboutDialog() {
-		View view = getActivity().getLayoutInflater().inflate(R.layout.about, null, false);
+		TextView textView = new TextView(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
+		textView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+		textView.setTextSize(16);
+		textView.setAutoLinkMask(Linkify.WEB_URLS);
+		textView.setText(R.string.about_text);
 
-		TextView textView = (TextView) view.findViewById(R.id.about_text);
-		int defaultColor = textView.getTextColors().getDefaultColor();
-		textView.setTextColor(defaultColor);
+		final int paddingDP = Utils.getDP(16);
+		textView.setPadding(paddingDP, paddingDP, paddingDP, paddingDP);
 
-		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		builder.setIcon(R.drawable.ic_launcher);
 		builder.setTitle(R.string.app_name);
-		builder.setView(view);
+		builder.setView(textView);
+
 		builder.create();
 		builder.show();
 	}

@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -193,7 +192,7 @@ public class OnlineContentActivity extends ActionBarActivity
 		pref_key = getIntent().getStringExtra(ARG_PREF_KEY);
 
 		remoteContent = RemoteContent.getInstance(remoteContentUrl, localContentUrl);
-		remoteContent.setListener(this);
+		remoteContent.addListener(this);
 
 		setUpActionBar();
 
@@ -222,7 +221,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		remoteContent.setListener(null);
+		remoteContent.removeListener(this);
 	}
 
 	@Override

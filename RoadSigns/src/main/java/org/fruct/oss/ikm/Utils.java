@@ -21,7 +21,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.util.Log;
+import android.util.Pair;
 import android.util.TypedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,10 @@ public class Utils {
 	@SuppressWarnings("hiding")
 	public static interface Function<R, T> {
 		public R apply(T t);
+	}
+
+	public static interface Function2<R1, R2, T> {
+		public Pair<R1, R2> apply(T t);
 	}
 	
 	public static interface FunctionDouble {
@@ -228,6 +234,21 @@ public class Utils {
 		
 		return list;
 	}
+
+	public static <R1, R2, T> Pair<List<R1>, List<R2>> map2(List<T> source, Function2<R1, R2, T> fun) {
+		List<R1> ret1 = new ArrayList<R1>(source.size());
+		List<R2> ret2 = new ArrayList<R2>(source.size());
+
+		for (T t : source) {
+			Pair<R1, R2> ret = fun.apply(t);
+			if (ret != null) {
+				ret1.add(ret.first);
+				ret2.add(ret.second);
+			}
+		}
+
+		return new Pair<List<R1>, List<R2>>(ret1, ret2);
+	}
 	
 	public static int getDP(int px) {
 		return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, px,
@@ -361,5 +382,13 @@ public class Utils {
 			return null;
 		else
 			return cls.cast(t);
+	}
+
+	public static int getDialogTheme() {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			return android.R.style.Theme_Dialog;
+		} else {
+			return android.R.style.Theme_Holo_Light_Dialog;
+		}
 	}
 }

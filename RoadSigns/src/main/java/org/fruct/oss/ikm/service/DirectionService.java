@@ -60,7 +60,8 @@ public class DirectionService extends Service implements PointsListener,
 	private String navigationPath;
 
 	private LocationIndexCache locationIndexCache;
-	
+	private Thread extractingThread;
+
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
 			return DirectionService.this;
@@ -187,6 +188,10 @@ public class DirectionService extends Service implements PointsListener,
 		lastLocation = location;
 		notifyLocationChanged(location);
 
+		if (extractingThread != null && extractingThread.isAlive()) {
+			return;
+		}
+
 		dirManager.updateLocation(lastLocation);
 		dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 	}
@@ -234,6 +239,8 @@ public class DirectionService extends Service implements PointsListener,
 		// Use name 'karelia.ghz' only for backward compatibility
 		String targetDirectory = null;
 		try {
+			dirManager.interrupt();
+
 			targetDirectory = navigationPath;
 			new Unzipper().unzip(path, targetDirectory, false);
 			log.info("Archive file {} successfully extracted", path);
@@ -260,12 +267,13 @@ public class DirectionService extends Service implements PointsListener,
 
 			log.debug("Starting thread");
 			locationIndexCache.reset();
-			new Thread() {
+			extractingThread = new Thread() {
 				@Override
 				public void run() {
 					extractArchive(archivePath);
 				}
-			}.start();
+			};
+			extractingThread.start();
 		}
 	}
 

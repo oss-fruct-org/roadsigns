@@ -25,8 +25,10 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
-	private EditTextPreference offlineMapPref;
-	private EditTextPreference navigationDataPref;
+
+	private OnlineContentPreference offlineMapPref;
+	private OnlineContentPreference navigationDataPref;
+
 	private EditTextPreference getsServerPref;
 
 	@Override
@@ -36,8 +38,10 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
-		offlineMapPref = (EditTextPreference) findPreference(OFFLINE_MAP);
-		navigationDataPref = (EditTextPreference) findPreference(NAVIGATION_DATA);
+
+		offlineMapPref = (OnlineContentPreference) findPreference(OFFLINE_MAP);
+		navigationDataPref = (OnlineContentPreference) findPreference(NAVIGATION_DATA);
+
 		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 	
@@ -47,8 +51,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		updateNearestPoints(sharedPreferences);
-		updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
-		updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+
+		updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+		updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
 		//updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
@@ -69,12 +74,18 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);
 		} else if (key.equals(OFFLINE_MAP)) {
-			updateEditBoxPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+			updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		} else if (key.equals(NAVIGATION_DATA)) {
-			updateEditBoxPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+			updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
 		} else if (key.equals(GETS_SERVER)) {
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		}
+	}
+
+	private void updateOnlineContentPreference(SharedPreferences sharedPreferences, String key,
+											   OnlineContentPreference pref) {
+		String value = sharedPreferences.getString(key, "");
+		pref.setSummary(value);
 	}
 
 	private void updateEditBoxPreference(SharedPreferences sharedPreferences, String key, EditTextPreference pref) {

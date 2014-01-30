@@ -34,6 +34,8 @@
     <string name="action_about">О программе</string>
     <string name="warn_network_unavailable">Сеть недоступна</string>
     <string name="configure_use_offline_map">Настроить карту</string>
+    <string name="warn_no_navigation_data">Нет данных навигации</string>
+    <string name="configure_navigation_data">Загрузить данные навигации</string>
 
 
     <plurals  name="distance_meters">

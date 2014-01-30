@@ -10,6 +10,10 @@
     <string name="pref_disable_warn_network_sum">Don\'t warn about offline network</string>
     <string name="pref_disable_warn_network">Unavailable network</string>
 
+    <string name="pref_disable_warn_navigation_sum">Don\'t warn about navigation data</string>
+    <string name="pref_disable_warn_navigation">No navigation data</string>
+
+
     <string name="pref_offline_map_path">Offline map path</string>
     
     <string name="pref_autozoom">Autozoom</string>
@@ -17,6 +21,7 @@
     <string name="pref_autozoom_sumoff">Off</string>
     
 	<string name="pref_all">All</string>
+    <string name="pref_warnings">Warnings</string>
 
     <string-array name="pref_nearest_points_str">
         <item>@string/pref_all</item>

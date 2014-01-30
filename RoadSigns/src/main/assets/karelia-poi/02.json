@@ -7,33 +7,6 @@
                     {
                         "GeoObject": {
                             "Point": [
-                                "35.0337", 
-                                "62.5514"
-                            ], 
-                            "description": "\n                                                  <div class=\"info\">URL: <a href=\"http://www.ticrk.ru/ru/regions/region_3534/sights/27148.html\" target=\"_blank\">http://www.ticrk.ru/ru/regions/region_3534/sights/27148.html</a></div>                    ", 
-                            "metaDataProperty": {
-                                "AnyMetaData": [
-                                    {
-                                        "objectId": [
-                                            {
-                                                "value": "35613"
-                                            }
-                                        ], 
-                                        "site": [
-                                            {
-                                                "value": "http://www.ticrk.ru/ru/regions/region_3534/sights/27148.html"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }, 
-                            "name": "http://www.ticrk.ru/ru/regions/region_3534/sights/27148.html", 
-                            "style": "#layer_34269"
-                        }
-                    }, 
-                    {
-                        "GeoObject": {
-                            "Point": [
                                 "35.3569", 
                                 "61.3695"
                             ], 

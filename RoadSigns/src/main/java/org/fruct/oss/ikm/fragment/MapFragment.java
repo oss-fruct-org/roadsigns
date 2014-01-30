@@ -24,6 +24,7 @@ import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.util.Linkify;
@@ -138,7 +139,11 @@ public class MapFragment extends Fragment implements MapListener,
 	public static final String REMOTE_CONTENT_URL = "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml";
 
 	private DefaultInfoWindow infoWindow;
+
 	private boolean networkToastShown;
+	private boolean navigationDataToastShown;
+	private boolean providersToastShown;
+
 	private Overlay poiOverlay;
 
 	static enum State {
@@ -188,7 +193,6 @@ public class MapFragment extends Fragment implements MapListener,
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
-	private boolean providersToastShown;
 	private TileProviderManager tileProviderManager;
 
 	public MapFragment() {
@@ -417,6 +421,7 @@ public class MapFragment extends Fragment implements MapListener,
 		
 		checkProvidersEnabled();
 		checkNetworkAvailable();
+		checkNavigationDataAvailable();
 		
 		// Start tracking if preference set
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
@@ -450,6 +455,30 @@ public class MapFragment extends Fragment implements MapListener,
 		});
 	}
 
+	private void checkNavigationDataAvailable() {
+		SharedPreferences pref = PreferenceManager
+				.getDefaultSharedPreferences(getActivity());
+
+		if (!navigationDataToastShown && pref.getString(SettingsActivity.NAVIGATION_DATA, "").isEmpty()) {
+			WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
+					R.string.configure_navigation_data,
+					R.string.warn_providers_disable,
+					SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
+				@Override
+				protected void onAccept() {
+					Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
+					intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
+					intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
+					intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
+					getActivity().startActivity(intent);
+				}
+			};
+			dialog.show(getFragmentManager(), "navigation-data-dialog");
+
+			navigationDataToastShown = true;
+		}
+	}
+
 	private void checkNetworkAvailable() {
 		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
 
@@ -458,7 +487,19 @@ public class MapFragment extends Fragment implements MapListener,
 					.getDefaultSharedPreferences(getActivity());
 
 			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
-				NetworkDialog dialog = new NetworkDialog();
+				WarnDialog dialog = new WarnDialog(R.string.warn_network_unavailable,
+						R.string.configure_use_offline_map,
+						R.string.warn_providers_disable,
+						SettingsActivity.WARN_NETWORK_DISABLED) {
+					@Override
+					protected void onAccept() {
+						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
+						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
+						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
+						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
+						getActivity().startActivity(intent);
+					}
+				};
 				dialog.show(getFragmentManager(), "network-dialog");
 			} else {
 				Toast toast = Toast.makeText(getActivity(),
@@ -484,7 +525,17 @@ public class MapFragment extends Fragment implements MapListener,
 			SharedPreferences pref = PreferenceManager
 					.getDefaultSharedPreferences(getActivity());
 			if (!pref.getBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, false)) {
-				ProvidersDialog dialog = new ProvidersDialog();
+				WarnDialog dialog = new WarnDialog(R.string.warn_no_providers,
+						R.string.configure_providers,
+						R.string.warn_providers_disable,
+						SettingsActivity.WARN_PROVIDERS_DISABLED) {
+					@Override
+					protected void onAccept() {
+						Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+						startActivity(intent);
+					}
+				};
+
 				dialog.show(getFragmentManager(), "providers-dialog");
 			} else {
 				Toast toast = Toast.makeText(getActivity(),

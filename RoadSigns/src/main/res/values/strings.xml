@@ -37,6 +37,8 @@
     </string>
     <string name="warn_network_unavailable">Network unavailable</string>
     <string name="configure_use_offline_map">Use offline map</string>
+    <string name="warn_no_navigation_data">No navigation data</string>
+    <string name="configure_navigation_data">Download navigation data</string>
 
 
     <plurals  name="distance_meters">

@@ -15,3 +15,5 @@ gen/
 /RoadSigns/lib
 
 *.ghz
+
+.idea/libraries/

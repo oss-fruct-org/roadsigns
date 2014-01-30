@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="osmbonuspack_v4.2">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/RoadSigns/lib/osmbonuspack_v4.2.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

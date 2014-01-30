@@ -73,8 +73,8 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 19 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="osmdroid-android-4.0" level="project" />
     <orderEntry type="library" exported="" name="osmbonuspack_v4.2" level="project" />
+    <orderEntry type="library" exported="" name="osmdroid-android-4.0" level="project" />
     <orderEntry type="library" exported="" name="graphhopper-0.3-SNAPSHOT-android" level="project" />
     <orderEntry type="library" exported="" name="mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies" level="project" />
     <orderEntry type="library" exported="" name="support-v4-19.0.0" level="project" />

@@ -110,7 +110,7 @@ public class DirectionManager {
 				GeoPoint current = new GeoPoint(location);
 				
 				// Find nearest road node
-				// Can throw in not initialized, ignoring
+				// Can throw if not initialized, ignoring
 				GeoPoint nearestNode = routing.getNearestRoadNode(current);				
 				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
 					return;

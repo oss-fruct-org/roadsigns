@@ -10,6 +10,8 @@ import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
 import org.osmdroid.tileprovider.modules.NetworkAvailabliltyCheck;
 import org.osmdroid.tileprovider.modules.TileWriter;
 import org.osmdroid.tileprovider.tilesource.ITileSource;
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 
@@ -24,7 +26,7 @@ import com.salidasoftware.osmdroidandmapsforge.MFTileSource;
 public class TileProviderManager {
 	private MapTileProviderArray provider;
 	private MFTileSource mfSource;
-	private XYTileSource webSource;
+	private OnlineTileSourceBase webSource;
 	private boolean isOnline;
 
 	public TileProviderManager(Context context) {
@@ -36,7 +38,8 @@ public class TileProviderManager {
 		File mapFile = new File(mapPath);
 			
 		mfSource = MFTileSource.createFromFile(mapFile);
-		webSource = new XYTileSource("Mapnik", ResourceProxy.string.mapnik, 1, 18, 256, ".png", "http://tile.openstreetmap.org/");
+		webSource = TileSourceFactory.MAPQUESTOSM;
+		//webSource = new XYTileSource("Mapquest", ResourceProxy.string.mapnik, 1, 18, 256, ".png", "http://tile.openstreetmap.org/");
 		
 		// Setup cache
 		TileWriter cacheWriter = new TileWriter();

@@ -136,7 +136,7 @@ public abstract class GHRouting implements IRouting {
 		if (!ensureInitialized())
 			return null;
 
-		log.debug("findPath enter");
+		log.trace("findPath enter");
 		try {
 			prepare(from);
 			return route(to);
@@ -144,7 +144,7 @@ public abstract class GHRouting implements IRouting {
 			ex.printStackTrace();
 			return null;
 		} finally {
-			log.debug("findPath exit");
+			log.trace("findPath exit");
 		}
 	}
 }

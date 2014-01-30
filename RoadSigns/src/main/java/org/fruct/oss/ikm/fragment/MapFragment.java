@@ -319,6 +319,8 @@ public class MapFragment extends Fragment implements MapListener,
 		mapView = new MapView(getActivity(), 256, proxy, tileProviderManager.getProvider());
     	mapView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
+		log.info("Created MapView using {} tiles", tileProviderManager.isOnline() ? "online" : "offline");
+
 		//mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 		mapView.setMapListener(this);

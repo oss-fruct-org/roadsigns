@@ -33,7 +33,8 @@
     <string name="action_about">About</string>
     <string name="about_text">
     Application uses map data from http://openstreetmap.org\n\n
-    This application is a part of grant KA322 of Karelia ENPI CBC programme, which is co-funded by the European Union, the Russian Federation and the Republic of Finland
+    This application is a part of grant KA322 of Karelia ENPI CBC programme, which is co-funded by the European Union, the Russian Federation and the Republic of Finland\n\n
+    Tiles Courtesy of MapQuest: http://www.mapquest.com
     </string>
     <string name="warn_network_unavailable">Network unavailable</string>
     <string name="configure_use_offline_map">Use offline map</string>

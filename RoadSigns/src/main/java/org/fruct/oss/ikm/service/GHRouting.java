@@ -6,6 +6,9 @@ import com.graphhopper.GraphHopper;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
+import com.graphhopper.storage.MMapDirectory;
+import com.graphhopper.storage.index.Location2IDFullIndex;
+import com.graphhopper.storage.index.Location2IDQuadtree;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
@@ -21,6 +24,8 @@ public abstract class GHRouting implements IRouting {
 	private boolean isInitialized = false;
 	private boolean isInitializationFailed = false;
 	protected GraphHopper hopper;
+	private LocationIndex[] locationIndexArray;
+
 
 	public abstract void prepare(GeoPoint from);
 	public abstract PointList route(GeoPoint to);
@@ -50,6 +55,14 @@ public abstract class GHRouting implements IRouting {
 
 			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
+
+			locationIndexArray = new LocationIndex[] {
+					hopper.getLocationIndex(),
+					//new Location2IDQuadtree(hopper.getGraph(), hopper.get)
+					//new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory())
+					new Location2IDFullIndex(hopper.getGraph())
+			};
+
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
 				isInitialized = true;
@@ -72,21 +85,34 @@ public abstract class GHRouting implements IRouting {
 	public GeoPoint getNearestRoadNode(GeoPoint current) {
 		if (!ensureInitialized())
 			return null;
-		
-		LocationIndex index = hopper.getLocationIndex();
-		FlagEncoder encoder = hopper.getEncodingManager().getEncoder("CAR");
-		EdgeFilter filter = EdgeFilter.ALL_EDGES;
-		
-		int nodeId = index.findClosest(current.getLatitudeE6()/1e6,
-				current.getLongitudeE6()/1e6, filter).getClosestNode();
-		
-		if (nodeId < 0)
-			return null;
+
+		int nodeId = getPointIndex(current, false);
 		
 		double lat = hopper.getGraph().getLatitude(nodeId);
 		double lon = hopper.getGraph().getLongitude(nodeId);
 
 		return new GeoPoint(lat, lon);
+	}
+
+	public int getPointIndex(GeoPoint geoPoint, boolean useCache) {
+		if (useCache) {
+			int cachedIndex = locationIndexCache.get(geoPoint);
+			if (cachedIndex != -1)
+				return cachedIndex;
+		}
+
+		for (LocationIndex index : locationIndexArray) {
+			int id = index.findID(geoPoint.getLatitude(), geoPoint.getLongitude());
+			if (id != -1) {
+				if (useCache) {
+					locationIndexCache.put(geoPoint, id);
+				}
+
+				return id;
+			}
+		}
+
+		return -1;
 	}
 
 	public PointList findPath(GeoPoint from, GeoPoint to) {

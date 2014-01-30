@@ -119,77 +119,6 @@ public class Utils {
 		
 		return toHex(md5.digest());
 	}
-	
-	private static boolean checkFileNeedsUpdate(String path, InputStream in) throws IOException {
-		if (!in.markSupported()) {
-			log.warn("copyToInternalStorage in.markSupported == false");
-			return true;
-		}
-		
-		String fileId = hashString(path);
-		
-		SharedPreferences pref = App.getContext().getSharedPreferences("stored-files", Context.MODE_PRIVATE);
-		String oldFileHash = pref.getString(fileId, null);
-		
-		log.info("copyToInternalStorage oldFileHash = " + oldFileHash);
-		
-		// XXX: handle any file size
-		in.mark(50 * 1024 * 1024);
-		String fileHash = hashStream(in);
-		in.reset();
-		
-		log.info("copyToInternalStorage fileHash = " + fileHash);
-		
-		boolean needUpdate = !fileHash.equals(oldFileHash);
-		
-		if (needUpdate)
-			pref.edit().putString(fileId, fileHash).commit();
-		
-		return needUpdate;
-	}
-	
-	/**
-	 * Copies or updates data from stream to internal storage
-	 * 
-	 * @param context Android context
-	 * @param input data stream
-	 * @param pathInStorage
-	 * @param fileInStorage
-	 * @return path to file
-	 * @throws IOException
-	 */
-	public static String copyToInternalStorage(Context context, InputStream input,
-			String pathInStorage, String fileInStorage) throws IOException {
-		if (!pathInStorage.startsWith("/"))
-			pathInStorage = "/" + pathInStorage;
-
-		final int bufferSize = 4096;
-		final String storageFolder = context.getFilesDir().getPath() + "/" + pathInStorage;
-		final String storageFile = storageFolder + "/" + fileInStorage;
-		
-		File targetFile = new File(storageFile);
-		if (targetFile.exists() || !checkFileNeedsUpdate(storageFile, input))
-			return storageFile;
-		
-		log.info("copyToInternalStorage copying file " + storageFile);
-	
-		File targetDirectory = new File(storageFolder);
-		// XXX: check return value
-		targetDirectory.mkdirs();
-		
-		OutputStream output = new BufferedOutputStream(new FileOutputStream(targetFile));
-		
-		int length;
-		byte[] buffer = new byte[bufferSize];
-		while ((length = input.read(buffer)) > 0) {
-			output.write(buffer, 0, length);
-		} 
-		
-		output.flush();
-		output.close();
-		
-		return storageFile;
-	}
 
 	public static String inputStreamToString(InputStream stream) throws IOException {
 		InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
@@ -390,5 +319,19 @@ public class Utils {
 		} else {
 			return android.R.style.Theme_Holo_Light_Dialog;
 		}
+	}
+
+	public static void deleteDir(File dir) {
+		if (!dir.exists() && !dir.isDirectory())
+			return;
+
+		File[] listFiles = dir.listFiles();
+		for (File file : listFiles) {
+			if (!file.isDirectory()) {
+				file.delete();
+			}
+		}
+
+		dir.delete();
 	}
 }

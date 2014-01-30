@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
 import android.os.Build;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
@@ -17,6 +18,7 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
@@ -57,10 +59,13 @@ public class DirectionService extends Service implements PointsListener,
 	
 	private Location lastLocation;
 
+	private String oldNavigationPath;
 	private String navigationPath;
+	private String ghPath;
 
 	private LocationIndexCache locationIndexCache;
 	private Thread extractingThread;
+	private SharedPreferences pref;
 
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -80,11 +85,18 @@ public class DirectionService extends Service implements PointsListener,
 		File internalDir = getFilesDir();
 		assert internalDir != null;
 
-		navigationPath = getFilesDir().getPath() + "/graphhopper/karelia.ghz";
+		pref = getSharedPreferences("gh-dir-pref", MODE_PRIVATE);
+
+		ghPath = getFilesDir().getPath() + "/graphhopper";
+
+		long ghDirIndex = pref.getLong("gh-dir-index", 1);
+		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
+		navigationPath = ghPath + "/ghdata" + ghDirIndex;
 
 		locationReceiver = new LocationReceiver(this);
 
 		locationIndexCache = new LocationIndexCache(this);
+
 
 		dirManager = new DirectionManager(createRouting());
 		dirManager.setListener(this);
@@ -236,20 +248,42 @@ public class DirectionService extends Service implements PointsListener,
 		if (file == null || !file.exists() || !file.canRead())
 			return;
 
-		// Use name 'karelia.ghz' only for backward compatibility
-		String targetDirectory = null;
 		try {
 			dirManager.interrupt();
 
-			targetDirectory = navigationPath;
-			new Unzipper().unzip(path, targetDirectory, false);
+			long ghDirIndex = pref.getLong("gh-dir-index", 1) + 1;
+			String newPath = ghPath + "/ghdata" + ghDirIndex;
+
+			new Unzipper().unzip(path, newPath, false);
 			log.info("Archive file {} successfully extracted", path);
 
-			// Check whether DirectionService active
-			if (this.dirManager != null)
-				dirManager.setRouting(createRouting());
+			File oldFileDir = new File(oldNavigationPath);
+			Utils.deleteDir(oldFileDir);
+
+			oldNavigationPath = navigationPath;
+			navigationPath = newPath;
+
+			pref.edit().putLong("gh-dir-index", ghDirIndex).apply();
+			dirManager.setRouting(createRouting());
+
+			log.debug("Listing graphhopper directory:");
+			File ghDirFile = new File(ghPath);
+			if (!ghDirFile.isDirectory() || !ghDirFile.exists()) {
+				log.error("Wrong internal gh directory");
+				return;
+			}
+
+			File[] files = ghDirFile.listFiles();
+			if (files == null) {
+				log.error("Can't list directory");
+				return;
+			}
+
+			for (File f : files)
+				log.debug(" {}", f.getAbsolutePath());
+
 		} catch (IOException e) {
-			log.warn("Can not extract archive file {} to {}", path, targetDirectory);
+			log.warn("Can not extract archive file {}", path);
 		}
 	}
 

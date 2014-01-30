@@ -1,19 +1,18 @@
 package org.fruct.oss.ikm.service;
 
-import org.osmdroid.util.GeoPoint;
-
 import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.util.EdgeFilter;
-import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.storage.MMapDirectory;
 import com.graphhopper.storage.index.Location2IDFullIndex;
 import com.graphhopper.storage.index.Location2IDQuadtree;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
+import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
 
 public abstract class GHRouting implements IRouting {
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
@@ -42,6 +41,27 @@ public abstract class GHRouting implements IRouting {
 		if (!from.equals(oldGeoPoint))
 			prepare(from);
 	}
+
+	private LocationIndex[] createLocationIndexArray() {
+		ArrayList<LocationIndex> arr = new ArrayList<LocationIndex>();
+
+		// Default index
+		arr.add(hopper.getLocationIndex());
+
+		// Quad tree index if available
+		String quadTreeFileName = path + "/loc2idIndex";
+		if (new File(quadTreeFileName).exists()) {
+			log.info("Enabling quadtree index as fallback");
+			arr.add(new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory(path)));
+		} else {
+			log.info("Quadtree index is unavailable");
+		}
+
+		// Slow linear search index
+		arr.add(new Location2IDFullIndex(hopper.getGraph()));
+
+		return arr.toArray(new LocationIndex[1]);
+	}
 	
 	public void initialize() {
 		if (isInitialized || isInitializationFailed)
@@ -56,12 +76,7 @@ public abstract class GHRouting implements IRouting {
 			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
 
-			locationIndexArray = new LocationIndex[] {
-					hopper.getLocationIndex(),
-					//new Location2IDQuadtree(hopper.getGraph(), hopper.get)
-					//new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory())
-					new Location2IDFullIndex(hopper.getGraph())
-			};
+			locationIndexArray = createLocationIndexArray();
 
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
@@ -107,6 +122,8 @@ public abstract class GHRouting implements IRouting {
 				if (useCache) {
 					locationIndexCache.put(geoPoint, id);
 				}
+
+				log.trace("LocationIndex found in {}", index.getClass().getName());
 
 				return id;
 			}

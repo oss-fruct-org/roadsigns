@@ -10,8 +10,11 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.util.PointList;
 
 import org.osmdroid.util.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OneToManyRouting extends GHRouting {
+	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 	private int fromId;
 
 	private com.graphhopper.routing.DijkstraOneToMany algo;

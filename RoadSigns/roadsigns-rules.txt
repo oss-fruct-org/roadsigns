@@ -7,7 +7,7 @@
 -dontpreverify
 -verbose
 # (3)Not remove unused code
--dontshrink
+# -dontshrink
 
 -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
 
@@ -25,6 +25,12 @@
 -keep class org.simpleframework.xml.**{ *; } 
 -keep class org.simpleframework.xml.core.**{ *; } 
 -keep class org.simpleframework.xml.util.**{ *; }
+
+-dontwarn org.openstreetmap.osmosis.osmbinary.**
+-dontwarn sun.misc.Unsafe
+-dontwarn com.google.protobuf.**
+-dontwarn com.sun.management.OperatingSystemMXBean
+-dontwarn org.apache.http.entity.mime.**
 
 # (1)Annotations and signatures
 -keepattributes *Annotation*

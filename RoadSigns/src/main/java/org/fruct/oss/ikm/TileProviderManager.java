@@ -93,6 +93,8 @@ public class TileProviderManager {
 	private class ClearableMapTileProviderArray extends MapTileProviderArray {
 		public ClearableMapTileProviderArray(ITileSource pTileSource, IRegisterReceiver aRegisterReceiver, MapTileModuleProviderBase[] pTileProviderArray) {
 			super(pTileSource, aRegisterReceiver, pTileProviderArray);
+
+			//BitmapPool.getInstance().
 		}
 
 		@Override

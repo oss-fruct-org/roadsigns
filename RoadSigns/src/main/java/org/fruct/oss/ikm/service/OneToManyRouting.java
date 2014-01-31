@@ -40,8 +40,10 @@ public class OneToManyRouting extends GHRouting {
 		Weighting weightCalc = new ShortestWeighting();
 
 		fromId = getPointIndex(from, false);
-		algo = null; // Allow gc collect old DijkstraOneToMany when constructing new
+
+		algo = null;
 		//App.getInstance().onLowMemory();
+		App.clearBitmapPool();
 		System.gc();
 
 		algo = new DijkstraOneToMany(graph, encoder, weightCalc);

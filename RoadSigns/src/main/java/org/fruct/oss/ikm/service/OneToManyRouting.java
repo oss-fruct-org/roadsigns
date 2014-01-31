@@ -9,6 +9,7 @@ import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ikm.App;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 	private int fromId;
 
-	private com.graphhopper.routing.DijkstraOneToMany algo;
+	private volatile com.graphhopper.routing.DijkstraOneToMany algo;
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
@@ -29,6 +30,8 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return;
 
+		log.debug("prepare {}", from);
+
 		EncodingManager encodingManager = new EncodingManager("CAR");
 		FlagEncoder encoder = encodingManager.getEncoder("CAR");
 
@@ -37,6 +40,10 @@ public class OneToManyRouting extends GHRouting {
 		Weighting weightCalc = new ShortestWeighting();
 
 		fromId = getPointIndex(from, false);
+		algo = null; // Allow gc collect old DijkstraOneToMany when constructing new
+		//App.getInstance().onLowMemory();
+		System.gc();
+
 		algo = new DijkstraOneToMany(graph, encoder, weightCalc);
 	}
 

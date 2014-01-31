@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -95,6 +96,7 @@ public class DirectionManager {
 			@Override
 			public void run() {
 				activePoints = new ArrayList<PointDesc>(points);
+
 				doCalculateForPoints();
 			}
 		});
@@ -117,6 +119,17 @@ public class DirectionManager {
 
 				DirectionManager.this.userPosition = nearestNode;
 				readyPoints.clear();
+
+				/*Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+					@Override
+					public void uncaughtException(Thread thread, Throwable throwable) {
+						try {
+							android.os.Debug.dumpHprofData("/sdcard/dump.hprof");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				});*/
 
 				// Can throw if not initialized, ignore
 				routing.reset(userPosition);
@@ -184,7 +197,7 @@ public class DirectionManager {
 		}
 		
 		long curr = System.nanoTime();
-		log.info("GHRouting results " + (curr - last) / 1e9 + " cache/total = " + dbgPointsCache + "/" + dbgPointsProcessed);
+		log.info("GHRouting results " + (curr - last) / 1e9 + " cache/totalProc/total = " + dbgPointsCache + "/" + dbgPointsProcessed + "/" + activePoints.size());
 		
 		sendResult();
 		

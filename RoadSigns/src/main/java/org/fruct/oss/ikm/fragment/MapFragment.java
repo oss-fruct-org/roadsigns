@@ -162,6 +162,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final GeoPoint ICELAND = new GeoPoint(64.133038, -21.898337);
+	public static final GeoPoint KUOPIO = new GeoPoint(62.892500, 27.678333);
 	public static final int DEFAULT_ZOOM = 18;
 	
 	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
@@ -399,7 +400,7 @@ public class MapFragment extends Fragment implements MapListener,
 		// Restore saved instance state
 		if (savedInstanceState == null) {
 			mapView.getController().setZoom(DEFAULT_ZOOM);
-			mapView.getController().setCenter(PTZ);
+			mapView.getController().setCenter(KUOPIO);
 		} else {
 			log.debug("Restore mapCenter = " + mapState.center);
 			

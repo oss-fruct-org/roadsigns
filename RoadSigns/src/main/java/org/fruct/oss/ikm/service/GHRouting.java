@@ -52,7 +52,7 @@ public abstract class GHRouting implements IRouting {
 		String quadTreeFileName = path + "/loc2idIndex";
 		if (new File(quadTreeFileName).exists()) {
 			log.info("Enabling quadtree index as fallback");
-			arr.add(new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory(path)));
+			arr.add(new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory(path)).prepareIndex());
 		} else {
 			log.info("Quadtree index is unavailable");
 		}
@@ -123,7 +123,7 @@ public abstract class GHRouting implements IRouting {
 					locationIndexCache.put(geoPoint, id);
 				}
 
-				log.trace("LocationIndex found in {}", index.getClass().getName());
+				log.trace("LocationIndex {} found in {}", id, index.getClass().getName());
 
 				return id;
 			}

@@ -1,8 +1,12 @@
 package org.fruct.oss.ikm;
 
 import java.io.File;
+import java.util.HashSet;
 
 import org.osmdroid.ResourceProxy;
+import org.osmdroid.tileprovider.BitmapPool;
+import org.osmdroid.tileprovider.IRegisterReceiver;
+import org.osmdroid.tileprovider.MapTileCache;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.modules.MapTileDownloader;
 import org.osmdroid.tileprovider.modules.MapTileFilesystemProvider;
@@ -40,17 +44,17 @@ public class TileProviderManager {
 		mfSource = MFTileSource.createFromFile(mapFile);
 		webSource = TileSourceFactory.MAPQUESTOSM;
 		//webSource = new XYTileSource("Mapquest", ResourceProxy.string.mapnik, 1, 18, 256, ".png", "http://tile.openstreetmap.org/");
-		
+
 		// Setup cache
 		TileWriter cacheWriter = new TileWriter();
 		MapTileFilesystemProvider fileSystemProvider = new MapTileFilesystemProvider(register, webSource);
-		
+
 		// Setup providers
 		NetworkAvailabliltyCheck networkAvailabliltyCheck = new NetworkAvailabliltyCheck(context);
 		MFTileModuleProvider mfProvider = new MFTileModuleProvider(register, mapFile, mfSource);
 		MapTileDownloader webProvider = new MapTileDownloader(webSource, cacheWriter, networkAvailabliltyCheck);
 		
-		provider = new MapTileProviderArray(mfSource, register,
+		provider = new ClearableMapTileProviderArray(mfSource, register,
 				new MapTileModuleProviderBase[] { fileSystemProvider, mfProvider, webProvider });
 		
 		if (!mapPath.isEmpty() && mapFile.exists()) {
@@ -81,5 +85,24 @@ public class TileProviderManager {
 
 	public boolean isOnline() {
 		return isOnline;
+	}
+
+	/*
+	 *	MapTileProviderArray that allows application clear MapTileCache
+	 */
+	private class ClearableMapTileProviderArray extends MapTileProviderArray {
+		public ClearableMapTileProviderArray(ITileSource pTileSource, IRegisterReceiver aRegisterReceiver, MapTileModuleProviderBase[] pTileProviderArray) {
+			super(pTileSource, aRegisterReceiver, pTileProviderArray);
+		}
+
+		@Override
+		public MapTileCache createTileCache() {
+			ClearableTileCache tmpTileCache = new ClearableTileCache();
+			App.addClearable(tmpTileCache);
+			return tmpTileCache;
+		}
+	}
+
+	private class ClearableTileCache extends MapTileCache implements App.Clearable {
 	}
 }

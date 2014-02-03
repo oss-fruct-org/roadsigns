@@ -45,7 +45,9 @@ public class LocationReceiver implements LocationListener {
 			}
 		} catch (SecurityException ex) {
 			ex.printStackTrace();
-		}
+		} catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        }
 		
 		isStarted = true;
 	}

@@ -56,7 +56,7 @@ public class TileProviderManager {
 		
 		provider = new ClearableMapTileProviderArray(mfSource, register,
 				new MapTileModuleProviderBase[] { fileSystemProvider, mfProvider, webProvider });
-		
+
 		if (!mapPath.isEmpty() && mapFile.exists()) {
 			provider.setTileSource(mfSource);
 			isOnline = false;

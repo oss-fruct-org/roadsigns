@@ -74,6 +74,7 @@ import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -168,7 +169,7 @@ public class MapFragment extends Fragment implements MapListener,
 	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
 	public static final String MAP_CENTER = "org.fruct.oss.ikm.fragment.MAP_CENTER";
 				
-	private List<DirectedLocationOverlay> crossDirections;
+	private List<ClickableDirectedLocationOverlay> crossDirections;
 	private PathOverlay pathOverlay;
 	private MyPositionOverlay myPositionOverlay;
 	
@@ -226,9 +227,26 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	};
 
+    /*public static class MyUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread thread, Throwable ex) {
+            Log.e("UncaughtException", "Got an uncaught exception: "+ex.toString());
+            if(ex.getClass().equals(OutOfMemoryError.class))
+            {
+                try {
+                    android.os.Debug.dumpHprofData("/sdcard/dump.hprof");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            ex.printStackTrace();
+        }
+    }*/
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		log.trace("MapFragment.onCreate");
+        //Thread.currentThread().setUncaughtExceptionHandler(new MyUncaughtExceptionHandler());
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
@@ -553,6 +571,8 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
 
+        mapView.getTileProvider().clearTileCache();
+
 		clearState(State.DS_RECEIVED);
 		clearState(State.CREATED);
 		clearState(State.DS_CREATED);
@@ -675,7 +695,7 @@ public class MapFragment extends Fragment implements MapListener,
 			mapView.getOverlays().removeAll(crossDirections);
 		}
 				
-		crossDirections = new ArrayList<DirectedLocationOverlay>();
+		crossDirections = new ArrayList<ClickableDirectedLocationOverlay>();
 		for (Direction direction : directions) {
 			final GeoPoint directionPoint = direction.getDirection();
 			final GeoPoint centerPoint = direction.getCenter();
@@ -687,7 +707,7 @@ public class MapFragment extends Fragment implements MapListener,
 			final GeoPoint markerPosition = directionPoint;
 			
 			//markerPosition = directionPoint;
-			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
+			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override

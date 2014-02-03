@@ -60,6 +60,7 @@ public class App extends Application {
 		clearables.put(clearable, log /* dummy object */);
 	}
 
+    @SuppressWarnings("unchecked")
 	public static void clearBitmapPool() {
 		// FIXME: use method clearBitmapPool() when it will be available in maven repository
 		BitmapPool pool = BitmapPool.getInstance();
@@ -69,7 +70,7 @@ public class App extends Application {
 			if (field.getName().equals("mPool")) {
 				field.setAccessible(true);
 				try {
-					LinkedList<Bitmap> mPool = (LinkedList) field.get(pool);
+					LinkedList<Bitmap> mPool = (LinkedList<Bitmap>) field.get(pool);
 					log.debug("Pool size = " + mPool.size());
 					synchronized (mPool) {
 						while (!mPool.isEmpty()) {

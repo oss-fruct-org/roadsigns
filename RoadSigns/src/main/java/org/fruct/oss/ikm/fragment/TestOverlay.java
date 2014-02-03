@@ -29,7 +29,7 @@ public class TestOverlay extends RelativeLayout  {
 	}
 	
 	public void initialize(MapView mapView) {
-	    DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
+	    /*DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
 	    DirectionsPanel rightPanel = (DirectionsPanel) findViewById(R.id.directions_panel_right);
 	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);
 	    DirectionsPanel bottomPanel = (DirectionsPanel) findViewById(R.id.directions_panel_bottom);
@@ -38,13 +38,13 @@ public class TestOverlay extends RelativeLayout  {
 	    panels.put(RelativeDirection.LEFT, leftPanel);
 	    panels.put(RelativeDirection.RIGHT, rightPanel);
 	    panels.put(RelativeDirection.FORWARD, topPanel);
-	    panels.put(RelativeDirection.BACK, bottomPanel);
+	    panels.put(RelativeDirection.BACK, bottomPanel);*/
 
 	}
 
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-	    DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
+	    /*DirectionsPanel leftPanel = (DirectionsPanel) findViewById(R.id.directions_panel_left);
 	    DirectionsPanel rightPanel = (DirectionsPanel) findViewById(R.id.directions_panel_right);
 	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);
 	    DirectionsPanel bottomPanel = (DirectionsPanel) findViewById(R.id.directions_panel_bottom);
@@ -56,7 +56,7 @@ public class TestOverlay extends RelativeLayout  {
 	    setTopPanelSize(topPanel);
 	    setTopPanelSize(bottomPanel);
 	    
-		super.onSizeChanged(w, h, oldw, oldh);
+		super.onSizeChanged(w, h, oldw, oldh);*/
 	}
 	
 	private void setSidePanelSize(DirectionsPanel panel) {

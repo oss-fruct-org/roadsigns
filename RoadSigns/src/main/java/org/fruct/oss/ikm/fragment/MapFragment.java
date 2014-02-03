@@ -390,8 +390,8 @@ public class MapFragment extends Fragment implements MapListener,
 		// Initialize map		
 		createMapView(getView());
 		
-		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
-		panelOverlay.initialize(mapView);
+		//panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
+		//panelOverlay.initialize(mapView);
 		
 		// Process MAP_CENTER parameter
 		Intent intent = getActivity().getIntent();
@@ -571,6 +571,8 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
 
+        log.debug("Provider type: " + mapView.getTileProvider().getClass().getName());
+
         mapView.getTileProvider().clearTileCache();
 
 		clearState(State.DS_RECEIVED);
@@ -728,7 +730,7 @@ public class MapFragment extends Fragment implements MapListener,
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {
-				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
+		//		panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
 			}
 		},  State.CREATED);
 		
@@ -771,8 +773,8 @@ public class MapFragment extends Fragment implements MapListener,
 	public void startTracking() {
 		isTracking = true;
 		myPositionOverlay.setListener(this);
-		panelOverlay.setVisibility(View.VISIBLE);
-		panelOverlay.setHidden(false);
+		//panelOverlay.setVisibility(View.VISIBLE);
+		//panelOverlay.setHidden(false);
 
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
@@ -784,8 +786,8 @@ public class MapFragment extends Fragment implements MapListener,
 	public void stopTracking() {
 		isTracking = false;
 		myPositionOverlay.clearListener();
-		panelOverlay.setVisibility(View.GONE);
-		panelOverlay.setHidden(true);
+		//panelOverlay.setVisibility(View.GONE);
+		//panelOverlay.setHidden(true);
 		
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);

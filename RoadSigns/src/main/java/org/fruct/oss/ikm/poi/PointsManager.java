@@ -230,7 +230,7 @@ public class PointsManager {
 		if (instance == null) {
 			instance = new PointsManager();
 
-			if (true) {
+			if (false) {
 				instance.addPointLoader(new StubPointLoader());
 				//instance.ensureGetsState();
 				return instance;

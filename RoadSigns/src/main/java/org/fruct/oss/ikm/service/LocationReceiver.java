@@ -40,14 +40,17 @@ public class LocationReceiver implements LocationListener {
 	public void start() {
 		try {
 			if (!isDisableRealLocation) {
-				locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 20, this);
-				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 20, this);
+				try {
+					locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 20, this);
+				} catch (IllegalArgumentException ex) {}
+
+				try {
+					locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 20, this);
+				} catch (IllegalArgumentException ex) {}
 			}
 		} catch (SecurityException ex) {
 			ex.printStackTrace();
-		} catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
-        }
+		}
 		
 		isStarted = true;
 	}

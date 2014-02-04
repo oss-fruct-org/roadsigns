@@ -14,15 +14,37 @@ import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.ref.SoftReference;
+
 public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 	private int fromId;
 
-	private volatile DijkstraOneToMany algo;
+	private volatile SoftReference<DijkstraOneToMany> algoRef;
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
 		log.debug("OneToManyRouting created");
+	}
+
+	private DijkstraOneToMany getAlgo() {
+		DijkstraOneToMany hardRef = (algoRef == null ? null : algoRef.get());
+
+		if (hardRef == null) {
+			EncodingManager encodingManager = new EncodingManager("CAR");
+			FlagEncoder encoder = encodingManager.getEncoder("CAR");
+			Weighting weightCalc = new ShortestWeighting();
+
+			Graph graph = hopper.getGraph();
+
+			App.clearBitmapPool();
+			System.gc();
+
+			hardRef = new DijkstraOneToMany(graph, encoder, weightCalc);
+			algoRef = new SoftReference<DijkstraOneToMany>(hardRef);
+		}
+
+		return hardRef;
 	}
 
 	@Override
@@ -30,27 +52,17 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return;
 
-		EncodingManager encodingManager = new EncodingManager("CAR");
-		FlagEncoder encoder = encodingManager.getEncoder("CAR");
-
-		Graph graph = hopper.getGraph();
-
-		Weighting weightCalc = new ShortestWeighting();
-
 		fromId = getPointIndex(from, false);
-
-		algo = null;
-		//App.getInstance().onLowMemory();
-		App.clearBitmapPool();
-		System.gc();
-
-		algo = new DijkstraOneToMany(graph, encoder, weightCalc);
+		if (algoRef != null)
+			algoRef.clear();
 	}
 
 	@Override
 	public synchronized PointList route(GeoPoint to) {
 		if (!ensureInitialized())
 			return null;
+
+		DijkstraOneToMany algo = getAlgo();
 
 		if (algo == null)
 			return null;

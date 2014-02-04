@@ -120,17 +120,6 @@ public class DirectionManager {
 				DirectionManager.this.userPosition = nearestNode;
 				readyPoints.clear();
 
-				/*Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-					@Override
-					public void uncaughtException(Thread thread, Throwable throwable) {
-						try {
-							android.os.Debug.dumpHprofData("/sdcard/dump.hprof");
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-				});*/
-
 				// Can throw if not initialized, ignore
 				routing.reset(userPosition);
 			}

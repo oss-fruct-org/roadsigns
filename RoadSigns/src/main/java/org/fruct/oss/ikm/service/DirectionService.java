@@ -2,12 +2,14 @@ package org.fruct.oss.ikm.service;
 
 import android.annotation.TargetApi;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
 import android.os.Build;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.SystemClock;
@@ -35,6 +37,9 @@ import java.util.List;
 public class DirectionService extends Service implements PointsListener,
 		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
+
+	// Local broadcasts
+	private static final String ARCHIVE_READY = "org.fruct.oss.ikm.ARCHIVE_READY";
 
 	// Extras
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
@@ -66,6 +71,7 @@ public class DirectionService extends Service implements PointsListener,
 	private LocationIndexCache locationIndexCache;
 	private Thread extractingThread;
 	private SharedPreferences pref;
+	private BroadcastReceiver archiveReadyReceiver;
 
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
@@ -77,7 +83,7 @@ public class DirectionService extends Service implements PointsListener,
 	public IBinder onBind(Intent intent) {
 		return binder;
 	}
-	
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -86,20 +92,15 @@ public class DirectionService extends Service implements PointsListener,
 		assert internalDir != null;
 
 		pref = getSharedPreferences("gh-dir-pref", MODE_PRIVATE);
+		pref.registerOnSharedPreferenceChangeListener(this);
 
 		ghPath = getFilesDir().getPath() + "/graphhopper";
-
-		long ghDirIndex = pref.getLong("gh-dir-index", 1);
-		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
-		navigationPath = ghPath + "/ghdata" + ghDirIndex;
 
 		locationReceiver = new LocationReceiver(this);
 
 		locationIndexCache = new LocationIndexCache(this);
 
-
-		dirManager = new DirectionManager(createRouting());
-		dirManager.setListener(this);
+		updateDirectionsManager();
 		dirManager.calculateForPoints(PointsManager.getInstance()
 				.getFilteredPoints());
 
@@ -108,6 +109,15 @@ public class DirectionService extends Service implements PointsListener,
 				.registerOnSharedPreferenceChangeListener(this);
 
 		log.debug("DirectionService created");
+
+		archiveReadyReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				log.debug("Archive ready");
+				updateDirectionsManager();
+			}
+		};
+		LocalBroadcastManager.getInstance(this).registerReceiver(archiveReadyReceiver, new IntentFilter(ARCHIVE_READY));
 	}
 
 	private IRouting createRouting() {
@@ -115,6 +125,20 @@ public class DirectionService extends Service implements PointsListener,
 			return new OneToManyRouting(navigationPath, locationIndexCache);
 		else
 			return new StubRouting();
+	}
+
+	private void updateDirectionsManager() {
+		long ghDirIndex = pref.getLong("gh-dir-index", 1);
+		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
+		navigationPath = ghPath + "/ghdata" + ghDirIndex;
+
+		if (dirManager != null) {
+			dirManager.interrupt();
+			dirManager.setRouting(createRouting());
+		} else {
+			dirManager = new DirectionManager(createRouting());
+			dirManager.setListener(this);
+		}
 	}
 
 	@Override
@@ -129,6 +153,8 @@ public class DirectionService extends Service implements PointsListener,
 
 		PointsManager.getInstance().removeListener(this);
 
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(archiveReadyReceiver);
+		pref.unregisterOnSharedPreferenceChangeListener(this);
 		dirManager.interrupt();
 		dirManager = null;
 
@@ -186,7 +212,7 @@ public class DirectionService extends Service implements PointsListener,
 		}
 		
 		locationReceiver.setListener(this);
-		
+		getSharedPreferences("qweqwe", MODE_PRIVATE);
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
 			locationReceiver.sendLastLocation();
@@ -249,9 +275,6 @@ public class DirectionService extends Service implements PointsListener,
 			return;
 
 		try {
-			if (dirManager != null)
-				dirManager.interrupt();
-
 			long ghDirIndex = pref.getLong("gh-dir-index", 1) + 1;
 			String newPath = ghPath + "/ghdata" + ghDirIndex;
 
@@ -266,8 +289,8 @@ public class DirectionService extends Service implements PointsListener,
 
 			pref.edit().putLong("gh-dir-index", ghDirIndex).apply();
 
-			if (dirManager != null)
-				dirManager.setRouting(createRouting());
+			LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ARCHIVE_READY));
+
 
 			log.debug("Listing graphhopper directory:");
 			File ghDirFile = new File(ghPath);

@@ -859,6 +859,9 @@ public class MapFragment extends Fragment implements MapListener,
 		pathOverlay = new PathOverlay(Color.BLUE, getActivity());
 		pathOverlay.setAlpha(127);
 
+		for (GeoPoint geoPoint : path)
+			pathOverlay.addPoint(geoPoint);
+
 		mapView.getOverlays().add(pathOverlay);
 		mapView.invalidate();
 		

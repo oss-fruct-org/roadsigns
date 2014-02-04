@@ -232,7 +232,7 @@ public class PointsManager {
 
 			if (false) {
 				instance.addPointLoader(new StubPointLoader());
-				//instance.ensureGetsState();
+				instance.ensureGetsState();
 				return instance;
 			}
 

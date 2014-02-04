@@ -223,26 +223,9 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	};
 
-    /*public static class MyUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
-        @Override
-        public void uncaughtException(Thread thread, Throwable ex) {
-            Log.e("UncaughtException", "Got an uncaught exception: "+ex.toString());
-            if(ex.getClass().equals(OutOfMemoryError.class))
-            {
-                try {
-                    android.os.Debug.dumpHprofData("/sdcard/dump.hprof");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            ex.printStackTrace();
-        }
-    }*/
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		log.trace("MapFragment.onCreate");
-        //Thread.currentThread().setUncaughtExceptionHandler(new MyUncaughtExceptionHandler());
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
@@ -596,8 +579,6 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
 
-        log.debug("Provider type: " + mapView.getTileProvider().getClass().getName());
-
         mapView.getTileProvider().clearTileCache();
 
 		clearState(State.DS_RECEIVED);
@@ -734,7 +715,7 @@ public class MapFragment extends Fragment implements MapListener,
 			final GeoPoint markerPosition = directionPoint;
 			
 			//markerPosition = directionPoint;
-			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, markerPosition, (float) bearing);
+			ClickableDirectedLocationOverlay overlay = new ClickableDirectedLocationOverlay(context, mapView, markerPosition, (float) bearing);
 			
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override

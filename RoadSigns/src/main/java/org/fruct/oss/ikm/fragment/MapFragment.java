@@ -177,7 +177,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 	private BroadcastReceiver directionsReceiver;
 	private BroadcastReceiver locationReceiver;
-	
+	private BroadcastReceiver pathReceiver;
+
 	private Location myLocation;
 	private Smoother speedAverage = new Smoother(10000);
 	
@@ -241,7 +242,7 @@ public class MapFragment extends Fragment implements MapListener,
 				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
-				
+
 				setState(State.DS_RECEIVED);
 			}
 		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
@@ -283,7 +284,16 @@ public class MapFragment extends Fragment implements MapListener,
 				}
 			}
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
-		
+
+		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(pathReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				ArrayList<GeoPoint> pathArray = intent.getParcelableArrayListExtra(DirectionService.PATH);
+				showPath(pathArray);
+				mapView.getController().setCenter(new GeoPoint(myLocation));
+			}
+		}, new IntentFilter(DirectionService.PATH_READY));
+
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		log.trace("MapFragment.onCreate EXIT");
@@ -587,6 +597,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
+		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(pathReceiver);
 
 		getActivity().unbindService(serviceConnection);
 		
@@ -831,27 +842,8 @@ public class MapFragment extends Fragment implements MapListener,
 			public void run() {
 				log.debug("MapFragment.showPath task start");
 
-				// Get last known location from DirectionService
-				Location lastLocation = directionService.getLastLocation();
-				if (lastLocation == null) {
-					Log.w("roadsigns", "MapFragment.showPath: myLocation == null");
-					return;
-				}
-				myLocation = lastLocation;
-				
-				GeoPoint current = new GeoPoint(myLocation);
-				
 				// Find path from current location to target location
-				PointList list = directionService.findPath(current, target);
-				if (list == null || list.isEmpty())
-					return;
-				
-				ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();
-				for (int i = 0; i < list.getSize(); i++)
-					pathArray.add(new GeoPoint(list.getLatitude(i), list.getLongitude(i)));
-				
-				showPath(pathArray);
-				mapView.getController().setCenter(new GeoPoint(myLocation));
+				directionService.findPath(target);
 			}
 		};
 		
@@ -866,12 +858,7 @@ public class MapFragment extends Fragment implements MapListener,
 		
 		pathOverlay = new PathOverlay(Color.BLUE, getActivity());
 		pathOverlay.setAlpha(127);
-		
-		for (GeoPoint geoPoint : path) {
-			log.trace("path " + geoPoint);
-			pathOverlay.addPoint(geoPoint);
-		}
-		
+
 		mapView.getOverlays().add(pathOverlay);
 		mapView.invalidate();
 		

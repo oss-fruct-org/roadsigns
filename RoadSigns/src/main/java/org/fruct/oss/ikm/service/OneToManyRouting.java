@@ -18,7 +18,7 @@ public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 	private int fromId;
 
-	private volatile com.graphhopper.routing.DijkstraOneToMany algo;
+	private volatile DijkstraOneToMany algo;
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
@@ -29,8 +29,6 @@ public class OneToManyRouting extends GHRouting {
 	public void prepare(GeoPoint from) {
 		if (!ensureInitialized())
 			return;
-
-		log.debug("prepare {}", from);
 
 		EncodingManager encodingManager = new EncodingManager("CAR");
 		FlagEncoder encoder = encodingManager.getEncoder("CAR");
@@ -50,8 +48,11 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	@Override
-	public PointList route(GeoPoint to) {
+	public synchronized PointList route(GeoPoint to) {
 		if (!ensureInitialized())
+			return null;
+
+		if (algo == null)
 			return null;
 
 		int toId = getPointIndex(to, true);

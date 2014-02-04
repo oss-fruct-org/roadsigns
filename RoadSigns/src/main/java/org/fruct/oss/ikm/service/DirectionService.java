@@ -45,10 +45,12 @@ public class DirectionService extends Service implements PointsListener,
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
 	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
+	public static final String PATH = "org.fruct.oss.ikm.PATH";
 
 	// Broadcasts
 	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
+	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
 
@@ -254,12 +256,8 @@ public class DirectionService extends Service implements PointsListener,
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
-	public PointList findPath(GeoPoint from, GeoPoint to) {
-		return dirManager.findPath(from, to);
-	}
-	
-	public Location getLastLocation() {
-		return lastLocation;
+	public void findPath(GeoPoint to) {
+		dirManager.findPath(to);
 	}
 	
 	@Override
@@ -345,7 +343,19 @@ public class DirectionService extends Service implements PointsListener,
 		
 		sendResult(lastResultDirections, lastResultCenter, lastLocation);
 	}
-		
+
+	@Override
+	public void pathReady(PointList pointList) {
+		ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();
+		for (int i = 0; i < pointList.getSize(); i++)
+			pathArray.add(new GeoPoint(pointList.getLatitude(i), pointList.getLongitude(i)));
+
+		Intent intent = new Intent(PATH_READY);
+		intent.putParcelableArrayListExtra(PATH, pathArray);
+
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+	}
+
 	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
 		Intent intent = new Intent(DIRECTIONS_READY);
 		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);

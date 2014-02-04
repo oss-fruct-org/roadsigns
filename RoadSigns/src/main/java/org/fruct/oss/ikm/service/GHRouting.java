@@ -131,20 +131,4 @@ public abstract class GHRouting implements IRouting {
 
 		return -1;
 	}
-
-	public PointList findPath(GeoPoint from, GeoPoint to) {
-		if (!ensureInitialized())
-			return null;
-
-		log.trace("findPath enter");
-		try {
-			prepare(from);
-			return route(to);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			return null;
-		} finally {
-			log.trace("findPath exit");
-		}
-	}
 }

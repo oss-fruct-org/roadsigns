@@ -1,17 +1,14 @@
 package org.fruct.oss.ikm.service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -33,6 +30,7 @@ public class DirectionManager {
 
 	public interface Listener {
 		void directionsUpdated(List<Direction> directions, GeoPoint center);
+		void pathReady(PointList pointList);
 	}
 	
 	private Listener listener;
@@ -48,7 +46,7 @@ public class DirectionManager {
 	private GeoPoint userPosition;
 	private Location location;
 
-	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private Future<?> calculationTask;
 
 	// POI, for that directions ready
@@ -142,7 +140,7 @@ public class DirectionManager {
 			activePoints = activePoints.subList(0, nearest);
 		}
 	}
-	
+
 	private void doCalculateForPoints() {
 		if (activePoints == null || userPosition == null)
 			return;
@@ -277,16 +275,25 @@ public class DirectionManager {
 		}
 	}
 
-	public PointList findPath(GeoPoint from, GeoPoint to) {
+	public void findPath(final GeoPoint to) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				doFindPath(to);
+			}
+		});
+	}
+
+	public void doFindPath(GeoPoint to) {
 		try {
 			if (routing instanceof GHRouting) {
-				return ((GHRouting) routing).findPath(from, to);
-			} else {
-				return null;
+				PointList pointList = routing.route(to);
+
+				if (listener != null)
+					listener.pathReady(pointList);
 			}
 		} catch (Exception ex) {
 			log.error("findPath throw exception", ex);
-			return null;
 		}
 	}
 

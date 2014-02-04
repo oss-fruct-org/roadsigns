@@ -32,7 +32,7 @@ public class MainActivity extends ActionBarActivity {
 		final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
 		final ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
 
-		debugThread = new Thread() {
+		/*debugThread = new Thread() {
 			@Override
 			public void run() {
 				while (!Thread.interrupted()) {
@@ -46,7 +46,7 @@ public class MainActivity extends ActionBarActivity {
 					}
 				}
 			}
-		};
+		};*/
 		//debugThread.start();
 	}
 

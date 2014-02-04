@@ -27,7 +27,7 @@ import android.preference.PreferenceManager;
 import com.salidasoftware.osmdroidandmapsforge.MFTileModuleProvider;
 import com.salidasoftware.osmdroidandmapsforge.MFTileSource;
 
-public class TileProviderManager {
+public class TileProviderManager implements App.Clearable {
 	private MapTileProviderArray provider;
 	private MFTileSource mfSource;
 	private OnlineTileSourceBase webSource;
@@ -54,8 +54,9 @@ public class TileProviderManager {
 		MFTileModuleProvider mfProvider = new MFTileModuleProvider(register, mapFile, mfSource);
 		MapTileDownloader webProvider = new MapTileDownloader(webSource, cacheWriter, networkAvailabliltyCheck);
 		
-		provider = new ClearableMapTileProviderArray(mfSource, register,
+		provider = new MapTileProviderArray(mfSource, register,
 				new MapTileModuleProviderBase[] { fileSystemProvider, mfProvider, webProvider });
+		App.addClearable(this);
 
 		if (!mapPath.isEmpty() && mapFile.exists()) {
 			provider.setTileSource(mfSource);
@@ -87,24 +88,8 @@ public class TileProviderManager {
 		return isOnline;
 	}
 
-	/*
-	 *	MapTileProviderArray that allows application clear MapTileCache
-	 */
-	private class ClearableMapTileProviderArray extends MapTileProviderArray {
-		public ClearableMapTileProviderArray(ITileSource pTileSource, IRegisterReceiver aRegisterReceiver, MapTileModuleProviderBase[] pTileProviderArray) {
-			super(pTileSource, aRegisterReceiver, pTileProviderArray);
-
-			//BitmapPool.getInstance().
-		}
-
-		@Override
-		public MapTileCache createTileCache() {
-			ClearableTileCache tmpTileCache = new ClearableTileCache();
-			App.addClearable(tmpTileCache);
-			return tmpTileCache;
-		}
-	}
-
-	private class ClearableTileCache extends MapTileCache implements App.Clearable {
+	@Override
+	public void clear() {
+		provider.clearTileCache();
 	}
 }

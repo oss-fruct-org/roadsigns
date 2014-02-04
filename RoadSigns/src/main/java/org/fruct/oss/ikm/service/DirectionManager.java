@@ -52,7 +52,7 @@ public class DirectionManager {
 	private Future<?> calculationTask;
 
 	// POI, for that directions ready
-	private Map<PointDesc, PointList> readyPoints = new HashMap<PointDesc, PointList>();
+	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
 	
 	// POI, that pass filters
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
@@ -184,11 +184,13 @@ public class DirectionManager {
 				continue;
 			}
 
-			readyPoints.put(point, path);
-
 			int dist = (int) path.calcDistance(new DistanceCalc3D());
 			point.setDistance(dist);
-			
+
+			Pair<GeoPoint, GeoPoint> directionNode = getDirectionNode(userPosition, path);
+
+			readyPoints.put(point, directionNode);
+
 			pointsProcessed++;
 			if (pointsProcessed >= BATCH_SIZE) {
 				needContinue = true;
@@ -223,11 +225,9 @@ public class DirectionManager {
 		
 		HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
 		for (PointDesc point : activePoints) {
-			PointList path = readyPoints.get(point);
+			Pair<GeoPoint, GeoPoint> dirPair = readyPoints.get(point);
 			
-			if (path != null) {
-				Pair<GeoPoint, GeoPoint> dirPair = getDirectionNode(userPosition, path);
-
+			if (dirPair != null) {
 				GeoPoint node1 = dirPair.first;
 				GeoPoint node2 = dirPair.second;
 				

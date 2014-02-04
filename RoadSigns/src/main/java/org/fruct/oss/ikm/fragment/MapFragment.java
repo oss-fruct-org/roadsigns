@@ -68,13 +68,11 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.MapView.Projection;
-import org.osmdroid.views.overlay.DirectedLocationOverlay;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -88,7 +86,7 @@ class MapState implements Parcelable {
 	List<Direction> directions = Collections.emptyList();
 	boolean isTracking;
 	
-	boolean providerWarningShown;
+	boolean warningShown;
 	
 	@Override
 	public int describeContents() {
@@ -102,7 +100,7 @@ class MapState implements Parcelable {
 		dest.writeTypedList(currentPath);
 		dest.writeTypedList(directions);
 		dest.writeValue(isTracking);
-		dest.writeValue(providerWarningShown);
+		dest.writeValue(warningShown);
 	}
 	
 	public static final Parcelable.Creator<MapState> CREATOR = new Parcelable.Creator<MapState>() {
@@ -121,7 +119,7 @@ class MapState implements Parcelable {
 			source.readTypedList(ret.directions, Direction.CREATOR);
 			
 			ret.isTracking = (Boolean) source.readValue(loader);
-			ret.providerWarningShown = (Boolean) source.readValue(loader);
+			ret.warningShown = (Boolean) source.readValue(loader);
 			
 			return ret;
 		}
@@ -198,14 +196,12 @@ public class MapFragment extends Fragment implements MapListener,
 	private TileProviderManager tileProviderManager;
 
 	public MapFragment() {
-		log.trace("MapFragment.MapFragment");
-
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.DS_CREATED, new ArrayList<Runnable>());
 		pendingTasks.put(State.DS_RECEIVED, new ArrayList<Runnable>());
 	}
-	
+
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
@@ -308,6 +304,35 @@ public class MapFragment extends Fragment implements MapListener,
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		log.trace("MapFragment.onCreate EXIT");
+
+
+		/*new Thread() {
+			@Override
+			public void run() {
+				List<Bitmap> list = new ArrayList<Bitmap>();
+				Random r = new Random();
+				for (;;) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					Bitmap bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888);
+					bitmap.setPixel(64, 64, 0xffffffff);
+
+					for (int x = 0; x < 128; x++)
+					for (int y = 0; y < 128; y++) {
+						bitmap.setPixel(x, y, r.nextInt(0x7fffffff));
+					}
+
+					list.add(bitmap);
+					log.debug("BM {}", list.size());
+
+					if (list.size() > 300)
+						list.clear();
+				}
+			}
+		}.start();*/
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -426,7 +451,7 @@ public class MapFragment extends Fragment implements MapListener,
 			assert mapState != null;
 			mapView.getController().setZoom(mapState.zoomLevel);
 			mapView.getController().setCenter(mapState.center);
-			providersToastShown = mapState.providerWarningShown;
+			providersToastShown = networkToastShown = navigationDataToastShown = mapState.warningShown;
 
 			if (!mapState.directions.isEmpty())
 				updateDirectionOverlay(mapState.directions);
@@ -800,7 +825,7 @@ public class MapFragment extends Fragment implements MapListener,
 		mapState.center = Utils.copyGeoPoint(mapView.getMapCenter());
 		mapState.zoomLevel = mapView.getZoomLevel();
 		mapState.isTracking = isTracking;
-		mapState.providerWarningShown = providersToastShown;
+		mapState.warningShown = providersToastShown || navigationDataToastShown || networkToastShown;
 		//mapState.mapOrientation = mapView.getMapOrientation();
 		outState.putParcelable("map-state", mapState);
 	}

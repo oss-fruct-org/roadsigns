@@ -249,7 +249,8 @@ public class DirectionService extends Service implements PointsListener,
 			return;
 
 		try {
-			dirManager.interrupt();
+			if (dirManager != null)
+				dirManager.interrupt();
 
 			long ghDirIndex = pref.getLong("gh-dir-index", 1) + 1;
 			String newPath = ghPath + "/ghdata" + ghDirIndex;
@@ -264,7 +265,9 @@ public class DirectionService extends Service implements PointsListener,
 			navigationPath = newPath;
 
 			pref.edit().putLong("gh-dir-index", ghDirIndex).apply();
-			dirManager.setRouting(createRouting());
+
+			if (dirManager != null)
+				dirManager.setRouting(createRouting());
 
 			log.debug("Listing graphhopper directory:");
 			File ghDirFile = new File(ghPath);

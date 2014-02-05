@@ -82,7 +82,7 @@ public class ContentItem implements IContentItem {
 		return url.compression;
 	}
 
-	@Root
+	@Root(name = "url")
 	private static class Url {
 		@Attribute(name = "compression", required = false)
 		String compression;

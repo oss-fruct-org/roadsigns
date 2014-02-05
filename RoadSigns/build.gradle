@@ -32,6 +32,13 @@ android {
         }
 
         buildTypes {
+            /*debug {
+                runProguard true
+                proguardFile getDefaultProguardFile('proguard-android.txt')
+                proguardFile file('roadsigns-rules.txt')
+                zipAlign true
+            }*/
+
             release {
                 signingConfig signingConfigs.release
 

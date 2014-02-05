@@ -297,35 +297,6 @@ public class MapFragment extends Fragment implements MapListener,
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		log.trace("MapFragment.onCreate EXIT");
-
-
-		/*new Thread() {
-			@Override
-			public void run() {
-				List<Bitmap> list = new ArrayList<Bitmap>();
-				Random r = new Random();
-				for (;;) {
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					Bitmap bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888);
-					bitmap.setPixel(64, 64, 0xffffffff);
-
-					for (int x = 0; x < 128; x++)
-					for (int y = 0; y < 128; y++) {
-						bitmap.setPixel(x, y, r.nextInt(0x7fffffff));
-					}
-
-					list.add(bitmap);
-					log.debug("BM {}", list.size());
-
-					if (list.size() > 300)
-						list.clear();
-				}
-			}
-		}.start();*/
 	}
 
 	private int getZoomBySpeed(float speed) {

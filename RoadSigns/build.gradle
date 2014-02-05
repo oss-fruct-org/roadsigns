@@ -21,6 +21,12 @@ android {
         targetSdkVersion 19
     }
 
+    sourceSets {
+        instrumentTest {
+            java.srcDirs = ['src/instrumentTest/java']
+        }
+    }
+
     if (false) {
         signingConfigs {
             release {

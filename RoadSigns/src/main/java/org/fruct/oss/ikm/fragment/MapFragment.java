@@ -407,7 +407,12 @@ public class MapFragment extends Fragment implements MapListener,
 		// Restore saved instance state
 		if (savedInstanceState == null) {
 			mapView.getController().setZoom(DEFAULT_ZOOM);
-			mapView.getController().setCenter(KUOPIO);
+
+            SharedPreferences localPref = getActivity().getSharedPreferences("MapFragment", Context.MODE_PRIVATE);
+            int lat = localPref.getInt("last-pos-lat", PTZ.getLatitudeE6());
+            int lon = localPref.getInt("last-pos-lon", PTZ.getLongitudeE6());
+
+			mapView.getController().setCenter(new GeoPoint(lat, lon));
 		} else {
 			log.debug("Restore mapCenter = " + mapState.center);
 			
@@ -573,6 +578,10 @@ public class MapFragment extends Fragment implements MapListener,
 		getActivity().unbindService(serviceConnection);
 		
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
+
+        getActivity().getSharedPreferences("MapFragment", Context.MODE_PRIVATE).edit()
+                .putInt("last-pos-lat", mapView.getMapCenter().getLatitudeE6())
+                .putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		PointsManager.getInstance().removeListener(this);
 

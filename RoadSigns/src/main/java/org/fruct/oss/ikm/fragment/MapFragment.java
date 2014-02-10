@@ -45,6 +45,8 @@ import android.widget.Toast;
 
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ikm.HelpActivity;
+import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.PointsActivity;
@@ -654,6 +656,11 @@ public class MapFragment extends Fragment implements MapListener,
 
 		case R.id.action_about:
 			showAboutDialog();
+			break;
+
+		case R.id.action_help:
+			intent = new Intent(getActivity(), HelpTabActivity.class);
+			startActivity(intent);
 			break;
 
 		default:

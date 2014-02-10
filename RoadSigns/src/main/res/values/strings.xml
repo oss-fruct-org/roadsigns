@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Road Signs</string>
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
     <string name="action_place">Show places</string>
     <string name="action_download_map">Maps</string>
     <string name="action_download_navigation_data">Download navigation data</string>
-
     <string name="title_activity_points">Points of interest</string>
     <string name="title_activity_details">Details</string>
     <string name="action_track">Follow location</string>
     <string name="filter">Filter</string>
-
     <string name="warn_no_providers">No location providers enabled</string>
     <string name="configure_providers">Configure</string>
     <string name="warn_providers_disable">Don\'t show this dialog again</string>
@@ -23,32 +22,35 @@
     <string name="download_interrupted">Download interrupted</string>
     <string name="error_downloading">Error downloading</string>
     <string name="download_finished">Download finished</string>
-
     <string name="navigation_data">Navigation data</string>
     <string name="offline_map">Offline map</string>
-
     <string name="use">Use</string>
     <string name="download">Download</string>
     <string name="update_availabe">update available</string>
     <string name="action_about">About</string>
-    <string name="about_text">
-    Application uses map data from http://openstreetmap.org\n\n
+    <string name="about_text">    Application uses map data from http://openstreetmap.org\n\n
     This application is a part of grant KA322 of Karelia ENPI CBC programme, which is co-funded by the European Union, the Russian Federation and the Republic of Finland\n\n
-    Tiles Courtesy of MapQuest: http://www.mapquest.com
-    </string>
+    Tiles Courtesy of MapQuest: http://www.mapquest.com</string>
     <string name="warn_network_unavailable">Network unavailable</string>
     <string name="configure_use_offline_map">Use offline map</string>
     <string name="warn_no_navigation_data">No navigation data</string>
     <string name="configure_navigation_data">Download navigation data</string>
 
-
-    <plurals  name="distance_meters">
+    <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>
         <item quantity="other">Distance: %d meters</item>
     </plurals>
-    
     <plurals name="distance_kilometers">
         <item quantity="one">Distance: %.1f kilometer</item>
         <item quantity="other">Distance: %.1f kilometers</item>
     </plurals>
+
+    <string name="title_activity_help">HelpActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_help">Help</string>
+    <string name="title_activity_help_tab">HelpTabActivity</string>
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+
 </resources>

@@ -36,7 +36,6 @@
     <string name="configure_use_offline_map">Настроить карту</string>
     <string name="warn_no_navigation_data">Нет данных навигации</string>
     <string name="configure_navigation_data">Загрузить данные навигации</string>
-    <string name="action_help">Справка</string>
 
 
     <plurals  name="distance_meters">

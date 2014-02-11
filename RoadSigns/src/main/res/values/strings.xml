@@ -45,12 +45,4 @@
         <item quantity="other">Distance: %.1f kilometers</item>
     </plurals>
 
-    <string name="title_activity_help">HelpActivity</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_help">Help</string>
-    <string name="title_activity_help_tab">HelpTabActivity</string>
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
-
 </resources>

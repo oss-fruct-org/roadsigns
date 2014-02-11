@@ -2,6 +2,8 @@ package org.fruct.oss.ikm;
 
 import java.util.Locale;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -16,6 +18,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class HelpTabActivity extends ActionBarActivity implements ActionBar.TabListener {
@@ -73,8 +77,18 @@ public class HelpTabActivity extends ActionBarActivity implements ActionBar.TabL
                             .setText(mSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
+
+		setupActionBar();
     }
 
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void setupActionBar() {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+			getActionBar().setDisplayHomeAsUpEnabled(true);
+		} else {
+			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+		}
+	}
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -123,10 +137,17 @@ public class HelpTabActivity extends ActionBarActivity implements ActionBar.TabL
 
         @Override
         public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
-        }
+			switch (position) {
+			case 0:
+				return PlaceholderFragment.newLayoutInstance(R.layout.fragment_help_tab1);
+			case 1:
+				return PlaceholderFragment.newLayoutInstance(R.layout.fragment_help_tab2);
+			case 2:
+				return PlaceholderFragment.newLayoutInstance(R.layout.fragment_help_tab3);
+			default:
+				throw new IllegalArgumentException();
+			}
+		}
 
         @Override
         public int getCount() {
@@ -158,30 +179,38 @@ public class HelpTabActivity extends ActionBarActivity implements ActionBar.TabL
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
+		private static final String ARG_LAYOUT_NUMBER = "layout_number";
 
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
-        }
+		public static Fragment newLayoutInstance(int layoutNumber) {
+			PlaceholderFragment fragment = new PlaceholderFragment();
+			Bundle args = new Bundle();
+			args.putInt(ARG_LAYOUT_NUMBER, layoutNumber);
+			fragment.setArguments(args);
+			return fragment;
 
-        public PlaceholderFragment() {
+		}
+
+		public PlaceholderFragment() {
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_help_tab, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            textView.setText(Integer.toString(getArguments().getInt(ARG_SECTION_NUMBER)));
-            return rootView;
+			int layoutNumber = getArguments().getInt(ARG_LAYOUT_NUMBER, R.layout.fragment_help_tab);
+
+            View childView = inflater.inflate(layoutNumber, container, false);
+
+			ScrollView scrollView = new ScrollView(getActivity());
+			scrollView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+					ViewGroup.LayoutParams.MATCH_PARENT));
+			scrollView.setHorizontalScrollBarEnabled(false);
+			scrollView.setVerticalScrollBarEnabled(false);
+
+			scrollView.addView(childView);
+
+            return scrollView;
         }
-    }
+
+	}
 
 }

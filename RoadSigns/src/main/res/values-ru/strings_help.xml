@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_activity_help">HelpActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_help">Справка</string>
+
+    <string name="title_activity_help_tab">Справка</string>
+    <string name="title_section1">Навигация</string>
+    <string name="title_section2">Онлайн-контент</string>
+    <string name="title_section3">Достопримечательности</string>
+</resources>

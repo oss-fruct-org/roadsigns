@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title_activity_help">HelpActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_help">Help</string>
+
+    <string name="title_activity_help_tab">Help</string>
+    <string name="title_section1">Navigation</string>
+    <string name="title_section2">Online content</string>
+    <string name="title_section3">Sights</string>
+</resources>

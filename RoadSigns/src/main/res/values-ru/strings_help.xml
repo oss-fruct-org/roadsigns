@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title_activity_help">HelpActivity</string>
+    <string name="title_activity_help">Справка</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_help">Справка</string>
 
@@ -8,4 +8,24 @@
     <string name="title_section1">Навигация</string>
     <string name="title_section2">Онлайн-контент</string>
     <string name="title_section3">Достопримечательности</string>
+    <string name="control_title">Управление</string>
+    <string name="control">Перетаскивайте карту для изменения текущего положения</string>
+    <string name="zooming_title">Масштаб</string>
+    <string name="zoom">Для изменения масштаба используйте мультитач</string>
+    <string name="tracking_title">Отслеживание</string>
+    <string name="tracking">Кнопка отслеживания переключает навигатор в режим отслеживания текужего местоположения. Ручное перемещение карты отменяет режим отслеживания.</string>
+    <string name="filtering_title">Фильтрация</string>
+    <string name="filtering">Диалог фильтрации позволяет фильтровать достопримечательности по категориям (магазины, театры, церкви и т.д.)</string>
+    <string name="directions_title">Направления</string>
+    <string name="directions">Навигатор показывает, в каких направлениях находятся достопримечательности. Щелкните на значек направления для просмотра деталей.</string>
+
+    <string name="online_content_title">Загружаемый контент</string>
+    <string name="online_content">Навигатор позволяет загружать карты и данные навигации из репозитория.
+На экране загружаемого контента отображается список доступных для загрузки и обновления карт и данных навигации</string>
+    <string name="refresh_title">Обновить</string>
+    <string name="refresh_desc">Кнопка обновления</string>
+    <string name="stop_desc">Кнопка остановки прерывает текущую загрузку.</string>
+    <string name="sights_screen">Экран достопримечательностей</string>
+    <string name="sights_screen_desc">На этом экране вы можете просматривать доступные достопримечательности и фильтровать их по имени и категории.
+Используйте закладки чтобы отобразить достопримечательности только одной категории.</string>
 </resources>

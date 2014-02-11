@@ -8,4 +8,21 @@
     <string name="title_section1">Navigation</string>
     <string name="title_section2">Online content</string>
     <string name="title_section3">Sights</string>
+    <string name="control_title">Control</string>
+    <string name="control">Drag map to change current position</string>
+    <string name="zooming_title">Zooming</string>
+    <string name="zoom">Use two fingers to zoom in and zoom out map</string>
+    <string name="tracking_title">Tracking</string>
+    <string name="tracking">Use track button to start tracking current position</string>
+    <string name="filtering_title">Filtering</string>
+    <string name="filtering">Filter button allows to filter points of interest by categories (shops, museums, hostels, etc.)</string>
+    <string name="directions_title">Directions</string>
+    <string name="directions">Application shows what sights available in nearest roads. You can click on direction label to view details about sights in direction</string>
+    <string name="online_content_title">Online content</string><string name="online_content">RoadSigns can download navigation data and offline maps from online repository.
+Online content screen shows what content is available and notifies about content updates</string>
+    <string name="refresh">Refresh</string>
+    <string name="refresh_desc">Refresh button can be used to check updates of content</string>
+    <string name="stop_desc">Stop button interrupts any current download task. Existing content will not be touched.</string>
+    <string name="sights_screen">Sights screen</string><string name="sights_screen_desc">In sights screen you can browse all available points of interest and filter them by name and category.
+   Use tabs to show points of interest from one category.</string>
 </resources>

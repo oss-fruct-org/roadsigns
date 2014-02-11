@@ -15,14 +15,14 @@
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:text="Control"
+        android:text="@string/control_title"
         />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="normal"
-        android:text="Drag map to change current position"
+        android:text="@string/control"
         android:paddingBottom="16dp"
         />
 
@@ -32,14 +32,14 @@
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:text="Zooming"
+        android:text="@string/zooming_title"
         />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="normal"
-        android:text="Use two fingers to zoom in and zoom out map"
+        android:text="@string/zoom"
         android:paddingBottom="16dp"
         />
 
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:text="Tracking"
+            android:text="@string/tracking_title"
             android:layout_alignParentTop="true"
             />
 
@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textStyle="normal"
-            android:text="Use track button to start tracking current position"
+            android:text="@string/tracking"
             android:layout_below="@id/help_routing_1"
             android:layout_toLeftOf="@+id/image"
             android:layout_alignParentLeft="true"
@@ -90,7 +90,7 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:text="Filtering"
+            android:text="@string/filtering_title"
             android:layout_alignParentTop="true"
             />
         <TextView
@@ -98,7 +98,7 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textStyle="normal"
-            android:text="Filter button allows to filter points of interest by categories (shops, museums, hostels, etc.)"
+            android:text="@string/filtering"
             android:layout_below="@id/help_routing_2"
             android:layout_toLeftOf="@+id/image"
             android:layout_alignParentLeft="true"
@@ -107,7 +107,7 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/image"
+            android:id="@id/image"
             android:src="@drawable/filter"
             android:layout_alignParentRight="true"
             />
@@ -119,14 +119,14 @@
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:text="Directions"
+        android:text="@string/directions_title"
         />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="normal"
-        android:text="Application shows what sights available in nearest roads. You can click on direction label to view details about sights in direction"
+        android:text="@string/directions"
         android:paddingBottom="16dp"
         />
 

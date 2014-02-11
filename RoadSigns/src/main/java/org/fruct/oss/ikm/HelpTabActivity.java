@@ -174,11 +174,6 @@ public class HelpTabActivity extends ActionBarActivity implements ActionBar.TabL
      * A placeholder fragment containing a simple view.
      */
     public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
 		private static final String ARG_LAYOUT_NUMBER = "layout_number";
 
 		public static Fragment newLayoutInstance(int layoutNumber) {

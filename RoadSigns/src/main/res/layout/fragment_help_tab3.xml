@@ -15,15 +15,14 @@
         android:layout_height="wrap_content"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:text="Sights screen"
+        android:text="@string/sights_screen"
         />
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textStyle="normal"
-        android:text="In sights screen you can browse all available points of interest and filter them by name and category.
-   Use tabs to show points of interest from one category."
+        android:text="@string/sights_screen_desc"
         android:paddingBottom="16dp"
         />
 

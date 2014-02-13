@@ -1,17 +1,15 @@
 package org.fruct.oss.ikm.poi;
 
-import java.io.Serializable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Patterns;
 
-import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.util.GeoPoint;
 
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Parcel;
-import android.os.Parcelable;
+import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PointDesc implements Serializable, Parcelable {
 	private static final long serialVersionUID = 1L;
@@ -30,6 +28,8 @@ public class PointDesc implements Serializable, Parcelable {
 	private RelativeDirection dir;
 	private int distance;
 
+	private transient boolean isDescriptionUrl = false;
+
 	public PointDesc(String name, int latE6, int lonE6) {
 		this.name = name;
 		this.latE6 = latE6;
@@ -42,19 +42,22 @@ public class PointDesc implements Serializable, Parcelable {
 		this.category = cat;
 		return this;
 	}
-	
+
+	public boolean isDescriptionUrl() {
+		return isDescriptionUrl;
+	}
+
 	public PointDesc setDescription(String d) {
 		if (d == null)
 			d = "";
 
 		this.desc = d;
 
-		Pattern pattern = Pattern.compile("\\\"(https?://.+?)\\\"");
-		Matcher match = pattern.matcher(desc);
+		Matcher match = Patterns.WEB_URL.matcher(desc);
 
 		if (match.find()) {
-			String str = match.group(1);
-			desc = str;
+			desc = match.group(0);
+			isDescriptionUrl = true;
 		}
 
 		return this;

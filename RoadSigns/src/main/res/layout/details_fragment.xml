@@ -46,6 +46,15 @@
             android:contentDescription="Search button"
             android:src="@drawable/ic_action_directions" />
 
+        <ImageButton
+            android:id="@+id/browse_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginLeft="16dp"
+            android:contentDescription="Browse button"
+            android:src="@drawable/ic_action_web_site"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
 </LinearLayout>

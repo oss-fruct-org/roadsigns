@@ -6,10 +6,12 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.poi.PointDesc;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.text.Html;
+import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,8 +66,25 @@ public class DetailsFragment extends Fragment {
 			}
 		});
 
+		// Show web button if description of point represents URL
+		if (desc.isDescriptionUrl()) {
+			ImageButton webButton = (ImageButton) getActivity().findViewById(R.id.browse_button);
+			webButton.setVisibility(View.VISIBLE);
+
+			webButton.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					Uri uri = Uri.parse(desc.getDescription());
+					intent.setData(uri);
+					startActivity(intent);
+				}
+			});
+		}
+
 		titleView.setText(desc.getName());
-		//descView.setText(Html.fromHtml(desc.getDescription()));
+
+		descView.setAutoLinkMask(Linkify.WEB_URLS);
 		descView.setText(desc.getDescription());
 	}
 }

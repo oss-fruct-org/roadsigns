@@ -1,7 +1,5 @@
 package org.fruct.oss.ikm.fragment;
 
-import static org.fruct.oss.ikm.Utils.log;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -117,6 +115,8 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	private boolean isDualPane;
 	private String searchText;
 
+	private PointDesc lastShownPoint;
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -185,7 +185,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		
 		
 		if (-1 != c) {
-			log("select " + c);
+			log.debug("select " + c);
 			getListView().setItemChecked(c, true);
 
 			if ((alwaysSwitch || isDualPane)) {
@@ -202,7 +202,9 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	 */
 	public void showDetails(int index) {
 		PointDesc pointDesc = shownList.get(index);
-		log("PointsFragment.showDetails isDualPane = " + isDualPane);
+		lastShownPoint = pointDesc;
+
+		log.debug("PointsFragment.showDetails isDualPane = " + isDualPane);
 		if (isDualPane) {
 			getListView().setItemChecked(index, true);
 			
@@ -252,10 +254,10 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		}
 
 		int selectedBar = 0;
-		int index = ListView.INVALID_POSITION;
+		PointDesc storedPointDesc = null;
 		if (savedInstanceState != null) {
-			index = savedInstanceState.getInt("index", 0);
 			selectedBar = savedInstanceState.getInt("selectedBar", 0);
+			storedPointDesc = savedInstanceState.getParcelable("lastShownPoint");
 		}
 		
 		if (isDualPane) {
@@ -265,11 +267,11 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		// If intent has action SHOW_DETAILS, show details activity immediately
 		if (PointsActivity.SHOW_DETAILS.equals(getActivity().getIntent().getAction())) {
 			Bundle bundle = getActivity().getIntent().getBundleExtra(PointsActivity.DETAILS_INDEX);
-			log("PointsFragment receive action SHOW_DETAILS. extras = " + bundle);
+			log.debug("PointsFragment receive action SHOW_DETAILS. extras = " + bundle);
 			PointDesc point = bundle.getParcelable("pointdesc");
 			selectIfAvailable(point, true);
-		} else if (isDualPane && index != ListView.INVALID_POSITION) {
-			showDetails(index);
+		} else if (isDualPane && storedPointDesc != null) {
+			selectIfAvailable(storedPointDesc, false);
 		}
 		
 		setupFilterBar(selectedBar);
@@ -329,9 +331,11 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 	
-		outState.putInt("index", getListView().getCheckedItemPosition());
 		int selectedTab = getActionBar().getSelectedNavigationIndex();
 		outState.putInt("selectedBar", selectedTab);
+
+		if (lastShownPoint != null)
+			outState.putParcelable("lastShownPoint", lastShownPoint);
 	}
 
 	private ActionBar getActionBar() {
@@ -348,7 +352,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
-		log("onTextChanged " + s);
+		log.debug("onTextChanged " + s);
 		searchText = s.toString().toLowerCase(Locale.getDefault());
 		updateList();
 	}

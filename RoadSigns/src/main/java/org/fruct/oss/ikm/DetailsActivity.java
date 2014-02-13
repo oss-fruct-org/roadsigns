@@ -22,8 +22,7 @@ public class DetailsActivity extends ActionBarActivity {
 			finish();
 			return;
 		}
-		
-		
+
 		if (savedInstanceState == null) {
 			setContentView(R.layout.activity_details);
 			setupActionBar();

@@ -214,10 +214,7 @@ public class DirectionService extends Service implements PointsListener,
 		}
 		
 		locationReceiver.setListener(this);
-		getSharedPreferences("qweqwe", MODE_PRIVATE);
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-
-        //
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
 			locationReceiver.sendLastLocation();
 		}

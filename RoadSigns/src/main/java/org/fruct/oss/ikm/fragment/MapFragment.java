@@ -478,21 +478,27 @@ public class MapFragment extends Fragment implements MapListener,
 				.getDefaultSharedPreferences(getActivity());
 
 		if (!navigationDataToastShown && pref.getString(SettingsActivity.NAVIGATION_DATA, "").isEmpty()) {
-			WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
-					R.string.configure_navigation_data,
-					R.string.warn_providers_disable,
-					SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
-				@Override
-				protected void onAccept() {
-					Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-					intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
-					intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
-					intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
-					getActivity().startActivity(intent);
-				}
-			};
-			dialog.show(getFragmentManager(), "navigation-data-dialog");
+			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
+				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
+						R.string.configure_navigation_data,
+						R.string.warn_providers_disable,
+						SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
+					@Override
+					protected void onAccept() {
+						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
+						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
+						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
+						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
+						getActivity().startActivity(intent);
+					}
+				};
+				dialog.show(getFragmentManager(), "navigation-data-dialog");
+			} else {
+				Toast toast = Toast.makeText(getActivity(),
+						R.string.warn_no_navigation_data, Toast.LENGTH_SHORT);
+				toast.show();
 
+			}
 			navigationDataToastShown = true;
 		}
 	}
@@ -505,7 +511,7 @@ public class MapFragment extends Fragment implements MapListener,
 					.getDefaultSharedPreferences(getActivity());
 
 			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_network_unavailable,
+				WarnDialog dialog = new WarnDialog(R.string.warn_no_network,
 						R.string.configure_use_offline_map,
 						R.string.warn_providers_disable,
 						SettingsActivity.WARN_NETWORK_DISABLED) {

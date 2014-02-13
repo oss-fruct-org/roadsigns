@@ -64,6 +64,7 @@
         android:title="@string/pref_disable_warn_network" />
     <CheckBoxPreference
         android:defaultValue="false"
+
         android:key="warn_navigation_data_disabled"
         android:summary="@string/pref_disable_warn_navigation_sum"
         android:title="@string/pref_disable_warn_navigation" />

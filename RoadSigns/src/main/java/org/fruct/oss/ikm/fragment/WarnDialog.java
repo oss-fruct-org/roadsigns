@@ -11,8 +11,11 @@ import android.view.ContextThemeWrapper;
 import android.widget.CheckBox;
 
 import org.fruct.oss.ikm.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WarnDialog extends DialogFragment implements DialogInterface.OnClickListener {
+	private static Logger log = LoggerFactory.getLogger(WarnDialog.class);
 	private CheckBox checkbox;
 
 	private int messageId;
@@ -43,12 +46,11 @@ public class WarnDialog extends DialogFragment implements DialogInterface.OnClic
 		return builder.create();
 	}
 
-
 	@Override
 	public void onClick(DialogInterface dialogInterface, int which) {
 		if (checkbox.isChecked()) {
 			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-			pref.edit().putBoolean(disablePref, true).commit();
+			pref.edit().putBoolean(disablePref, true).apply();
 		}
 
 		if (which == AlertDialog.BUTTON_POSITIVE) {

@@ -375,6 +375,7 @@ public class MapFragment extends Fragment implements MapListener,
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
+		log.debug("MapFragment.onActivityCreated instanceState {}", savedInstanceState == null ? "null" : "not null");
 
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
@@ -383,7 +384,9 @@ public class MapFragment extends Fragment implements MapListener,
 		
 		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
 		panelOverlay.initialize(mapView);
-		
+
+		setupOverlays();
+
 		// Process MAP_CENTER parameter
 		Intent intent = getActivity().getIntent();
 		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
@@ -400,8 +403,6 @@ public class MapFragment extends Fragment implements MapListener,
 			GeoPoint target = getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
 			showPath(target);
 		}
-
-		setupOverlays();
 
 		// Listen for new points in PointManager
 		PointsManager.getInstance().addListener(this);
@@ -812,7 +813,9 @@ public class MapFragment extends Fragment implements MapListener,
 	public void setCenter(IGeoPoint geoPoint) {
 		mapView.getController().setZoom(DEFAULT_ZOOM);
 		mapView.getController().animateTo(geoPoint);
-		stopTracking();
+
+		if (isTracking)
+			stopTracking();
 	}
 
 	/**

@@ -233,7 +233,12 @@ public class DetailsFragment extends Fragment {
 		titleView.setText(desc.getName());
 
 		descView.setAutoLinkMask(Linkify.WEB_URLS);
-		descView.setText(desc.getDescription());
+
+		if (desc.getDescription().isEmpty())
+			descView.setVisibility(View.GONE);
+		else
+			descView.setText(desc.getDescription());
+
 	}
 
 	@Override

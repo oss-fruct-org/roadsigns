@@ -156,6 +156,7 @@ public class Gets implements IGets {
 			conn.setRequestMethod(postQuery == null ? "GET" : "POST");
 			conn.setDoInput(true);
 			conn.setDoOutput(postQuery != null);
+			conn.setRequestProperty("User-Agent", "RoadSigns/0.2 (http://oss.fruct.org/projects/roadsigns/)");
 
 			if (postQuery != null) {
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));

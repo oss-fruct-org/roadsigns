@@ -334,4 +334,12 @@ public class Utils {
 
 		dir.delete();
 	}
+
+	public static int geoCoordMin(double coord) {
+		return (int) ((geoCoordDeg(coord) - Math.abs(coord)) * 60);
+	}
+
+	public static int geoCoordDeg(double coord) {
+		return (int) (Math.abs(coord));
+	}
 }

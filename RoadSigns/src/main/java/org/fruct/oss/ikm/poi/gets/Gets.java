@@ -143,7 +143,8 @@ public class Gets implements IGets {
 		}
 	}
 
-	public String downloadUrl(String urlString, String postQuery) throws IOException {
+	// TODO: Move this method to Utils
+	public static String downloadUrl(String urlString, String postQuery) throws IOException {
 		HttpURLConnection conn = null;
 		InputStream responseStream = null;
 
@@ -152,9 +153,9 @@ public class Gets implements IGets {
 			conn = (HttpURLConnection) url.openConnection();
 			conn.setReadTimeout(10000);
 			conn.setConnectTimeout(10000);
-			conn.setRequestMethod("POST");
+			conn.setRequestMethod(postQuery == null ? "GET" : "POST");
 			conn.setDoInput(true);
-			conn.setDoOutput(true);
+			conn.setDoOutput(postQuery != null);
 
 			if (postQuery != null) {
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream(), "UTF-8"));

@@ -31,8 +31,8 @@
 
         <ImageButton
             android:id="@+id/show_place_button"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             
             android:layout_marginLeft="16dp"
             android:contentDescription="Place button"
@@ -40,21 +40,34 @@
 
         <ImageButton
             android:id="@+id/search_place_button"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginLeft="16dp"
             android:contentDescription="Search button"
             android:src="@drawable/ic_action_directions" />
 
         <ImageButton
             android:id="@+id/browse_button"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:layout_marginLeft="16dp"
             android:contentDescription="Browse button"
             android:src="@drawable/ic_action_web_site"
             android:visibility="gone"/>
 
+        <ImageButton
+            android:id="@+id/search_button"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="16dp"
+            android:contentDescription="Wikipedia search"
+            android:src="@drawable/wikipediaw"/>
     </LinearLayout>
+
+    <ListView
+        android:visibility="gone"
+        android:id="@+id/search_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

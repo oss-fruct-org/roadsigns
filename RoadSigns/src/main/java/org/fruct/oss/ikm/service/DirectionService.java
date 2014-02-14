@@ -123,8 +123,15 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	private IRouting createRouting() {
-		if (new File(navigationPath + "/nodes").exists())
-			return new OneToManyRouting(navigationPath, locationIndexCache);
+		if (new File(navigationPath + "/nodes").exists()) {
+			OneToManyRouting routing = new OneToManyRouting(navigationPath, locationIndexCache);
+
+			// Apply encoder from preferences
+			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+			routing.setEncoder(pref.getString(SettingsActivity.VEHICLE, "CAR"));
+
+			return routing;
+		}
 		else
 			return new StubRouting();
 	}
@@ -331,6 +338,10 @@ public class DirectionService extends Service implements PointsListener,
 				}
 			};
 			extractingThread.start();
+		} else if (key.equals(SettingsActivity.VEHICLE)) {
+			if (dirManager != null) {
+				dirManager.setEncoder(sharedPreferences.getString(key, "CAR"));
+			}
 		}
 	}
 

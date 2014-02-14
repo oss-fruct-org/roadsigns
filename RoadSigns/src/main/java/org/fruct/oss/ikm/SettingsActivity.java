@@ -24,6 +24,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 
 	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
+	public static final String VEHICLE = "vehicle";
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;

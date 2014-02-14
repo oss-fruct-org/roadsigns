@@ -300,4 +300,9 @@ public class DirectionManager {
 	public void interrupt() {
 		interruptCurrentCalculation();
 	}
+
+	public void setEncoder(String encoder) {
+		if (routing != null)
+			routing.setEncoder(encoder);
+	}
 }

@@ -22,4 +22,9 @@ public class StubRouting implements IRouting {
 	@Override
 	public void reset(GeoPoint userPosition) {
 	}
+
+	@Override
+	public void setEncoder(String encoding) {
+
+	}
 }

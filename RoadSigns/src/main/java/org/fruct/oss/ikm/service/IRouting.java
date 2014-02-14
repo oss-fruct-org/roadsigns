@@ -9,4 +9,5 @@ public interface IRouting {
 	PointList route(GeoPoint to);
 	GeoPoint getNearestRoadNode(GeoPoint current);
 	void reset(GeoPoint userPosition);
+	void setEncoder(String encoding);
 }

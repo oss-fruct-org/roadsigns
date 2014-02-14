@@ -22,6 +22,7 @@
     
 	<string name="pref_all">All</string>
     <string name="pref_warnings">Warnings</string>
+    <string name="pref_vehicle_title">Vehicle</string>
 
     <string-array name="pref_nearest_points_str">
         <item>@string/pref_all</item>
@@ -52,6 +53,18 @@
         <item>200</item>
         <item>300</item>
         <item>500</item>
+    </string-array>
+
+    <string-array name="pref_vehicles">
+        <item>Car</item>
+        <item>Foot</item>
+        <item>Bike</item>
+    </string-array>
+
+    <string-array name="pref_vehicles_values">
+        <item>CAR</item>
+        <item>FOOT</item>
+        <item>BIKE</item>
     </string-array>
 
 </resources>

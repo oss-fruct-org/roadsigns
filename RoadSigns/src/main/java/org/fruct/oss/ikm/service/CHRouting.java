@@ -39,4 +39,8 @@ public class CHRouting extends GHRouting {
 			return null;
 		}
 	}
+
+	@Override
+	public void setEncoder(String encoding) {
+	}
 }

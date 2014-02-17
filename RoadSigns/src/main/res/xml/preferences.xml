@@ -48,7 +48,7 @@
         />
 
     <ListPreference
-        android:title="Vehicle"
+        android:title="@string/pref_vehicle_title"
         android:key="vehicle"
         android:entries="@array/pref_vehicles"
         android:entryValues="@array/pref_vehicles_values"

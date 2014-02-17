@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.storage;
 
+import android.support.v4.widget.ListViewAutoScrollHelper;
 import android.util.Pair;
 
 import org.fruct.oss.ikm.DigestInputStream;
@@ -18,10 +19,13 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -80,7 +84,7 @@ public class RemoteContent {
 	private static Logger log = LoggerFactory.getLogger(RemoteContent.class);
 	private final IStorage storage;
 	private final IProvider provider;
-	private final String contentUrl;
+	private final List<String> contentUrls;
 
 	private ArrayList<Listener> listeners = new ArrayList<Listener>();
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -94,10 +98,10 @@ public class RemoteContent {
 	// List of available storage items
 	private List<StorageItem> storageItems;
 
-	public RemoteContent(IStorage storage, IProvider provider, String contentUrl) {
+	public RemoteContent(IStorage storage, IProvider provider, List<String> contentUrls) {
 		this.storage = storage;
 		this.provider = provider;
-		this.contentUrl = contentUrl;
+		this.contentUrls = contentUrls;
 	}
 
 	private void initialize() throws IOException {
@@ -112,6 +116,48 @@ public class RemoteContent {
 		ByteArrayInputStream input = new ByteArrayInputStream("<content/>".getBytes("UTF-8"));
 		storage.storeContentItem("content.xml", input);
 		input.close();
+	}
+
+	private List<IContentItem> getContentList(IProvider storage, List<String> contentUrls, Set<String> visited) throws IOException {
+		ArrayList<IContentItem> ret = new ArrayList<IContentItem>();
+
+		int countSuccessful = 0;
+		for (String url : contentUrls) {
+			if (visited.contains(url)) {
+				countSuccessful++;
+				continue;
+			}
+
+			visited.add(url);
+			IContentConnection conn = null;
+			try {
+				conn = storage.loadContentItem(url);
+				Content content = Content.createFromStream(conn.getStream());
+
+				List<IContentItem> items = content.getContent();
+				for (IContentItem item : items) {
+					ret.add(item);
+				}
+
+				countSuccessful++;
+
+				ret.addAll(getContentList(storage, content.getIncludes(), visited));
+			} catch (IOException e) {
+				log.warn("Content link " + url + " broken: ", e);
+			} finally {
+				if (conn != null)
+					conn.close();
+			}
+		}
+
+		if (countSuccessful == 0 && contentUrls.size() > 0)
+			throw new IOException("No one of remote content roots are available");
+
+		return ret;
+	}
+
+	private List<IContentItem> getContentList(IProvider storage, List<String> contentUrls) throws IOException {
+		return getContentList(storage, contentUrls, new HashSet<String>());
 	}
 
 	private List<IContentItem> getContentList(IProvider storage, String contentUrl) throws IOException {
@@ -249,7 +295,7 @@ public class RemoteContent {
 			initialize();
 			localContent = storageContent;
 
-			remoteContent = getContentList(provider, contentUrl);
+			remoteContent = getContentList(provider, contentUrls);
 		} catch (IOException e) {
 			log.warn("Cannot download file", e);
 			for (Listener listener : listeners)
@@ -266,8 +312,6 @@ public class RemoteContent {
 
 		if (remoteContent != null) {
 			for (IContentItem item : remoteContent) {
-				log.debug("Remote item {}", item.getName());
-
 				StorageItem sItem = allItems.get(item.getName());
 				// Local item exists check it state
 				if (sItem == null) {
@@ -280,6 +324,7 @@ public class RemoteContent {
 					sItem.item = item;
 					sItem.state = LocalContentState.NEEDS_UPDATE;
 				}
+				log.debug("Remote item {} state {}", item.getName(), sItem.state.name());
 			}
 		}
 
@@ -358,15 +403,17 @@ public class RemoteContent {
 			future.cancel(true);
 	}
 
-	private static Map<Pair<String, String>, RemoteContent> instances = new HashMap<Pair<String, String>, RemoteContent>();
-	public static RemoteContent getInstance(String contentUrl, String localPath) {
-		Pair<String, String> key = Pair.create(contentUrl, localPath);
+	private static Map<Pair<ArrayList<String>, String>, RemoteContent> instances = new HashMap<Pair<ArrayList<String>, String>, RemoteContent>();
+	public static RemoteContent getInstance(String[] contentUrl, String localPath) {
+		ArrayList<String> contentUrlsList = new ArrayList<String>(Arrays.asList(contentUrl));
+
+		Pair<ArrayList<String>, String> key = Pair.create(contentUrlsList, localPath);
 		RemoteContent instance = instances.get(key);
 		if (instance == null) {
 			log.info("New instance of RemoteContent created");
 			NetworkProvider provider = new NetworkProvider();
 			FileStorage storage = FileStorage.createExternalStorage(localPath);
-			RemoteContent ret = new RemoteContent(storage, provider, contentUrl);
+			RemoteContent ret = new RemoteContent(storage, provider, contentUrlsList);
 			instances.put(key, ret);
 			return ret;
 		} else

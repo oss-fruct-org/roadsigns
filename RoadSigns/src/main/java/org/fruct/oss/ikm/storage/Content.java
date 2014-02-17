@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Maps content xml to java object
  */
-@Root(name = "content")
+@Root(name = "content", strict = false)
 public class Content {
 	@ElementList(inline = true, entry = "file", type = ContentItem.class, empty = false, required = false)
 	private List<IContentItem> content;
@@ -34,5 +34,12 @@ public class Content {
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
+	}
+
+	@ElementList(inline = true, entry = "include", type = String.class, empty = false, required = false)
+	private List<String> includes;
+
+	public List<String> getIncludes() {
+		return includes;
 	}
 }

@@ -29,7 +29,7 @@ public class OnlineContentPreference extends ListPreference implements RemoteCon
 		setNegativeButtonText(android.R.string.cancel);
 
 		contentType = attrs.getAttributeValue(null, "contentType");
-		remoteContent = RemoteContent.getInstance(MapFragment.REMOTE_CONTENT_URL, "roadsigns-maps");
+		remoteContent = RemoteContent.getInstance(MapFragment.REMOTE_CONTENT_URLS, "roadsigns-maps");
 		remoteContent.addListener(this);
 		remoteContent.startInitialize(false);
 	}

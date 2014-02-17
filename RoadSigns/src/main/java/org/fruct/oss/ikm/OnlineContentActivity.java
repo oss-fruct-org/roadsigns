@@ -22,6 +22,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.storage.RemoteContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,11 +188,11 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		String remoteContentUrl = getIntent().getStringExtra(ARG_REMOTE_CONTENT_URL);
+		String[] remoteContentUrls = getIntent().getStringArrayExtra(ARG_REMOTE_CONTENT_URL);
 		String localContentUrl = getIntent().getStringExtra(ARG_LOCAL_STORAGE);
 		pref_key = getIntent().getStringExtra(ARG_PREF_KEY);
 
-		remoteContent = RemoteContent.getInstance(remoteContentUrl, localContentUrl);
+		remoteContent = RemoteContent.getInstance(remoteContentUrls, localContentUrl);
 		remoteContent.addListener(this);
 
 		setUpActionBar();

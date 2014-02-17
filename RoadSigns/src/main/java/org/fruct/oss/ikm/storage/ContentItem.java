@@ -6,7 +6,7 @@ import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Text;
 
-@Root(name = "file")
+@Root(name = "file", strict = false)
 public class ContentItem implements IContentItem {
 	@Element(name = "name")
 	private String name;

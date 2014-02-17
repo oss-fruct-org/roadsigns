@@ -33,6 +33,7 @@ public class OneToManyRouting extends GHRouting {
 		DijkstraOneToMany hardRef = (algoRef == null ? null : algoRef.get());
 
 		if (hardRef == null) {
+			log.debug("Creating DijkstraOneToMany with {} encoder...", encoderString);
 			EncodingManager encodingManager = new EncodingManager(encoderString);
 			FlagEncoder encoder = encodingManager.getEncoder(encoderString);
 			Weighting weightCalc = new FastestWeighting(encoder);

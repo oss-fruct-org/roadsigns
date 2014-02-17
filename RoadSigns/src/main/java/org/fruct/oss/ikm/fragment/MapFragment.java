@@ -76,6 +76,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -137,7 +138,8 @@ public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
-	public static final String REMOTE_CONTENT_URL = "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/akCI8POpzn/all.xml";
+	public static final String[] REMOTE_CONTENT_URLS = {
+			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
 
 	private DefaultInfoWindow infoWindow;
 
@@ -379,7 +381,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
-		// Initialize map		
+		// Initialize map
 		createMapView(getView());
 		
 		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
@@ -486,7 +488,7 @@ public class MapFragment extends Fragment implements MapListener,
 					@Override
 					protected void onAccept() {
 						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
+						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
 						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
 						getActivity().startActivity(intent);
@@ -518,7 +520,7 @@ public class MapFragment extends Fragment implements MapListener,
 					@Override
 					protected void onAccept() {
 						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URL);
+						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
 						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
 						getActivity().startActivity(intent);
@@ -654,7 +656,7 @@ public class MapFragment extends Fragment implements MapListener,
 		case R.id.action_download_map:
 			intent = new Intent(getActivity(), OnlineContentActivity.class);
 			//intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, REMOTE_CONTENT_URL);
+			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
 
 			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
 			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);

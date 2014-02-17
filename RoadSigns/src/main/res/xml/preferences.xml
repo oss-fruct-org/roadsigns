@@ -52,7 +52,7 @@
         android:key="vehicle"
         android:entries="@array/pref_vehicles"
         android:entryValues="@array/pref_vehicles_values"
-        android:defaultValue="0"
+        android:defaultValue="CAR"
         />
 
     <PreferenceCategory

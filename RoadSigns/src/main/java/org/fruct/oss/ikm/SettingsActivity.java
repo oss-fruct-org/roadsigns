@@ -22,6 +22,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String NAVIGATION_DATA = "navigation_data";
 	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
+	public static final String GETS_RADIUS = "gets_radius";
 
 	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
 	public static final String VEHICLE = "vehicle";

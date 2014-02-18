@@ -12,5 +12,5 @@ import java.util.List;
 public interface IGets {
 	String login(String username, String password) throws IOException;
 	List<CategoriesList.Category> getCategories() throws IOException, LoginException;
-	List<PointDesc> getPoints(String category, GeoPoint position) throws IOException, LoginException;
+	List<PointDesc> getPoints(final CategoriesList.Category category, GeoPoint position, int radius) throws IOException, LoginException;
 }

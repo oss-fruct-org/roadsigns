@@ -100,7 +100,7 @@ public class Gets implements IGets {
 	}
 
 	@Override
-	public List<PointDesc> getPoints(final String category, GeoPoint position) throws IOException, LoginException {
+	public List<PointDesc> getPoints(final Category category, GeoPoint position, int radius) throws IOException, LoginException {
 		try {
 			StringBuilder requestBuilder = new StringBuilder();
 			requestBuilder.append("<request><params>");
@@ -108,17 +108,18 @@ public class Gets implements IGets {
 			if (token != null)
 				requestBuilder.append("<auth_token>").append(token).append("</auth_token>");
 
+			requestBuilder.append("<latitude>").append(position.getLatitude()).append("</latitude>");
+			requestBuilder.append("<longitude>").append(position.getLongitude()).append("</longitude>");
+			requestBuilder.append("<radius>").append(radius).append("</radius>");
+
 			if (category != null) {
-				requestBuilder.append("<category_name>").append(category).append("</category_name>");
-			} else {
-				requestBuilder.append("<latitude>").append(position.getLatitude()).append("</latitude>");
-				requestBuilder.append("<longitude>").append(position.getLongitude()).append("</longitude>");
-				requestBuilder.append("<radius>").append(10000).append("</radius>");
+				requestBuilder.append("<category_id>").append(category.getId()).append("</category_id>");
 			}
 
 			requestBuilder.append("</params></request>");
 
 			String responseStr = downloadUrl(getsServerUrl + "loadPoints.php",requestBuilder.toString());
+			log.debug("Req {}", requestBuilder.toString());
 			Response resp = processResponse(responseStr);
 			if (resp.getCode() != 0) {
 				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());
@@ -130,7 +131,7 @@ public class Gets implements IGets {
 			List<PointDesc> pointList = Utils.map(document.getPlacemarks(), new Utils.Function<PointDesc, Kml.Placemark>() {
 				@Override
 				public PointDesc apply(Kml.Placemark placemark) {
-					return placemark.toPointDesc().setCategory(category == null ? "Unclassified" : category);
+					return placemark.toPointDesc().setCategory(category == null ? "Unclassified" : category.getName());
 				}
 			});
 			return pointList;

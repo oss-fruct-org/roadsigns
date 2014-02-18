@@ -95,6 +95,17 @@ public class PointsManager {
 		});
 	}
 
+	public void updateRadius(final int radiusM) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				if (getsPointsLoader != null) {
+					getsPointsLoader.setRadius(radiusM);
+				}
+			}
+		});
+	}
+
 	// Ensure that GeTS loader state matches GETS_ENABLE preference
 	public void ensureGetsState() {
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
@@ -118,7 +129,12 @@ public class PointsManager {
 			getsServer = SettingsActivity.GETS_SERVER_DEFAULT;
 		}
 
+		String radiusString = pref.getString(SettingsActivity.GETS_RADIUS, "5000");
+		int radius = Integer.parseInt(radiusString);
+
 		getsPointsLoader = new GetsPointLoader(getsServer);
+		getsPointsLoader.setRadius(radius);
+
 		//getsPointsLoader = new GetsPointLoader("http://172.20.46.186/gets");
 
 		addPointLoader(getsPointsLoader);
@@ -139,7 +155,6 @@ public class PointsManager {
         createFiltersFromPoints(this.points);
         notifyFiltersUpdated();
     }
-
 
 
 	private void createFiltersFromPoints(List<PointDesc> points) {
@@ -230,8 +245,8 @@ public class PointsManager {
 		if (instance == null) {
 			instance = new PointsManager();
 
-			if (false) {
-				instance.addPointLoader(new StubPointLoader());
+			if (true) {
+				//instance.addPointLoader(new StubPointLoader());
 				instance.ensureGetsState();
 				return instance;
 			}

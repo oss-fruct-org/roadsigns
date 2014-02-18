@@ -78,9 +78,8 @@
     </PreferenceCategory>
 
 
-    <!--
+
     <PreferenceCategory
-        android:enabled="false"
         android:title="GeTS preferences"
         android:key="gets_preferences">
         <CheckBoxPreference
@@ -89,17 +88,23 @@
             android:title="Enable GeTS"/>
 
         <EditTextPreference
-            android:defaultValue=""
+            android:defaultValue="http://oss.fruct.org/projects/gets/service"
             android:key="gets_server"
             android:title="GeTS Server"
-            android:inputType="textUri"
-            />
+            android:inputType="textUri"/>
+        <EditTextPreference
+            android:defaultValue="5"
+            android:key="gets_radius"
+            android:title="radius"
+            android:inputType="number"/>
 
+<!--
         <org.fruct.oss.ikm.AccountPreference
             android:enabled="false"
 
             android:title="Account setup"
             />
+            -->
     </PreferenceCategory>
-    -->
+
 </PreferenceScreen>

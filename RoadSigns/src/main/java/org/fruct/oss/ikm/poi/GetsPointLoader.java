@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.poi;
 
 import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Gets;
 import org.fruct.oss.ikm.poi.gets.LoginException;
 import org.osmdroid.util.GeoPoint;
@@ -17,6 +18,7 @@ public class GetsPointLoader extends PointLoader {
 
 	private Gets gets;
 	private GeoPoint lastPosition;
+	private int radius = 5000;
 
 	public GetsPointLoader(String url) {
 		gets = new Gets(url);
@@ -29,7 +31,17 @@ public class GetsPointLoader extends PointLoader {
 		if (lastPosition == null) {
 			notifyPointsReady(new ArrayList<PointDesc>());
 		} else {
-			final List<PointDesc> points = gets.getPoints(null, lastPosition);
+			List<PointDesc> points = new ArrayList<PointDesc>();
+			List<CategoriesList.Category> categories = gets.getCategories();
+
+			for (CategoriesList.Category cat : categories) {
+				log.debug("Category: {}", cat.getDescription());
+				try {
+					points.addAll(gets.getPoints(cat, lastPosition, radius));
+				} catch (IOException ex) {
+
+				}
+			}
 			notifyPointsReady(points);
 		}
 	}
@@ -47,5 +59,9 @@ public class GetsPointLoader extends PointLoader {
 			log.trace("Point too near to last position");
 			return false;
 		}
+	}
+
+	public void setRadius(int radiusM) {
+		this.radius = radiusM;
 	}
 }

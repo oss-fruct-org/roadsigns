@@ -47,6 +47,11 @@ public class GetsPointLoader extends PointLoader {
 	}
 
 	@Override
+	public String getName() {
+		return "GetsPointLoader";
+	}
+
+	@Override
 	public boolean updatePosition(GeoPoint geoPoint) {
 		super.updatePosition(geoPoint);
 		log.trace("GetsPointLoader.updatePosition {}", geoPoint);

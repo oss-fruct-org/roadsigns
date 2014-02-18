@@ -14,6 +14,11 @@ public abstract class PointLoader {
 	public abstract void loadPoints() throws Exception;
 
 	/**
+	 * Return loader name
+	 */
+	public abstract String getName();
+
+	/**
 	 * Should be called by implementation
 	 * @param points loaded points
 	 */
@@ -36,5 +41,10 @@ public abstract class PointLoader {
 	 */
 	public boolean updatePosition(GeoPoint geoPoint) {
 		return false;
+	}
+
+
+	public void loadFromStorage(PointsStorage storage) {
+		points = storage.loadAll(getName());
 	}
 }

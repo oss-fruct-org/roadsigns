@@ -83,7 +83,7 @@
         android:title="GeTS preferences"
         android:key="gets_preferences">
         <CheckBoxPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="gets_enable"
             android:title="Enable GeTS"/>
 
@@ -93,7 +93,7 @@
             android:title="GeTS Server"
             android:inputType="textUri"/>
         <EditTextPreference
-            android:defaultValue="5"
+            android:defaultValue="5000"
             android:key="gets_radius"
             android:title="radius"
             android:inputType="number"/>

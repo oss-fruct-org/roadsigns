@@ -2,7 +2,6 @@ package org.fruct.oss.ikm.poi;
 
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
-import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
@@ -49,9 +48,13 @@ public class PointsManager {
 	private List<PointsListener> listeners = new ArrayList<PointsManager.PointsListener>();
 
 	private GetsPointLoader getsPointsLoader;
+	private PointsStorage storage;
+
+	public PointsManager() {
+		storage = new PointsStorage(App.getContext());
+	}
 
 	public void addPointLoader(final PointLoader pointLoader) {
-        log.trace("addPointLoader");
 		loaders.add(pointLoader);
 
 		// Schedule loader
@@ -71,9 +74,10 @@ public class PointsManager {
 				this.points.removeAll(oldPoints);
 
 			pointLoader.loadPoints();
+			storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
 		} catch (Exception ex) {
-			log.warn("Can not load points from loader " + pointLoader.getClass().getName(), ex);
-			return;
+			log.warn("Can not load points from loader " + pointLoader.getClass().getName() + ". Trying to load from storage", ex);
+			pointLoader.loadFromStorage(storage);
 		}
 
 		// When previous method returns, points guaranteed to be ready

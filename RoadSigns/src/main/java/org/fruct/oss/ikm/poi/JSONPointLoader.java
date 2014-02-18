@@ -88,6 +88,11 @@ public class JSONPointLoader extends PointLoader {
 		notifyPointsReady(points);
 	}
 
+	@Override
+	public String getName() {
+		return "JSONPointLoader";
+	}
+
 	public static JSONPointLoader createForAsset(String assetFile) throws IOException {
 		InputStream in = App.getContext().getAssets().open(assetFile);
 		return new JSONPointLoader(in);

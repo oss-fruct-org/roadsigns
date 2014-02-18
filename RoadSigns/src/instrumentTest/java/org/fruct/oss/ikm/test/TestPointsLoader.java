@@ -17,4 +17,9 @@ public class TestPointsLoader extends PointLoader {
 
 		notifyPointsReady(ret);
 	}
+
+	@Override
+	public String getName() {
+		return "TestPointsLoader";
+	}
 }

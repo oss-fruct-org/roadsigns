@@ -40,4 +40,9 @@ public class StubPointLoader extends PointLoader {
 	public void loadPoints() {
 		notifyPointsReady(stubPoints);
 	}
+
+	@Override
+	public String getName() {
+		return "StubPointLoader";
+	}
 }

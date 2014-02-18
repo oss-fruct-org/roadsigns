@@ -77,8 +77,6 @@
         android:title="@string/pref_disable_warn_navigation" />
     </PreferenceCategory>
 
-
-
     <PreferenceCategory
         android:title="GeTS preferences"
         android:key="gets_preferences">
@@ -95,7 +93,7 @@
         <EditTextPreference
             android:defaultValue="5000"
             android:key="gets_radius"
-            android:title="radius"
+            android:title="Radius"
             android:inputType="number"/>
 
 <!--

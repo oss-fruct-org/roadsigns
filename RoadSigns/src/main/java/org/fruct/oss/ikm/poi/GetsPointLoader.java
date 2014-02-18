@@ -28,9 +28,7 @@ public class GetsPointLoader extends PointLoader {
 	public void loadPoints() throws IOException, LoginException {
 		log.trace("GetsPointLoader.loadPoints");
 
-		if (lastPosition == null) {
-			notifyPointsReady(new ArrayList<PointDesc>());
-		} else {
+		if (lastPosition != null) {
 			List<PointDesc> points = new ArrayList<PointDesc>();
 			List<CategoriesList.Category> categories = gets.getCategories();
 

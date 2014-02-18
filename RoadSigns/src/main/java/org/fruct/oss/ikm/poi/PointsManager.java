@@ -74,7 +74,10 @@ public class PointsManager {
 				this.points.removeAll(oldPoints);
 
 			pointLoader.loadPoints();
-			storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
+			if (pointLoader.getPoints() != null)
+				storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
+			else
+				pointLoader.loadFromStorage(storage);
 		} catch (Exception ex) {
 			log.warn("Can not load points from loader " + pointLoader.getClass().getName() + ". Trying to load from storage", ex);
 			pointLoader.loadFromStorage(storage);
@@ -82,7 +85,8 @@ public class PointsManager {
 
 		// When previous method returns, points guaranteed to be ready
 		List<PointDesc> newPoints = pointLoader.getPoints();
-		addPoints(newPoints);
+		if (newPoints != null)
+			addPoints(newPoints);
 	}
 
 	public void updatePosition(final GeoPoint position) {
@@ -114,7 +118,7 @@ public class PointsManager {
 	public void ensureGetsState() {
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
 
-		if (!pref.getBoolean(SettingsActivity.GETS_ENABLE, false)) {
+		if (!pref.getBoolean(SettingsActivity.GETS_ENABLE, true)) {
 			// If GETS_ENABLE is off and and GETS loaded, unload it
 			if (getsPointsLoader != null) {
 				final List<PointDesc> getsPoints = getsPointsLoader.getPoints();

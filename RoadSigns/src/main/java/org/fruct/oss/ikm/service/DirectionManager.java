@@ -148,9 +148,7 @@ public class DirectionManager {
 			return;
 
 		preparePoints();
-		
-		long last = System.nanoTime();
-		
+
 		// Process no more than BATCH_SIZE points at once
 		int pointsProcessed = 0;
 		boolean needContinue = false;
@@ -189,11 +187,9 @@ public class DirectionManager {
 				break;
 			}
 		}
+
 		timer.stop();
-		log.debug("Batch of points processed in {}", timer.getAcc());
-		
-		long curr = System.nanoTime();
-		log.info("GHRouting results " + (curr - last) / 1e9 + " cache/totalProc/total = " + dbgPointsCache + "/" + dbgPointsProcessed + "/" + activePoints.size());
+		log.info("GHRouting results time " + (timer.getAcc()) + " cache/totalProc/total = " + dbgPointsCache + "/" + dbgPointsProcessed + "/" + activePoints.size());
 		
 		sendResult();
 		

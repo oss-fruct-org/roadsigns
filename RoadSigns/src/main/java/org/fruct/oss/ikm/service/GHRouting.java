@@ -1,9 +1,11 @@
 package org.fruct.oss.ikm.service;
 
 import com.graphhopper.GraphHopper;
+import com.graphhopper.storage.GraphHopperStorage;
 import com.graphhopper.storage.MMapDirectory;
+import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.Location2IDFullIndex;
-import com.graphhopper.storage.index.Location2IDQuadtree;
+import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
@@ -24,6 +26,7 @@ public abstract class GHRouting implements IRouting {
 	private boolean isInitializationFailed = false;
 	protected GraphHopper hopper;
 	private LocationIndex[] locationIndexArray;
+	private NodeAccess nodeAccess;
 
 
 	public abstract void prepare(GeoPoint from);
@@ -52,7 +55,7 @@ public abstract class GHRouting implements IRouting {
 		String quadTreeFileName = path + "/loc2idIndex";
 		if (new File(quadTreeFileName).exists()) {
 			log.info("Enabling quadtree index as fallback");
-			arr.add(new Location2IDQuadtree(hopper.getGraph(), new MMapDirectory(path)).prepareIndex());
+			arr.add(new LocationIndexTree(hopper.getGraph(), new MMapDirectory(path)).prepareIndex());
 		} else {
 			log.info("Quadtree index is unavailable");
 		}
@@ -77,6 +80,7 @@ public abstract class GHRouting implements IRouting {
 			boolean res = hopper.load(path);
 
 			locationIndexArray = createLocationIndexArray();
+			nodeAccess = hopper.getGraph().getNodeAccess();
 
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
@@ -102,9 +106,9 @@ public abstract class GHRouting implements IRouting {
 			return null;
 
 		int nodeId = getPointIndex(current, false);
-		
-		double lat = hopper.getGraph().getLatitude(nodeId);
-		double lon = hopper.getGraph().getLongitude(nodeId);
+
+		double lat = nodeAccess.getLatitude(nodeId);
+		double lon = nodeAccess.getLongitude(nodeId);
 
 		return new GeoPoint(lat, lon);
 	}

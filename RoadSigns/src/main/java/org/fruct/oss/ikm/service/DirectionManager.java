@@ -1,5 +1,20 @@
 package org.fruct.oss.ikm.service;
 
+import android.location.Location;
+import android.preference.PreferenceManager;
+import android.util.Pair;
+
+import com.graphhopper.util.DistanceCalc3D;
+import com.graphhopper.util.PointList;
+
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.poi.PointDesc;
+import org.osmdroid.util.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,20 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Utils;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.osmdroid.util.GeoPoint;
-
-import android.location.Location;
-import android.preference.PreferenceManager;
-import android.util.Pair;
-
-import com.graphhopper.util.DistanceCalc3D;
-import com.graphhopper.util.PointList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import utils.Timer;
 
 public class DirectionManager {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
@@ -154,7 +156,10 @@ public class DirectionManager {
 		boolean needContinue = false;
 		
 		int dbgPointsProcessed = 0, dbgPointsCache = 0;
-		
+
+		Timer timer = new Timer();
+		timer.start();
+
 		// Hash table mapping road direction to POI list
 		for (PointDesc point : activePoints) {	
 			dbgPointsProcessed++;
@@ -184,6 +189,8 @@ public class DirectionManager {
 				break;
 			}
 		}
+		timer.stop();
+		log.debug("Batch of points processed in {}", timer.getAcc());
 		
 		long curr = System.nanoTime();
 		log.info("GHRouting results " + (curr - last) / 1e9 + " cache/totalProc/total = " + dbgPointsCache + "/" + dbgPointsProcessed + "/" + activePoints.size());

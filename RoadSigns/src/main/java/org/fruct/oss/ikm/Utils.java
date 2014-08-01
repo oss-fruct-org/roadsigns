@@ -342,4 +342,5 @@ public class Utils {
 	public static int geoCoordDeg(double coord) {
 		return (int) (Math.abs(coord));
 	}
+
 }

@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns.iml" />
       <module fileurl="file://$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" />
       <module fileurl="file://$PROJECT_DIR$/RoadSignsProject.iml" filepath="$PROJECT_DIR$/RoadSignsProject.iml" />
-      <module fileurl="file://$PROJECT_DIR$/roadsigns.iml" filepath="$PROJECT_DIR$/roadsigns.iml" />
     </modules>
   </component>
 </project>

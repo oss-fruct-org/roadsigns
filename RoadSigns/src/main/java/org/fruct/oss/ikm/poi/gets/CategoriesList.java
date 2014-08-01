@@ -17,7 +17,7 @@ public class CategoriesList implements IContent{
 		return categories;
 	}
 
-	@Root(name = "category")
+	@Root(name = "category", strict = false)
 	public static class Category {
 		private final int id;
 		private final String name;

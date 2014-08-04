@@ -52,13 +52,13 @@ public abstract class GHRouting implements IRouting {
 		arr.add(hopper.getLocationIndex());
 
 		// Quad tree index if available
-		String quadTreeFileName = path + "/loc2idIndex";
+		/*String quadTreeFileName = path + "/loc2idIndex";
 		if (new File(quadTreeFileName).exists()) {
 			log.info("Enabling quadtree index as fallback");
 			arr.add(new LocationIndexTree(hopper.getGraph(), new MMapDirectory(path)).prepareIndex());
 		} else {
 			log.info("Quadtree index is unavailable");
-		}
+		}*/
 
 		// Slow linear search index
 		arr.add(new Location2IDFullIndex(hopper.getGraph()));

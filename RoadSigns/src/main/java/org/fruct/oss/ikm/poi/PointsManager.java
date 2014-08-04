@@ -6,7 +6,7 @@ import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

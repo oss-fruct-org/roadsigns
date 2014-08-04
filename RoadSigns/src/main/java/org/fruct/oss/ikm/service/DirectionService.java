@@ -20,7 +20,7 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;

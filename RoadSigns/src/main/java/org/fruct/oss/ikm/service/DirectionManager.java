@@ -4,12 +4,11 @@ import android.location.Location;
 import android.preference.PreferenceManager;
 import android.util.Pair;
 
-import com.graphhopper.util.DistanceCalc3D;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
@@ -24,8 +23,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import utils.Timer;
 
 public class DirectionManager implements IRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);

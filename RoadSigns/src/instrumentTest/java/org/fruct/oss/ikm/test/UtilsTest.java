@@ -2,13 +2,12 @@ package org.fruct.oss.ikm.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 
 import android.test.AndroidTestCase;
 

@@ -7,7 +7,7 @@ import java.util.Locale;
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.AllFilter;
 import org.fruct.oss.ikm.poi.Filter;
 import org.fruct.oss.ikm.poi.PointDesc;

@@ -1,5 +1,7 @@
 package org.fruct.oss.ikm;
 
+import org.fruct.oss.ikm.utils.Utils;
+
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;

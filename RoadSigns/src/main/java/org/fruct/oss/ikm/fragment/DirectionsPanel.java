@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.service.Direction;
 

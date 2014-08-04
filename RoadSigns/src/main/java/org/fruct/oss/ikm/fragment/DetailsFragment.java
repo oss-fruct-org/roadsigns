@@ -20,13 +20,12 @@ import android.widget.Toast;
 import org.fruct.oss.ikm.DetailsActivity;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.gets.Gets;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

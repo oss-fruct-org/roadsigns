@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.views.MapView;

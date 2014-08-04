@@ -3,7 +3,7 @@ package org.fruct.oss.ikm.poi.gets;
 import android.content.Context;
 
 import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.simpleframework.xml.Serializer;

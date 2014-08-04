@@ -1,6 +1,6 @@
 package org.fruct.oss.ikm.poi;
 
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Gets;
 import org.fruct.oss.ikm.poi.gets.LoginException;

@@ -3,7 +3,7 @@ package org.fruct.oss.ikm.test;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.gets.AuthToken;
 import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Kml;
@@ -11,7 +11,6 @@ import org.fruct.oss.ikm.poi.gets.Response;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 

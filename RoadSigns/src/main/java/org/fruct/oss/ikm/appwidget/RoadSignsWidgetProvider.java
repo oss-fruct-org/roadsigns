@@ -8,10 +8,9 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.widget.RemoteViews;
-import static org.fruct.oss.ikm.Utils.log;
+import static org.fruct.oss.ikm.utils.Utils.log;
 
 @TargetApi(Build.VERSION_CODES.HONEYCOMB)
 public class RoadSignsWidgetProvider extends AppWidgetProvider {

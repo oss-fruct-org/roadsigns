@@ -1,12 +1,12 @@
 package org.fruct.oss.ikm.appwidget;
 
-import static org.fruct.oss.ikm.Utils.log;
+import static org.fruct.oss.ikm.utils.Utils.log;
 
 import java.util.ArrayList;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 

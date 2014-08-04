@@ -1,4 +1,4 @@
-package utils;
+package org.fruct.oss.ikm.utils;
 
 
 public final class Timer {

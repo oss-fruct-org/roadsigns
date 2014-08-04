@@ -1,12 +1,9 @@
-package org.fruct.oss.ikm;
+package org.fruct.oss.ikm.utils;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,11 +11,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.R;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;

@@ -9,6 +9,7 @@ import android.util.Pair;
 
 import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.storage.RemoteContent;
+import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

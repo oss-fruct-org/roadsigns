@@ -10,7 +10,7 @@ import android.support.v4.app.DialogFragment;
 import android.view.ContextThemeWrapper;
 import android.widget.CheckBox;
 
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

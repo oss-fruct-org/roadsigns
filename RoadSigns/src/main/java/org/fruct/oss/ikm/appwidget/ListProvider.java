@@ -1,13 +1,12 @@
 package org.fruct.oss.ikm.appwidget;
 
-import static org.fruct.oss.ikm.Utils.log;
+import static org.fruct.oss.ikm.utils.Utils.log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
-import org.fruct.oss.ikm.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.service.Direction;
 import org.osmdroid.util.GeoPoint;
@@ -16,7 +15,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.RemoteViews;

@@ -1,6 +1,6 @@
 package org.fruct.oss.ikm.appwidget;
 
-import org.fruct.oss.ikm.Utils;
+import org.fruct.oss.ikm.utils.Utils;
 
 import android.annotation.TargetApi;
 import android.appwidget.AppWidgetManager;

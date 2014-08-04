@@ -23,7 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -102,12 +104,19 @@ public class OneToManyRouting extends GHRouting {
 
 	@Override
 	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
-		TIntObjectMap<PointDesc> targetNodes = new TIntObjectHashMap<PointDesc>(targetPoints.length);
+		// TODO: possibly use more efficient multi-map
+		TIntObjectMap<List<PointDesc>> targetNodes = new TIntObjectHashMap<List<PointDesc>>(targetPoints.length);
 
 		for (PointDesc point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
 			if (nodeId >= 0) {
-				targetNodes.put(nodeId, point);
+				List<PointDesc> nodePoints = targetNodes.get(nodeId);
+				if (nodePoints == null) {
+					nodePoints = new ArrayList<PointDesc>();
+					targetNodes.put(nodeId, nodePoints);
+				}
+
+				nodePoints.add(point);
 			} else {
 				log.warn("Location index {} not found for {}", nodeId, point.getName());
 			}
@@ -143,8 +152,6 @@ public class OneToManyRouting extends GHRouting {
 
 			if (targetNodes.containsKey(node)) {
 				// Build direction for found target point
-				PointDesc pointDesc = targetNodes.remove(node);
-
 				tmpPath.clear();
 				int fnode = node;
 
@@ -157,7 +164,10 @@ public class OneToManyRouting extends GHRouting {
 
 				Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
 				if (dirPair != null) {
-					callback.pointReady(dirPair.first, dirPair.second, pointDesc);
+					List<PointDesc> nodePoints = targetNodes.remove(node);
+					for (PointDesc pointDesc : nodePoints) {
+						callback.pointReady(dirPair.first, dirPair.second, pointDesc);
+					}
 				}
 			}
 

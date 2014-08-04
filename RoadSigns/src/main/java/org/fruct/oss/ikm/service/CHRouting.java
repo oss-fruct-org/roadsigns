@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.service;
 
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 
 import com.graphhopper.GHRequest;
@@ -39,6 +40,12 @@ public class CHRouting extends GHRouting {
 			return null;
 		}
 	}
+
+	@Override
+	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
+
+	}
+
 
 	@Override
 	public void setEncoder(String encoding) {

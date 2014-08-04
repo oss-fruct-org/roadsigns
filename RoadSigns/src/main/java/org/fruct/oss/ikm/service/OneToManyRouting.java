@@ -11,11 +11,16 @@ import com.graphhopper.storage.Graph;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.SoftReference;
+
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
+import utils.Timer;
 
 public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
@@ -23,6 +28,8 @@ public class OneToManyRouting extends GHRouting {
 	private String encoderString = "CAR";
 
 	private volatile SoftReference<DijkstraOneToMany> algoRef;
+
+	private static Timer timer = new Timer();
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
@@ -74,10 +81,22 @@ public class OneToManyRouting extends GHRouting {
 			return null;
 
 		int toId = getPointIndex(to, true);
+
 		Path path = algo.calcPath(fromId, toId);
 
 		return path.calcPoints();
 	}
+
+	@Override
+	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
+		TIntSet targetNodes = new TIntHashSet(targetPoints.length);
+
+		GeoPoint center = getPoint(fromId);
+
+		callback.pointReady(center, center.destinationPoint(radius, (float) (Math.random() * 360)), targetPoints[0]);
+		callback.pointReady(center, center.destinationPoint(radius, (float) (Math.random() * 360)), targetPoints[1]);
+	}
+
 
 	@Override
 	public void setEncoder(String encoding) {

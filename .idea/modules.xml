@@ -4,7 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns.iml" />
       <module fileurl="file://$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" />
-      <module fileurl="file://$PROJECT_DIR$/RoadSignsProject.iml" filepath="$PROJECT_DIR$/RoadSignsProject.iml" />
     </modules>
   </component>
 </project>

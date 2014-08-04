@@ -28,7 +28,6 @@ public abstract class GHRouting implements IRouting {
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
 
-
 	public abstract void prepare(GeoPoint from);
 	public abstract PointList route(GeoPoint to);
 
@@ -107,6 +106,13 @@ public abstract class GHRouting implements IRouting {
 
 		int nodeId = getPointIndex(current, false);
 
+		double lat = nodeAccess.getLatitude(nodeId);
+		double lon = nodeAccess.getLongitude(nodeId);
+
+		return new GeoPoint(lat, lon);
+	}
+
+	public GeoPoint getPoint(int nodeId) {
 		double lat = nodeAccess.getLatitude(nodeId);
 		double lon = nodeAccess.getLongitude(nodeId);
 

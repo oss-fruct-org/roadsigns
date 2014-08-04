@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.service;
 
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 
 public class StubRouting implements IRouting {
@@ -12,6 +13,11 @@ public class StubRouting implements IRouting {
 	@Override
 	public PointList route(GeoPoint to) {
 		return null;
+	}
+
+	@Override
+	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
+
 	}
 
 	@Override

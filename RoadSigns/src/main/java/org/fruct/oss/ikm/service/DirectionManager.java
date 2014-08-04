@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 
 import utils.Timer;
 
-public class DirectionManager {
+public class DirectionManager implements IRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
 
 	public interface Listener {
@@ -51,7 +51,7 @@ public class DirectionManager {
 	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private Future<?> calculationTask;
 
-	// POI, for that directions ready
+		// POI, for that directions ready
 	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
 	
 	// POI, that pass filters
@@ -143,7 +143,7 @@ public class DirectionManager {
 		}
 	}
 
-	private void doCalculateForPoints() {
+	/*private void doCalculateForPoints() {
 		if (activePoints == null || userPosition == null)
 			return;
 
@@ -159,7 +159,7 @@ public class DirectionManager {
 		timer.start();
 
 		// Hash table mapping road direction to POI list
-		for (PointDesc point : activePoints) {	
+		for (PointDesc point : activePoints) {
 			dbgPointsProcessed++;
 			
 			// If direction for this point already calculated, skip it
@@ -169,6 +169,7 @@ public class DirectionManager {
 			}
 
 			PointList path = routing.route(point.toPoint());
+
 			if (path == null || path.getSize() < 2) {
 				log.warn("No path found for point {}", point.getName());
 				continue;
@@ -207,8 +208,26 @@ public class DirectionManager {
 				}
 			}
 		}
+	}*/
+
+	private void doCalculateForPoints() {
+		if (activePoints == null || userPosition == null)
+			return;
+
+		preparePoints();
+
+		routing.route(activePoints.toArray(new PointDesc[activePoints.size()]), radius, this);
+		sendResult();
 	}
-	
+
+	@Override
+	public void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc) {
+		readyPoints.put(pointDesc, Pair.create(center, target));
+		if (readyPoints.size() % BATCH_SIZE == 0) {
+			sendResult();
+		}
+	}
+
 	private void sendResult() {
 		if (readyPoints.isEmpty())
 			return;

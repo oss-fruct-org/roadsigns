@@ -135,7 +135,7 @@ public class OneToManyRouting extends GHRouting {
 		costs[fromId] = 0;
 		heap.insert(0f, fromId);
 
-		while (!heap.isEmpty()) {
+		while (!heap.isEmpty() && targetNodes.size() > 0) {
 			final int node = heap.peek_element();
 			final double cost = heap.peek_key();
 			heap.poll_element();

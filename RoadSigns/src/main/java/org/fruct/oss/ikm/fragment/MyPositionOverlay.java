@@ -16,6 +16,7 @@ import android.graphics.Point;
 import android.location.Location;
 import android.view.MotionEvent;
 
+// TODO: in this class some GeoPoint's creations on every draw call
 public class MyPositionOverlay extends Overlay {
 	interface OnScrollListener {
 		void onScroll();
@@ -24,6 +25,7 @@ public class MyPositionOverlay extends Overlay {
 
 	private MapView mapView;
 	private Location location;
+	private Location matchedLocation;
 	
 	private Point point = new Point();
 	private Point centerPoint = new Point();
@@ -70,36 +72,42 @@ public class MyPositionOverlay extends Overlay {
 	
 	@Override
 	protected void draw(Canvas canvas, MapView mapView, boolean shadow) {
+		if (shadow) {
+			return;
+		}
+
 		if (location == null) {
 			return;
 		}
-		
+
+		drawLocation(canvas);
+		drawMatchedLocation(canvas);
+	}
+
+	private void drawMatchedLocation(Canvas canvas) {
+		Projection proj = mapView.getProjection();
+		proj.toMapPixels(new GeoPoint(matchedLocation), point);
+		canvas.drawCircle(point.x, point.y, 8, paintRed);
+	}
+
+	private void drawLocation(Canvas canvas) {
 		Projection proj = mapView.getProjection();
 		GeoPoint locationPoint = new GeoPoint(location);
 		IGeoPoint mapCenter = mapView.getMapCenter();
-		
+
 		proj.toMapPixels(locationPoint, point);
 		proj.toMapPixels(mapCenter, centerPoint);
-		
+
 		canvas.save();
-		
+
 		canvas.rotate(location.getBearing(), point.x, point.y);
 		canvas.translate(point.x, point.y);
 
 		if (isPaintAccuracy) {
 			float pixels = 2 * proj.metersToEquatorPixels(location.getAccuracy());
 			canvas.drawCircle(0, 0, pixels, paintAccuracy);
-		}/* else {
-			float pixels = 2 * proj.metersToEquatorPixels(45);
-			canvas.drawCircle(0, 0, pixels, paintRad);
-		}*/
-		
-		drawArrow(canvas);
-		
-		canvas.restore();
-	}
-	
-	private void drawArrow(Canvas canvas) {
+		}
+
 		path.reset();
 		
 		path.moveTo(0, arrowWidth);
@@ -109,12 +117,19 @@ public class MyPositionOverlay extends Overlay {
 		path.close();
 		
 		canvas.drawPath(path, paintRed);
+		canvas.restore();
 	}
+
+
 
 	public void setLocation(Location myLocation) {
 		this.location = myLocation;
 	}
-	
+
+	public void setMatchedLocation(Location matchedLocation) {
+		this.matchedLocation = matchedLocation;
+	}
+
 	public void setShowAccuracy(boolean isShow) {
 		this.isPaintAccuracy = isShow;
 	}

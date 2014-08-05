@@ -251,6 +251,8 @@ public class MapFragment extends Fragment implements MapListener,
 			public void onReceive(Context context, Intent intent) {
 				log.debug("MapFragment LOCATION_CHANGED");
 				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
+				Location matchedLocation = intent.getParcelableExtra(DirectionService.MATCHED_LOCATION);
+
 				assert location != null;
 
 				myLocation = location;
@@ -262,8 +264,11 @@ public class MapFragment extends Fragment implements MapListener,
 				PointsManager.getInstance().updatePosition(new GeoPoint(location));
 
 				myPositionOverlay.setLocation(myLocation);
+				myPositionOverlay.setMatchedLocation(matchedLocation);
+
 				mapView.invalidate();
 
+				// Auto-zoom and animate to new location if tracking mode enabled
 				if (isTracking) {
 					assert getActivity() != null;
 					// Auto zoom enabled

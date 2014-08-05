@@ -3,8 +3,6 @@ package org.fruct.oss.ikm.service;
 import android.util.Pair;
 
 import com.graphhopper.coll.IntDoubleBinHeap;
-import com.graphhopper.routing.DijkstraOneToMany;
-import com.graphhopper.routing.Path;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FastestWeighting;
@@ -15,14 +13,12 @@ import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
 import com.graphhopper.util.PointList;
 
-import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +43,6 @@ public class OneToManyRouting extends GHRouting {
 	private IntDoubleBinHeap heap;
 
 	private EdgeExplorer outEdgeExplorer;
-	private FlagEncoder encoder;
 	private Weighting weightCalc;
 	private TIntStack tmpPath;
 
@@ -65,10 +60,11 @@ public class OneToManyRouting extends GHRouting {
 		Graph graph = hopper.getGraph();
 		tmpPath = new TIntArrayStack();
 
-		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
 		EncodingManager encodingManager = new EncodingManager(encoderString);
-		encoder = encodingManager.getEncoder(encoderString);
+		FlagEncoder encoder = encodingManager.getEncoder(encoderString);
 		weightCalc = new FastestWeighting(encoder);
+
+		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
 
 		int fromId = getPointIndex(from, false);
 
@@ -237,5 +233,12 @@ public class OneToManyRouting extends GHRouting {
 	@Override
 	public void setEncoder(String encoding) {
 		encoderString = encoding;
+	}
+
+	@Override
+	public IMapMatcher createMapMatcher() {
+		ensureInitialized();
+
+		return new MapMatcher(hopper.getGraph(), this, encoderString);
 	}
 }

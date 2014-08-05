@@ -18,4 +18,6 @@ public interface IRouting {
 	GeoPoint getNearestRoadNode(GeoPoint current);
 	void reset(GeoPoint userPosition);
 	void setEncoder(String encoding);
+
+	IMapMatcher createMapMatcher();
 }

@@ -1,5 +1,7 @@
 package org.fruct.oss.ikm.service;
 
+import android.location.Location;
+
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 
@@ -49,5 +51,22 @@ public class CHRouting extends GHRouting {
 
 	@Override
 	public void setEncoder(String encoding) {
+	}
+
+	@Override
+	public IMapMatcher createMapMatcher() {
+		return new IMapMatcher() {
+			public Location location;
+
+			@Override
+			public void updateLocation(Location location) {
+				this.location = location;
+			}
+
+			@Override
+			public Location getMatchedLocation() {
+				return location;
+			}
+		};
 	}
 }

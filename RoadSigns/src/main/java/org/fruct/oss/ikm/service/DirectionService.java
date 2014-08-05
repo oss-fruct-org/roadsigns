@@ -45,6 +45,7 @@ public class DirectionService extends Service implements PointsListener,
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
 	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
+	public static final String MATCHED_LOCATION = "org.fruct.oss.ikm.MATCHED_LOCATION";
 	public static final String PATH = "org.fruct.oss.ikm.PATH";
 
 	// Broadcasts
@@ -63,8 +64,11 @@ public class DirectionService extends Service implements PointsListener,
 	private ArrayList<Direction> lastResultDirections;
 	private GeoPoint lastResultCenter;
 	private Location lastResultLocation;
-	
+
+
 	private Location lastLocation;
+	private IMapMatcher mapMatcher;
+
 
 	private String oldNavigationPath;
 	private String navigationPath;
@@ -141,11 +145,14 @@ public class DirectionService extends Service implements PointsListener,
 		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
 		navigationPath = ghPath + "/ghdata" + ghDirIndex;
 
+		IRouting routing = createRouting();
+		mapMatcher = routing.createMapMatcher();
+
 		if (dirManager != null) {
 			dirManager.interrupt();
-			dirManager.setRouting(createRouting());
+			dirManager.setRouting(routing);
 		} else {
-			dirManager = new DirectionManager(createRouting());
+			dirManager = new DirectionManager(routing);
 			dirManager.setListener(this);
 		}
 	}
@@ -212,7 +219,7 @@ public class DirectionService extends Service implements PointsListener,
 	
 	public void startTracking() {
 		if (locationReceiver.isStarted()) {
-			notifyLocationChanged(lastLocation);
+			notifyLocationChanged(lastLocation, mapMatcher.getMatchedLocation());
 			
 			if (lastResultDirections != null)
 				sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
@@ -232,7 +239,9 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void newLocation(Location location) {
 		lastLocation = location;
-		notifyLocationChanged(location);
+		mapMatcher.updateLocation(location);
+
+		notifyLocationChanged(location, mapMatcher.getMatchedLocation());
 
 		if (extractingThread != null && extractingThread.isAlive()) {
 			return;
@@ -253,12 +262,14 @@ public class DirectionService extends Service implements PointsListener,
 		}
 	}
 	
-	private void notifyLocationChanged(Location location) {
+	private void notifyLocationChanged(Location location, Location matchedLocation) {
 		if (location == null)
 			return;
 		
 		Intent intent = new Intent(LOCATION_CHANGED);
 		intent.putExtra(LOCATION, location);
+		intent.putExtra(MATCHED_LOCATION, matchedLocation);
+
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
@@ -341,6 +352,7 @@ public class DirectionService extends Service implements PointsListener,
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (dirManager != null) {
 				dirManager.setEncoder(sharedPreferences.getString(key, "CAR"));
+				// TODO: need update encoder string in map matcher
 			}
 		}
 	}

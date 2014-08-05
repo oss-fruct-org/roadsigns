@@ -8,7 +8,6 @@ import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
@@ -42,6 +41,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	
 	private int radius = 45;
 	private IRouting routing;
+
 	private GeoPoint userPosition;
 	private Location location;
 
@@ -108,7 +108,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 			public void run() {
 				DirectionManager.this.location = location;
 				GeoPoint current = new GeoPoint(location);
-				
+
 				// Find nearest road node
 				// Can throw if not initialized, ignoring
 				GeoPoint nearestNode = routing.getNearestRoadNode(current);				

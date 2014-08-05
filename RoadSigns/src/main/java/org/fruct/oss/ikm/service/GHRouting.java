@@ -119,9 +119,10 @@ public abstract class GHRouting implements IRouting {
 		return new GeoPoint(lat, lon);
 	}
 
-	public void getPoint(int nodeId, GeoPoint outPoint) {
+	public GeoPoint getPoint(int nodeId, GeoPoint outPoint) {
 		outPoint.setLatitudeE6((int) (nodeAccess.getLatitude(nodeId) * 1e6));
 		outPoint.setLongitudeE6((int) (nodeAccess.getLongitude(nodeId) * 1e6));
+		return outPoint;
 	}
 
 	public int getPointIndex(GeoPoint geoPoint, boolean useCache) {

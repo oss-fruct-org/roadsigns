@@ -239,6 +239,7 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void newLocation(Location location) {
 		lastLocation = location;
+		// TODO: can be time consuming
 		mapMatcher.updateLocation(location);
 
 		notifyLocationChanged(location, mapMatcher.getMatchedLocation());

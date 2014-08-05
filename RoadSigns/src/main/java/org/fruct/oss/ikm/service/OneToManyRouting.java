@@ -44,7 +44,9 @@ public class OneToManyRouting extends GHRouting {
 
 	private EdgeExplorer outEdgeExplorer;
 	private Weighting weightCalc;
-	private TIntStack tmpPath;
+
+	private transient TIntStack tmpPath;
+	private transient GeoPoint tmpPoint = new GeoPoint(0, 0);
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
@@ -95,7 +97,7 @@ public class OneToManyRouting extends GHRouting {
 			PointList pointList = new PointList();
 
 			while (node != -1) {
-				GeoPoint nodePoint = getPoint(node);
+				GeoPoint nodePoint = getPoint(node, tmpPoint);
 				pointList.add(nodePoint.getLatitude(), nodePoint.getLongitude());
 				node = parents[node];
 			}

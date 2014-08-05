@@ -36,42 +36,25 @@ import org.fruct.oss.ikm.utils.Timer;
 public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 
-	private int fromId;
-	private GeoPoint fromGeoPoint;
-
 	private String encoderString = "CAR";
 
-	private volatile SoftReference<DijkstraOneToMany> algoRef;
-
 	private static Timer timer = new Timer();
+
+	// Dijkstra routing arrays
+	private int[] parents;
+	private float[] costs;
+	private boolean[] closed;
+	private IntDoubleBinHeap heap;
+
+	private EdgeExplorer outEdgeExplorer;
+	private FlagEncoder encoder;
+	private Weighting weightCalc;
+	private TIntStack tmpPath;
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
 		log.debug("OneToManyRouting created");
-	}
 
-	private DijkstraOneToMany getAlgo() {
-		DijkstraOneToMany hardRef = (algoRef == null ? null : algoRef.get());
-
-		if (hardRef == null) {
-			log.debug("Creating DijkstraOneToMany with {} encoder...", encoderString);
-			EncodingManager encodingManager = new EncodingManager(encoderString);
-			FlagEncoder encoder = encodingManager.getEncoder(encoderString);
-			Weighting weightCalc = new FastestWeighting(encoder);
-			//Weighting weightCalc = new ShortestWeighting();
-
-			Graph graph = hopper.getGraph();
-
-			App.clearBitmapPool();
-			System.gc();
-
-			hardRef = new DijkstraOneToMany(graph, encoder, weightCalc);
-			algoRef = new SoftReference<DijkstraOneToMany>(hardRef);
-
-			log.debug("Created DijkstraOneToMany with {} encoder", encoderString);
-		}
-
-		return hardRef;
 	}
 
 	@Override
@@ -79,10 +62,25 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return;
 
-		fromGeoPoint = from;
-		fromId = getPointIndex(from, false);
-		if (algoRef != null)
-			algoRef.clear();
+		Graph graph = hopper.getGraph();
+		tmpPath = new TIntArrayStack();
+
+		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
+		EncodingManager encodingManager = new EncodingManager(encoderString);
+		encoder = encodingManager.getEncoder(encoderString);
+		weightCalc = new FastestWeighting(encoder);
+
+		int fromId = getPointIndex(from, false);
+
+		parents = new int[graph.getNodes()];
+		Arrays.fill(parents, -1);
+
+		costs = new float[graph.getNodes()];
+		closed = new boolean[graph.getNodes()];
+		heap = new IntDoubleBinHeap();
+
+		costs[fromId] = 0;
+		heap.insert(0f, fromId);
 	}
 
 	@Override
@@ -90,16 +88,26 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return null;
 
-		DijkstraOneToMany algo = getAlgo();
-
-		if (algo == null)
-			return null;
-
 		int toId = getPointIndex(to, true);
+		int node = toId;
 
-		Path path = algo.calcPath(fromId, toId);
+		while (!heap.isEmpty() && !closed[toId]) {
+			node = findNextNode();
+		}
 
-		return path.calcPoints();
+		if (node != -1 && closed[node]) {
+			PointList pointList = new PointList();
+
+			while (node != -1) {
+				GeoPoint nodePoint = getPoint(node);
+				pointList.add(nodePoint.getLatitude(), nodePoint.getLongitude());
+				node = parents[node];
+			}
+
+			return pointList;
+		} else {
+			return null;
+		}
 	}
 
 	@Override
@@ -110,84 +118,78 @@ public class OneToManyRouting extends GHRouting {
 		for (PointDesc point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
 			if (nodeId >= 0) {
-				List<PointDesc> nodePoints = targetNodes.get(nodeId);
-				if (nodePoints == null) {
-					nodePoints = new ArrayList<PointDesc>();
-					targetNodes.put(nodeId, nodePoints);
-				}
+				if (closed[nodeId]) {
+					ArrayList<PointDesc> points = new ArrayList<PointDesc>(1);
+					points.add(point);
+					sendPointDirection(nodeId, points, radius, callback);
+				} else {
+					List<PointDesc> nodePoints = targetNodes.get(nodeId);
+					if (nodePoints == null) {
+						nodePoints = new ArrayList<PointDesc>();
+						targetNodes.put(nodeId, nodePoints);
+					}
 
-				nodePoints.add(point);
+					nodePoints.add(point);
+				}
 			} else {
 				log.warn("Location index {} not found for {}", nodeId, point.getName());
 			}
 		}
 
-		EncodingManager encodingManager = new EncodingManager(encoderString);
-		FlagEncoder encoder = encodingManager.getEncoder(encoderString);
-		Weighting weightCalc = new FastestWeighting(encoder);
-
-		Graph graph = hopper.getGraph();
-
-		EdgeExplorer outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
-		EdgeExplorer inEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, true, false));
-
-		int[] parents = new int[graph.getNodes()];
-		Arrays.fill(parents, -1);
-
-		TIntStack tmpPath = new TIntArrayStack();
-
-		float[] costs = new float[graph.getNodes()];
-		boolean[] closed = new boolean[graph.getNodes()];
-		//boolean[] opened = new boolean[graph.getNodes()];
-		IntDoubleBinHeap heap = new IntDoubleBinHeap();
-
-		costs[fromId] = 0;
-		heap.insert(0f, fromId);
-
 		while (!heap.isEmpty() && targetNodes.size() > 0) {
-			final int node = heap.peek_element();
-			final double cost = heap.peek_key();
-			heap.poll_element();
-			closed[node] = true;
-
+			int node = findNextNode();
 			if (targetNodes.containsKey(node)) {
-				// Build direction for found target point
-				tmpPath.clear();
-				int fnode = node;
-
-				while (fnode != -1) {
-					tmpPath.push(fnode);
-					fnode = parents[fnode];
-				}
-
-				assert tmpPath.peek() == fromId;
-
-				Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
-				if (dirPair != null) {
-					List<PointDesc> nodePoints = targetNodes.remove(node);
-					for (PointDesc pointDesc : nodePoints) {
-						callback.pointReady(dirPair.first, dirPair.second, pointDesc);
-					}
-				}
+				List<PointDesc> nodePoints = targetNodes.remove(node);
+				sendPointDirection(node, nodePoints, radius, callback);
 			}
+		}
+	}
 
-			EdgeIterator iter = outEdgeExplorer.setBaseNode(node);
-			while (iter.next()) {
-				int adjNode = iter.getAdjNode();
-				if (closed[adjNode])
-					continue;
+	private void sendPointDirection(int node, List<PointDesc> targetPoints, float radius, RoutingCallback callback) {
+		// Build direction for found target point
+		buildPath(node, tmpPath);
 
-				float tcost = (float) (cost + weightCalc.calcWeight(iter, false));
-				if (parents[adjNode] == -1) {
-					parents[adjNode] = node;
-					costs[adjNode] = tcost;
-					heap.insert(tcost, adjNode);
-				} else if (tcost < costs[adjNode]) {
-					parents[adjNode] = node;
-					costs[adjNode] = tcost;
-					heap.update(tcost, adjNode);
-				}
+		Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
+		if (dirPair != null) {
+			for (PointDesc pointDesc : targetPoints) {
+				callback.pointReady(dirPair.first, dirPair.second, pointDesc);
 			}
+		}
+	}
+
+	private int findNextNode() {
+		final int node = heap.peek_element();
+		final double cost = heap.peek_key();
+		heap.poll_element();
+		closed[node] = true;
+
+		EdgeIterator iter = outEdgeExplorer.setBaseNode(node);
+		while (iter.next()) {
+			int adjNode = iter.getAdjNode();
+			if (closed[adjNode])
+				continue;
+
+			float tcost = (float) (cost + weightCalc.calcWeight(iter, false));
+			if (parents[adjNode] == -1) {
+				parents[adjNode] = node;
+				costs[adjNode] = tcost;
+				heap.insert(tcost, adjNode);
+			} else if (tcost < costs[adjNode]) {
+				parents[adjNode] = node;
+				costs[adjNode] = tcost;
+				heap.update(tcost, adjNode);
+			}
+		}
+
+		return node;
+	}
+
+	private void buildPath(int node, TIntStack outPath) {
+		outPath.clear();
+
+		while (node != -1) {
+			outPath.push(node);
+			node = parents[node];
 		}
 	}
 

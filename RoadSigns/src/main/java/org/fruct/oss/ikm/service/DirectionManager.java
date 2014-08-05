@@ -77,6 +77,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		}
 	};
 
+	// TODO: add support for interrupting to OneToManyRouting
 	private void interruptCurrentCalculation() {
 		synchronized (executor) {
 			if (calculationTask != null) {
@@ -140,79 +141,11 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		}
 	}
 
-	/*private void doCalculateForPoints() {
-		if (activePoints == null || userPosition == null)
-			return;
-
-		preparePoints();
-
-		// Process no more than BATCH_SIZE points at once
-		int pointsProcessed = 0;
-		boolean needContinue = false;
-		
-		int dbgPointsProcessed = 0, dbgPointsCache = 0;
-
-		Timer timer = new Timer();
-		timer.start();
-
-		// Hash table mapping road direction to POI list
-		for (PointDesc point : activePoints) {
-			dbgPointsProcessed++;
-			
-			// If direction for this point already calculated, skip it
-			if (readyPoints.containsKey(point)) {
-				dbgPointsCache++;
-				continue;
-			}
-
-			PointList path = routing.route(point.toPoint());
-
-			if (path == null || path.getSize() < 2) {
-				log.warn("No path found for point {}", point.getName());
-				continue;
-			}
-
-			int dist = (int) path.calcDistance(new DistanceCalc3D());
-			point.setDistance(dist);
-
-			Pair<GeoPoint, GeoPoint> directionNode = getDirectionNode(userPosition, path);
-
-			readyPoints.put(point, directionNode);
-
-			pointsProcessed++;
-			if (pointsProcessed >= BATCH_SIZE) {
-				needContinue = true;
-				break;
-			}
-		}
-
-		timer.stop();
-		log.info("GHRouting results time " + (timer.getAcc()) + " cache/totalProc/total = " + dbgPointsCache + "/" + dbgPointsProcessed + "/" + activePoints.size());
-		
-		sendResult();
-		
-		if (needContinue) {
-			synchronized (executor) {
-				if (!Thread.interrupted()) {
-					calculationTask = executor.submit(new Runnable() {
-						@Override
-						public void run() {
-							doCalculateForPoints();
-						}
-					});
-				} else {
-					log.info("Directions thread interrupted");
-				}
-			}
-		}
-	}*/
-
 	private void doCalculateForPoints() {
 		if (activePoints == null || userPosition == null)
 			return;
 
 		preparePoints();
-
 		routing.route(activePoints.toArray(new PointDesc[activePoints.size()]), radius, this);
 		sendResult();
 	}
@@ -252,39 +185,6 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		ArrayList<Direction> lastResultDirections = new ArrayList<Direction>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);
-	}
-	
-	private Pair<GeoPoint, GeoPoint> getDirectionNode(final GeoPoint current, PointList path) {				
-		GeoPoint point = new GeoPoint(0, 0);
-		GeoPoint prev = Utils.copyGeoPoint(current);
-
-		for (int i = 1; i < path.getSize(); i++) {
-			point.setCoordsE6((int) (path.getLatitude(i) * 1e6), (int) (path.getLongitude(i) * 1e6));
-			
-			final int dist = current.distanceTo(point);
-			if (dist > radius) {
-				final GeoPoint a = prev;
-				final double d = a.distanceTo(point) + 2;
-				final float bearing = (float) a.bearingTo(point);
-				
-				// TODO: catch exceptions
-				double sol = Utils.solve(0, d, 0.1, new Utils.FunctionDouble() {
-					@Override
-					public double apply(double x) {
-						GeoPoint mid = a.destinationPoint(x, bearing);
-						double distFromCenter = current.distanceTo(mid);
-						return distFromCenter - (radius + 2);
-					}
-				});
-
-				GeoPoint target = a.destinationPoint(sol, bearing);
-				
-				return Pair.create(a, target);
-			}
-			prev = Utils.copyGeoPoint(point);
-		}
-		
-		return Pair.create(current, prev);
 	}
 
 	public void setRadius(int radius) {

@@ -243,13 +243,13 @@ public class DirectionService extends Service implements PointsListener,
 		// TODO: can be time consuming
 		mapMatcher.updateLocation(location);
 
-		notifyLocationChanged(location, mapMatcher.getMatchedLocation());
+		notifyLocationChanged(mapMatcher.getMatchedLocation(), mapMatcher.getMatchedLocation());
 
 		if (extractingThread != null && extractingThread.isAlive()) {
 			return;
 		}
 
-		dirManager.updateLocation(lastLocation);
+		dirManager.updateLocation(mapMatcher.getMatchedLocation());
 		dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 	}
 	

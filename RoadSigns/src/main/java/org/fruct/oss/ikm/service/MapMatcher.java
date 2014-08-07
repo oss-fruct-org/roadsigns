@@ -127,7 +127,7 @@ public class MapMatcher implements IMapMatcher {
 			}
 
 			if (bestEvalResult.node == -1) {
-				matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
+				matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
 				return;
 			}
 
@@ -144,7 +144,7 @@ public class MapMatcher implements IMapMatcher {
 				} else if (addedAdj > 0 && bestEvalResult.node == edgeProps.getAdjNode()) {
 					continue;
 				} else {
-					matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
+					matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
 					return;
 				}
 			}
@@ -186,8 +186,9 @@ public class MapMatcher implements IMapMatcher {
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-	private Location createLocation(double lat, double lon) {
-		Location location = new Location(PROVIDER);
+	private Location createLocation(Location prototype, double lat, double lon) {
+		Location location = new Location(prototype);
+		location.setProvider(PROVIDER);
 
 		if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());

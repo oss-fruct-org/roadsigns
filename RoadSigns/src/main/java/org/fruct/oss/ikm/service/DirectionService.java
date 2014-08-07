@@ -67,6 +67,7 @@ public class DirectionService extends Service implements PointsListener,
 
 
 	private Location lastLocation;
+	private IRouting routing;
 	private IMapMatcher mapMatcher;
 
 
@@ -145,7 +146,7 @@ public class DirectionService extends Service implements PointsListener,
 		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
 		navigationPath = ghPath + "/ghdata" + ghDirIndex;
 
-		IRouting routing = createRouting();
+		routing = createRouting();
 		mapMatcher = routing.createMapMatcher();
 
 		if (dirManager != null) {
@@ -351,9 +352,9 @@ public class DirectionService extends Service implements PointsListener,
 			};
 			extractingThread.start();
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
-			if (dirManager != null) {
-				dirManager.setEncoder(sharedPreferences.getString(key, "CAR"));
-				// TODO: need update encoder string in map matcher
+			if (routing != null) {
+				routing.setEncoder(sharedPreferences.getString(key, "CAR"));
+				mapMatcher = routing.createMapMatcher();
 			}
 		}
 	}

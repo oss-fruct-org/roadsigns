@@ -6,37 +6,58 @@ import android.location.Location;
 import android.os.Build;
 import android.os.SystemClock;
 
+import com.graphhopper.coll.IntDoubleBinHeap;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.routing.util.FastestWeighting;
 import com.graphhopper.routing.util.FlagEncoder;
+import com.graphhopper.routing.util.ShortestWeighting;
+import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Edge;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.DistanceCalcEarth;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
+import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.shapes.GHPoint;
 
 import org.osmdroid.util.GeoPoint;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import gnu.trove.map.TIntDoubleMap;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntDoubleHashMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.toRadians;
 
 public class MapMatcher implements IMapMatcher {
 	public static final String PROVIDER = "org.fruct.oss.ikm.MAP_MATCHER_PROVIDER";
-	private final Graph graph;
+	public static final double MAX_DISTANCE = 40f;
+
 	private final GHRouting routing;
 
 	private Location lastLocation;
 	private Location matchedLocation;
 
-	private int currentNode;
+	private Set<Edge> activeEdges = new HashSet<Edge>();
 
+	private final Graph graph;
 	private final EdgeExplorer outEdgeExplorer;
 	private final DistanceCalcEarth distanceCalc;
+	private final Weighting weightCalc;
 
 	private GeoPoint tmpPoint = new GeoPoint(0, 0);
 	private double[] tmpCoord = new double[2];
-	private int[] tmpOut = new int[1];
+	private int[] tmpInt = new int[1];
+	private boolean[] tmpBoolean = new boolean[1];
 
 	public MapMatcher(Graph graph, GHRouting routing, String encoderString) {
 		this.graph = graph;
@@ -47,6 +68,8 @@ public class MapMatcher implements IMapMatcher {
 
 		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
 		distanceCalc = new DistanceCalcEarth();
+		weightCalc = new ShortestWeighting();
+
 	}
 
 	@Override
@@ -55,54 +78,79 @@ public class MapMatcher implements IMapMatcher {
 			setInitialLocation(location);
 		}
 
-		findBestMatch(location);
+		setLocation(location);
+
 		lastLocation = location;
 	}
 
 	private void setInitialLocation(Location location) {
-		GeoPoint point = new GeoPoint(location);
-		currentNode = routing.getPointIndex(point, false);
+		int baseNodeId = routing.getPointIndex(new GeoPoint(location), false);
+		activateNodeEdges(baseNodeId);
 	}
 
-	private void findBestMatch(Location location) {
-		EdgeIterator iter = outEdgeExplorer.setBaseNode(currentNode);
-		GeoPoint basePoint = routing.getPoint(iter.getBaseNode(), tmpPoint);
+	private void activateNodeEdges(int nodeId) {
+		EdgeIterator iterator = outEdgeExplorer.setBaseNode(nodeId);
+		while (iterator.next()) {
+			Edge edge = new Edge(iterator);
+			activeEdges.add(edge);
+		}
+	}
 
+	private void setLocation(Location location) {
 		final double rLat = location.getLatitude();
-		final double rLon = location.getLongitude();
-		final double baseLat = basePoint.getLatitude();
-		final double baseLon = basePoint.getLongitude();
+		final double rLon= location.getLongitude();
 
-		double minDist = Double.MAX_VALUE;
-		GeoPoint minPoint = new GeoPoint(0, 0);
-		int minNode = -1;
+		EvalResult bestEvalResult = null;
+		double maxValue = -Double.MAX_VALUE;
 
-		while (iter.next()) {
-			int adjNode = iter.getAdjNode();
-			GeoPoint adjPoint = routing.getPoint(adjNode, tmpPoint);
-			final double adjLat = adjPoint.getLatitude();
-			final double adjLon = adjPoint.getLongitude();
+		for (Edge edge : activeEdges) {
+			EvalResult evalResult = evalEdge(edge, rLat, rLon);
+			double value = evalResult.value;
 
-			double d = calcDist(rLat, rLon, baseLat, baseLon, adjLat, adjLon, tmpOut, tmpCoord);
-			if (d < minDist) {
-				minDist = d;
-				minPoint.setCoordsE6((int) (tmpCoord[0] * 1e6), (int) (tmpCoord[1] * 1e6));
-
-				if (tmpOut[0] == 1) {
-					minNode = currentNode;
-				} else if (tmpOut[0] == 2) {
-					minNode = adjNode;
-				}
+			if (value > maxValue) {
+				maxValue = value;
+				bestEvalResult = evalResult;
 			}
 		}
 
-		if (minDist != Double.MAX_VALUE) {
-			matchedLocation = createLocation(minPoint.getLatitude(), minPoint.getLongitude());
+		assert bestEvalResult != null;
+		if (bestEvalResult.node == -1) {
+			matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
+		} else {
+			activeEdges.clear();
+			activateNodeEdges(bestEvalResult.node);
+			setLocation(location); // TODO: tail recursion can be optimized
+		}
+	}
+
+	private EvalResult evalEdge(Edge edge, final double rLat, final double rLon) {
+		EvalResult result = new EvalResult();
+
+		EdgeIteratorState edgeProps = graph.getEdgeProps(edge.edgeId, edge.baseNodeId);
+
+		routing.getPoint(edgeProps.getBaseNode(), tmpPoint);
+		final double aLat = tmpPoint.getLatitude();
+		final double aLon = tmpPoint.getLongitude();
+
+		routing.getPoint(edgeProps.getAdjNode(), tmpPoint);
+		final double bLat = tmpPoint.getLatitude();
+		final double bLon = tmpPoint.getLongitude();
+
+		double dist = calcDist(rLat, rLon, aLat, aLon, bLat, bLon, tmpInt, tmpCoord);
+
+		result.value = -dist;
+		result.cLat = tmpCoord[0];
+		result.cLon = tmpCoord[1];
+
+		if (tmpInt[0] == 1) {
+			result.node = edgeProps.getBaseNode();
+		} else if (tmpInt[0] == 2) {
+			result.node = edgeProps.getAdjNode();
+		} else {
+			result.node = -1;
 		}
 
-		if (minNode != -1) {
-			setInitialLocation(matchedLocation);
-		}
+		return result;
 	}
 
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
@@ -163,10 +211,10 @@ public class MapMatcher implements IMapMatcher {
 		double factor = ((r_lon - a_lon) * delta_lon + (r_lat - a_lat) * delta_lat) / norm;
 
 		if (factor > 1) {
-			type[0] = 1;
+			type[0] = 2;
 			factor = 1;
 		} else if (factor < 0) {
-			type[0] = 2;
+			type[0] = 1;
 			factor = 0;
 		}
 
@@ -178,5 +226,45 @@ public class MapMatcher implements IMapMatcher {
 		outCoord[1] = c_lon / shrink_factor;
 
 		return distanceCalc.calcDist(c_lat, c_lon / shrink_factor, r_lat_deg, r_lon_deg);
+	}
+
+	private static class Edge {
+		Edge(int edgeId, int baseNodeId) {
+			this.edgeId = edgeId;
+			this.baseNodeId = baseNodeId;
+		}
+
+		Edge(EdgeIteratorState iter) {
+			this.edgeId = iter.getEdge();
+			this.baseNodeId = iter.getBaseNode();
+		}
+
+		final int edgeId;
+		final int baseNodeId;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			Edge edge = (Edge) o;
+
+			if (edgeId != edge.edgeId) return false;
+
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			return edgeId;
+		}
+	}
+
+	private static class EvalResult {
+		double value;
+		int node;
+
+		double cLat;
+		double cLon;
 	}
 }

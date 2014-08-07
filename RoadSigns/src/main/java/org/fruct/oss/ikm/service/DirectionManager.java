@@ -219,9 +219,4 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	public void interrupt() {
 		interruptCurrentCalculation();
 	}
-
-	public void setEncoder(String encoder) {
-		if (routing != null)
-			routing.setEncoder(encoder);
-	}
 }

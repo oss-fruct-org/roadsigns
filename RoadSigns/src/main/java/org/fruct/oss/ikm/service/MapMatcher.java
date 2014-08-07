@@ -42,6 +42,7 @@ public class MapMatcher implements IMapMatcher {
 	public static final String PROVIDER = "org.fruct.oss.ikm.MAP_MATCHER_PROVIDER";
 
 	public static final double MAX_DISTANCE = 40f;
+	public static final int MAX_RECURSION = 10;
 
 	private final GHRouting routing;
 
@@ -105,7 +106,7 @@ public class MapMatcher implements IMapMatcher {
 		final double rLat = location.getLatitude();
 		final double rLon= location.getLongitude();
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < MAX_RECURSION; i++) {
 			EvalResult bestEvalResult = null;
 			double maxValue = -Double.MAX_VALUE;
 
@@ -120,6 +121,11 @@ public class MapMatcher implements IMapMatcher {
 			}
 
 			assert bestEvalResult != null;
+
+			if (distanceCalc.calcDist(rLat, rLon, bestEvalResult.cLat, bestEvalResult.cLon) > MAX_DISTANCE) {
+				break;
+			}
+
 			if (bestEvalResult.node == -1) {
 				matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
 				return;

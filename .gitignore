@@ -17,4 +17,5 @@ gen/
 *.ghz
 
 .idea/libraries/
+.idea/dictionaries/
 /build

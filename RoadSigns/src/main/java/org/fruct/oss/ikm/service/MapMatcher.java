@@ -40,6 +40,7 @@ import static java.lang.Math.toRadians;
 
 public class MapMatcher implements IMapMatcher {
 	public static final String PROVIDER = "org.fruct.oss.ikm.MAP_MATCHER_PROVIDER";
+
 	public static final double MAX_DISTANCE = 40f;
 
 	private final GHRouting routing;
@@ -69,12 +70,11 @@ public class MapMatcher implements IMapMatcher {
 		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
 		distanceCalc = new DistanceCalcEarth();
 		weightCalc = new ShortestWeighting();
-
 	}
 
 	@Override
 	public void updateLocation(Location location) {
-		if (lastLocation == null) {
+		if (activeEdges.isEmpty()) {
 			setInitialLocation(location);
 		}
 
@@ -85,42 +85,67 @@ public class MapMatcher implements IMapMatcher {
 
 	private void setInitialLocation(Location location) {
 		int baseNodeId = routing.getPointIndex(new GeoPoint(location), false);
-		activateNodeEdges(baseNodeId);
+		activateNodeEdges(baseNodeId, -1);
 	}
 
-	private void activateNodeEdges(int nodeId) {
+	private int activateNodeEdges(int nodeId, int exclude) {
+		int added = 0;
 		EdgeIterator iterator = outEdgeExplorer.setBaseNode(nodeId);
 		while (iterator.next()) {
 			Edge edge = new Edge(iterator);
-			activeEdges.add(edge);
+			if (edge.edgeId != exclude) {
+				activeEdges.add(edge);
+				added++;
+			}
 		}
+		return added;
 	}
 
 	private void setLocation(Location location) {
 		final double rLat = location.getLatitude();
 		final double rLon= location.getLongitude();
 
-		EvalResult bestEvalResult = null;
-		double maxValue = -Double.MAX_VALUE;
+		for (int i = 0; i < 10; i++) {
+			EvalResult bestEvalResult = null;
+			double maxValue = -Double.MAX_VALUE;
 
-		for (Edge edge : activeEdges) {
-			EvalResult evalResult = evalEdge(edge, rLat, rLon);
-			double value = evalResult.value;
+			for (Edge edge : activeEdges) {
+				EvalResult evalResult = evalEdge(edge, rLat, rLon);
+				double value = evalResult.value;
 
-			if (value > maxValue) {
-				maxValue = value;
-				bestEvalResult = evalResult;
+				if (value > maxValue) {
+					maxValue = value;
+					bestEvalResult = evalResult;
+				}
+			}
+
+			assert bestEvalResult != null;
+			if (bestEvalResult.node == -1) {
+				matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
+				return;
+			}
+
+			EdgeIteratorState edgeProps = graph.getEdgeProps(bestEvalResult.edge.edgeId, bestEvalResult.edge.baseNodeId);
+
+			activeEdges.clear();
+			int addedBase = activateNodeEdges(edgeProps.getBaseNode(), bestEvalResult.edge.edgeId);
+			int addedAdj = activateNodeEdges(edgeProps.getAdjNode(), bestEvalResult.edge.edgeId);
+			activeEdges.add(bestEvalResult.edge);
+
+			if (bestEvalResult.node != -1) {
+				if (addedBase > 0 && bestEvalResult.node == edgeProps.getBaseNode()) {
+					continue;
+				} else if (addedAdj > 0 && bestEvalResult.node == edgeProps.getAdjNode()) {
+					continue;
+				} else {
+					matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
+					return;
+				}
 			}
 		}
 
-		assert bestEvalResult != null;
-		if (bestEvalResult.node == -1) {
-			matchedLocation = createLocation(bestEvalResult.cLat, bestEvalResult.cLon);
-		} else {
-			activeEdges.clear();
-			activateNodeEdges(bestEvalResult.node);
-			setLocation(location); // TODO: tail recursion can be optimized
-		}
+		setInitialLocation(location);
+		setLocation(location);
 	}
 
 	private EvalResult evalEdge(Edge edge, final double rLat, final double rLon) {
@@ -138,6 +163,7 @@ public class MapMatcher implements IMapMatcher {
 
 		double dist = calcDist(rLat, rLon, aLat, aLon, bLat, bLon, tmpInt, tmpCoord);
 
+		result.edge = edge;
 		result.value = -dist;
 		result.cLat = tmpCoord[0];
 		result.cLon = tmpCoord[1];
@@ -228,7 +254,7 @@ public class MapMatcher implements IMapMatcher {
 		return distanceCalc.calcDist(c_lat, c_lon / shrink_factor, r_lat_deg, r_lon_deg);
 	}
 
-	private static class Edge {
+	static class Edge {
 		Edge(int edgeId, int baseNodeId) {
 			this.edgeId = edgeId;
 			this.baseNodeId = baseNodeId;
@@ -260,7 +286,8 @@ public class MapMatcher implements IMapMatcher {
 		}
 	}
 
-	private static class EvalResult {
+	static class EvalResult {
+		Edge edge;
 		double value;
 		int node;
 

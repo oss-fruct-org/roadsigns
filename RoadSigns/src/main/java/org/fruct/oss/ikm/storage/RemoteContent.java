@@ -1,9 +1,17 @@
 package org.fruct.oss.ikm.storage;
 
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Pair;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
+import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.utils.Utils;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -366,6 +374,45 @@ public class RemoteContent {
 		});
 	}
 
+	public void moveData(final String newStoragePath, final Handler handler) {
+		//stopAll();
+
+		startTask(new Runnable() {
+			@Override
+			public void run() {
+				doAsyncMoveData(newStoragePath, handler);
+			}
+		});
+	}
+
+	private void doAsyncMoveData(final String newStoragePath, final Handler handler) {
+		Message msg = new Message();
+		msg.arg2 = 1;
+
+		try {
+			storage.migrate(newStoragePath, new IStorage.MigrationListener() {
+				@Override
+				public void fileCopying(String name, int n, int max) {
+					Message msg = new Message();
+
+					Bundle args = new Bundle();
+					args.putString("name", name);
+					args.putInt("n", n);
+					args.putInt("max", max);
+
+					msg.setData(args);
+
+					handler.sendMessage(msg);
+				}
+			});
+			msg.arg1 = 0;
+		} catch (IOException e) {
+			msg.arg1 = 1;
+		}
+
+		handler.sendMessage(msg);
+	}
+
 	private void doAsyncStartDownloading(final StorageItem sItem) {
 		IContentConnection conn = null;
 		try {
@@ -447,9 +494,17 @@ public class RemoteContent {
 	private static RemoteContent instance;
 	public static synchronized RemoteContent getInstance(String contentPath) {
 		if (instance == null) {
+			if (contentPath == null) {
+				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
+
+				String[] contentPaths = Utils.getPrivateStorageDirs(App.getContext());
+				assert contentPaths.length > 0;
+				contentPath = contentPaths[0];
+				pref.edit().putString(SettingsActivity.STORAGE_PATH, contentPath).apply();
+			}
+
 			NetworkProvider networkProvider = new NetworkProvider();
 			FileStorage storage = new FileStorage(contentPath);
-
 			instance = new RemoteContent(storage, networkProvider, REMOTE_CONTENT_URLS);
 		}
 

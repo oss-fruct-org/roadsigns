@@ -1,13 +1,20 @@
 package org.fruct.oss.ikm;
 
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
+import android.widget.Toast;
 
+import org.fruct.oss.ikm.storage.RemoteContent;
 import org.fruct.oss.ikm.utils.Utils;
 
 @SuppressWarnings("deprecation")
@@ -41,6 +48,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private ListPreference storagePathPref;
 
+	private String oldStoragePath = null;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -64,7 +73,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		updateNearestPoints(sharedPreferences);
-		updateVehicle(sharedPreferences);
+		updateVehicle();
 
 		//updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		//updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
@@ -96,9 +105,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		} else if (key.equals(GETS_SERVER)) {
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		} else if (key.equals(VEHICLE)) {
-			updateVehicle(sharedPreferences);
+			updateVehicle();
 		} else if (key.equals(STORAGE_PATH)) {
-			updateStoragePath(sharedPreferences, storagePathPref);
+			migrateContent();
 		}
 	}
 
@@ -130,9 +139,51 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		nearestPointsPref.setSummary(summary);
 	}
 
-	private void updateVehicle(SharedPreferences sharedPreferences) {
+	private void updateVehicle() {
 		vehiclePref.setSummary(vehiclePref.getEntry());
 	}
+
+	private void migrateContent() {
+		final SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+		String newStoragePath = pref.getString(STORAGE_PATH, null);
+		assert newStoragePath != null;
+
+		if (oldStoragePath == null || oldStoragePath.equals(newStoragePath))
+			return;
+
+		final ProgressDialog dialog = ProgressDialog.show(this, "Copying", "Copying...", false, false);
+
+		RemoteContent remoteContent = RemoteContent.getInstance(oldStoragePath);
+		remoteContent.moveData(newStoragePath, new Handler(new Handler.Callback() {
+			@Override
+			public boolean handleMessage(Message message) {
+				if (message.arg2 == 1) {
+					if (message.arg1 == 0) {
+						Toast.makeText(SettingsActivity.this, "Local content successfully moved", Toast.LENGTH_LONG).show();
+						updateStoragePath(pref, storagePathPref);
+					} else {
+						Toast.makeText(SettingsActivity.this, "Cannot move local content", Toast.LENGTH_LONG).show();
+						String tmp = oldStoragePath;
+						oldStoragePath = null;
+						pref.edit().putString(STORAGE_PATH, tmp).apply();
+					}
+					dialog.dismiss();
+					return true;
+				}
+
+				String name = message.getData().getString("name");
+				int n = message.getData().getInt("n");
+				int max = message.getData().getInt("max");
+
+				dialog.setMax(max);
+				dialog.setProgress(n);
+				dialog.setMessage("Copying " + name);
+				return true;
+			}
+		}));
+	}
+
 
 	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
 		String[] storagePaths = Utils.getPrivateStorageDirs(this);
@@ -142,5 +193,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		String currentValue = sharedPreferences.getString(STORAGE_PATH, null);
 		if (currentValue != null)
 			storagePathPref.setSummary(currentValue);
+
+		oldStoragePath = currentValue;
+		RemoteContent.getInstance(oldStoragePath);
 	}
 }

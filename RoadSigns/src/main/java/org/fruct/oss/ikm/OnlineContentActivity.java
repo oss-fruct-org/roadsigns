@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.storage.RemoteContent;
+import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,10 +180,10 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		// TODO: initialize local storage path on first run
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+		String contentPath = pref.getString(SettingsActivity.STORAGE_PATH, null);
 
-		remoteContent = RemoteContent.getInstance(pref.getString(SettingsActivity.STORAGE_PATH, null));
+		remoteContent = RemoteContent.getInstance(contentPath);
 		remoteContent.addListener(this);
 
 		setUpActionBar();

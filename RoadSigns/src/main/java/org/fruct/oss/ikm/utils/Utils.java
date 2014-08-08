@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.utils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -356,7 +357,7 @@ public class Utils {
 		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
 		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
 			for (String secondaryStoragePath : secondaryStorageString.split(":")) {
-				ret.add(secondaryStoragePath + "/Android/data/" + context.getPackageName());
+				ret.add(secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files/storage");
 			}
 		}
 

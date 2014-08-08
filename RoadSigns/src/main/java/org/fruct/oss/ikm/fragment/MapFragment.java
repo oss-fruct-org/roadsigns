@@ -134,6 +134,8 @@ public class MapFragment extends Fragment implements MapListener,
 		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 	public static final String[] REMOTE_CONTENT_URLS = {
+			"http://example.com/non-working-content-url.xml",
+			"http://oss.fruct.org/projects/roadsigns/root.xml",
 			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
 
 	private DefaultInfoWindow infoWindow;

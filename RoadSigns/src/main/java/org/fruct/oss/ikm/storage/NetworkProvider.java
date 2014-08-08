@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class NetworkProvider implements IProvider {
+	public static final int MAX_RECURSION = 10;
 	private static Logger log = LoggerFactory.getLogger(NetworkProvider.class);
 
 	@Override
@@ -57,7 +58,7 @@ public class NetworkProvider implements IProvider {
 		if (code != HttpURLConnection.HTTP_ACCEPTED) {
 			if (code == HttpURLConnection.HTTP_MOVED_PERM || code == HttpURLConnection.HTTP_MOVED_TEMP) {
 				try {
-					if (++recursionDepth > 10)
+					if (++recursionDepth > MAX_RECURSION)
 						throw new IOException("Too many redirects");
 
 					String newLocation = conn.getHeaderField("Location");

@@ -1,10 +1,8 @@
 package org.fruct.oss.ikm.storage;
 
-import android.support.v4.widget.ListViewAutoScrollHelper;
 import android.util.Pair;
 
 import org.fruct.oss.ikm.DigestInputStream;
-import org.fruct.oss.ikm.OnlineContentPreference;
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
@@ -156,8 +154,27 @@ public class RemoteContent {
 		return ret;
 	}
 
-	private List<IContentItem> getContentList(IProvider storage, List<String> contentUrls) throws IOException {
-		return getContentList(storage, contentUrls, new HashSet<String>());
+	private List<IContentItem> getInitialContentList(IProvider storage, List<String> rootContentUrls) throws IOException {
+		List<IContentItem> ret = null;
+
+		for (String contentUrl : rootContentUrls) {
+			try {
+				List<String> singleContentUrl = new ArrayList<String>(1);
+				singleContentUrl.add(contentUrl);
+				ret = getContentList(storage, singleContentUrl, new HashSet<String>());
+				log.warn("Content root url {} successfully downloaded", contentUrl);
+
+				break;
+			} catch (IOException ex) {
+				log.warn("Content root url {} unavailable", contentUrl);
+			}
+		}
+
+		if (ret == null) {
+			throw new IOException("No one of remote content roots are available");
+		}
+
+		return ret;
 	}
 
 	private List<IContentItem> getContentList(IProvider storage, String contentUrl) throws IOException {
@@ -295,13 +312,14 @@ public class RemoteContent {
 			initialize();
 			localContent = storageContent;
 
-			remoteContent = getContentList(provider, contentUrls);
+			remoteContent = getInitialContentList(provider, contentUrls);
 		} catch (IOException e) {
 			log.warn("Cannot download file", e);
 			for (Listener listener : listeners)
 				listener.errorInitializing(e);
 
 			e.printStackTrace();
+			// TODO: process error
 		}
 
 		HashMap<String, StorageItem> allItems = new HashMap<String, StorageItem>();

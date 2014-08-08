@@ -55,15 +55,10 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 	}
 
 	private final int resource;
-	private String currentActiveName;
 
 	public ContentAdapter(Context context, int resource, List<ContentListItem> objects) {
 		super(context, resource, objects);
 		this.resource = resource;
-	}
-
-	public void setCurrentItemName(String currentActiveName) {
-		this.currentActiveName = currentActiveName;
 	}
 
 	@Override
@@ -155,9 +150,6 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 public class OnlineContentActivity extends ActionBarActivity
 		implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener,
 					PopupMenu.OnDismissListener, RemoteContent.Listener, ContentDialog.Listener {
-	public static final String ARG_REMOTE_CONTENT_URL = "org.fruct.oss.ikm.REMOTE_CONTENT_URL";
-	public static final String ARG_LOCAL_STORAGE = "org.fruct.oss.ikm.LOCAL_STORAGE";
-	public static final String ARG_PREF_KEY = "org.fruct.oss.ikm.PREF_KEY";
 
 	static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
@@ -172,7 +164,6 @@ public class OnlineContentActivity extends ActionBarActivity
 	private ContentListItem currentItem;
 	private String currentItemName;
 
-	private String pref_key;
 	private String currentActiveName;
 
 	public void onCreate(Bundle savedInstanceState) {
@@ -188,27 +179,13 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		String[] remoteContentUrls = getIntent().getStringArrayExtra(ARG_REMOTE_CONTENT_URL);
-		String localContentUrl = getIntent().getStringExtra(ARG_LOCAL_STORAGE);
-		pref_key = getIntent().getStringExtra(ARG_PREF_KEY);
+		// TODO: initialize local storage path on first run
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-		remoteContent = RemoteContent.getInstance(remoteContentUrls, localContentUrl);
+		remoteContent = RemoteContent.getInstance(pref.getString(SettingsActivity.STORAGE_PATH, null));
 		remoteContent.addListener(this);
 
 		setUpActionBar();
-
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-		String currentPath = pref.getString(pref_key, null);
-
-		log.trace("currentPath {}", currentPath);
-		if (currentPath != null) {
-			assert currentPath.lastIndexOf('/') + 1 <= currentPath.length();
-			currentActiveName = currentPath.substring(currentPath.lastIndexOf('/') + 1);
-			log.trace("currentActiveName {}", currentActiveName);
-
-			if (currentActiveName.isEmpty())
-				currentActiveName = null;
-		}
 
 		remoteContent.startInitialize(false);
 	}
@@ -271,7 +248,6 @@ public class OnlineContentActivity extends ActionBarActivity
 			currentItem = listItems.get(currentItemName);
 
 		adapter = new ContentAdapter(this, R.layout.point_list_item, new ArrayList<ContentListItem>(listItems.values()));
-		adapter.setCurrentItemName(currentActiveName);
 		listView.setAdapter(adapter);
 	}
 

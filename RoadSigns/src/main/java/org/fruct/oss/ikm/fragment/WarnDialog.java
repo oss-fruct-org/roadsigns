@@ -23,6 +23,7 @@ public class WarnDialog extends DialogFragment implements DialogInterface.OnClic
 	private int disableId;
 	private String disablePref;
 
+	// FIXME:
 	public WarnDialog(int messageId, int configureId, int disableId, String disablePref) {
 		this.messageId = messageId;
 		this.configureId = configureId;

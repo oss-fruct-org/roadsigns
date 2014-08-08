@@ -341,4 +341,25 @@ public class Utils {
 		return (int) (Math.abs(coord));
 	}
 
+	public static String[] getPrivateStorageDirs(Context context) {
+		List<String> ret = new ArrayList<String>();
+
+		// Internal storage
+		ret.add(context.getDir("storage", 0).getPath());
+
+		// External storage
+		File externalDir = context.getExternalFilesDir(null);
+		if (externalDir != null)
+			ret.add(externalDir.getPath());
+
+		// Secondary external storage
+		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
+		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
+			for (String secondaryStoragePath : secondaryStorageString.split(":")) {
+				ret.add(secondaryStoragePath + "/Android/data/" + context.getPackageName());
+			}
+		}
+
+		return ret.toArray(new String[ret.size()]);
+	}
 }

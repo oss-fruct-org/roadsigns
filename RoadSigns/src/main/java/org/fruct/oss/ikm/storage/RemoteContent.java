@@ -30,6 +30,11 @@ import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
 public class RemoteContent {
+	public static final String[] REMOTE_CONTENT_URLS = {
+			"http://example.com/non-working-content-url.xml",
+			"http://oss.fruct.org/projects/roadsigns/root.xml",
+			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
+
 	public enum LocalContentState {
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
 	}
@@ -82,7 +87,7 @@ public class RemoteContent {
 	private static Logger log = LoggerFactory.getLogger(RemoteContent.class);
 	private final IStorage storage;
 	private final IProvider provider;
-	private final List<String> contentUrls;
+	private final String[] contentUrls;
 
 	private ArrayList<Listener> listeners = new ArrayList<Listener>();
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -96,7 +101,7 @@ public class RemoteContent {
 	// List of available storage items
 	private List<StorageItem> storageItems;
 
-	public RemoteContent(IStorage storage, IProvider provider, List<String> contentUrls) {
+	public RemoteContent(IStorage storage, IProvider provider, String[] contentUrls) {
 		this.storage = storage;
 		this.provider = provider;
 		this.contentUrls = contentUrls;
@@ -154,7 +159,7 @@ public class RemoteContent {
 		return ret;
 	}
 
-	private List<IContentItem> getInitialContentList(IProvider storage, List<String> rootContentUrls) throws IOException {
+	private List<IContentItem> getInitialContentList(IProvider storage, String[] rootContentUrls) throws IOException {
 		List<IContentItem> ret = null;
 
 		for (String contentUrl : rootContentUrls) {
@@ -422,6 +427,7 @@ public class RemoteContent {
 	}
 
 	private static Map<Pair<ArrayList<String>, String>, RemoteContent> instances = new HashMap<Pair<ArrayList<String>, String>, RemoteContent>();
+	@Deprecated
 	public static RemoteContent getInstance(String[] contentUrl, String localPath) {
 		ArrayList<String> contentUrlsList = new ArrayList<String>(Arrays.asList(contentUrl));
 
@@ -431,10 +437,22 @@ public class RemoteContent {
 			log.info("New instance of RemoteContent created");
 			NetworkProvider provider = new NetworkProvider();
 			FileStorage storage = FileStorage.createExternalStorage(localPath);
-			RemoteContent ret = new RemoteContent(storage, provider, contentUrlsList);
+			RemoteContent ret = new RemoteContent(storage, provider, contentUrlsList.toArray(new String[0]));
 			instances.put(key, ret);
 			return ret;
 		} else
 			return instance;
+	}
+
+	private static RemoteContent instance;
+	public static synchronized RemoteContent getInstance(String contentPath) {
+		if (instance == null) {
+			NetworkProvider networkProvider = new NetworkProvider();
+			FileStorage storage = new FileStorage(contentPath);
+
+			instance = new RemoteContent(storage, networkProvider, REMOTE_CONTENT_URLS);
+		}
+
+		return instance;
 	}
 }

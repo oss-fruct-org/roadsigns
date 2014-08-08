@@ -76,6 +76,7 @@ public class FileStorage implements IStorage, IProvider {
 		};
 	}
 
+	@Deprecated
 	public static FileStorage createInternalStorage(Context context, String path) {
 		String storagePath = context.getFilesDir() + "/" + path;
 		File storageDirFile = new File(storagePath);
@@ -85,6 +86,7 @@ public class FileStorage implements IStorage, IProvider {
 		return new FileStorage(storagePath);
 	}
 
+	@Deprecated
 	public static FileStorage createExternalStorage(String path) {
 		String storagePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + path;
 		File storageDirFile = new File(storagePath);

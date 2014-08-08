@@ -26,6 +26,7 @@
         android:summary="Show all"
         android:title="Nearest points" />
 
+    <!--
     <org.fruct.oss.ikm.OnlineContentPreference
         contentType="mapsforge-map"
         android:key="offline_map"
@@ -38,7 +39,14 @@
         android:key="navigation_data"
         android:defaultValue=""
         android:title="@string/pref_navigation_data" />
-    
+
+    -->
+
+    <ListPreference
+        android:title="@string/pref_storage_path_title"
+        android:key="storage_path"
+        />
+
     <CheckBoxPreference 
         android:defaultValue="true"
         android:key="autozoom"

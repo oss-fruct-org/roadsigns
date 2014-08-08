@@ -8,6 +8,8 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
 
+import org.fruct.oss.ikm.utils.Utils;
+
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
@@ -23,6 +25,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
+	public static final String STORAGE_PATH = "storage_path";
 
 	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
 	public static final String VEHICLE = "vehicle";
@@ -36,6 +39,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private EditTextPreference getsServerPref;
 
+	private ListPreference storagePathPref;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -48,6 +53,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		offlineMapPref = (OnlineContentPreference) findPreference(OFFLINE_MAP);
 		navigationDataPref = (OnlineContentPreference) findPreference(NAVIGATION_DATA);
 
+		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
+
 		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 	
@@ -59,9 +66,11 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		updateNearestPoints(sharedPreferences);
 		updateVehicle(sharedPreferences);
 
-		updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
-		updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+		//updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+		//updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
 		//updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
+
+		updateStoragePath(sharedPreferences, storagePathPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 	}
@@ -81,13 +90,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);
 		} else if (key.equals(OFFLINE_MAP)) {
-			updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
+			//updateOnlineContentPreference(sharedPreferences, OFFLINE_MAP, offlineMapPref);
 		} else if (key.equals(NAVIGATION_DATA)) {
-			updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
+			//updateOnlineContentPreference(sharedPreferences, NAVIGATION_DATA, navigationDataPref);
 		} else if (key.equals(GETS_SERVER)) {
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		} else if (key.equals(VEHICLE)) {
 			updateVehicle(sharedPreferences);
+		} else if (key.equals(STORAGE_PATH)) {
+			updateStoragePath(sharedPreferences, storagePathPref);
 		}
 	}
 
@@ -121,5 +132,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private void updateVehicle(SharedPreferences sharedPreferences) {
 		vehiclePref.setSummary(vehiclePref.getEntry());
+	}
+
+	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
+		String[] storagePaths = Utils.getPrivateStorageDirs(this);
+		storagePathPref.setEntryValues(storagePaths);
+		storagePathPref.setEntries(storagePaths);
+
+		String currentValue = sharedPreferences.getString(STORAGE_PATH, null);
+		if (currentValue != null)
+			storagePathPref.setSummary(currentValue);
 	}
 }

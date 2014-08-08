@@ -133,10 +133,6 @@ public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
-	public static final String[] REMOTE_CONTENT_URLS = {
-			"http://example.com/non-working-content-url.xml",
-			"http://oss.fruct.org/projects/roadsigns/root.xml",
-			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
 
 	private DefaultInfoWindow infoWindow;
 
@@ -490,9 +486,6 @@ public class MapFragment extends Fragment implements MapListener,
 					@Override
 					protected void onAccept() {
 						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
-						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
-						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.NAVIGATION_DATA);
 						getActivity().startActivity(intent);
 					}
 				};
@@ -522,9 +515,6 @@ public class MapFragment extends Fragment implements MapListener,
 					@Override
 					protected void onAccept() {
 						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
-						intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
-						intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
 						getActivity().startActivity(intent);
 					}
 				};
@@ -657,11 +647,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 		case R.id.action_download_map:
 			intent = new Intent(getActivity(), OnlineContentActivity.class);
-			//intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, "https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/qNDPelAPa_/content.xml");
-			intent.putExtra(OnlineContentActivity.ARG_REMOTE_CONTENT_URL, MapFragment.REMOTE_CONTENT_URLS);
-
-			intent.putExtra(OnlineContentActivity.ARG_LOCAL_STORAGE, "roadsigns-maps");
-			intent.putExtra(OnlineContentActivity.ARG_PREF_KEY, SettingsActivity.OFFLINE_MAP);
 			startActivity(intent);
 			break;
 

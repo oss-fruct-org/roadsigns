@@ -34,6 +34,7 @@
     <string name="configure_use_offline_map">Use offline map</string>
     <string name="warn_no_navigation_data">No navigation data</string>
     <string name="configure_navigation_data">Download navigation data</string>
+    <string name="pref_storage_path_title">Data storage path</string>
 
     <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>

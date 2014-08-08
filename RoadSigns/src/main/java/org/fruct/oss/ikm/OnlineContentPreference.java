@@ -7,7 +7,6 @@ import android.preference.ListPreference;
 import android.util.AttributeSet;
 import android.util.Pair;
 
-import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.storage.RemoteContent;
 import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 
+@Deprecated
 public class OnlineContentPreference extends ListPreference implements RemoteContent.Listener {
 	private static Logger log = LoggerFactory.getLogger(OnlineContentPreference.class);
 	private final String contentType;
@@ -30,7 +30,7 @@ public class OnlineContentPreference extends ListPreference implements RemoteCon
 		setNegativeButtonText(android.R.string.cancel);
 
 		contentType = attrs.getAttributeValue(null, "contentType");
-		remoteContent = RemoteContent.getInstance(MapFragment.REMOTE_CONTENT_URLS, "roadsigns-maps");
+		remoteContent = RemoteContent.getInstance(RemoteContent.REMOTE_CONTENT_URLS, "roadsigns-maps");
 		remoteContent.addListener(this);
 		remoteContent.startInitialize(false);
 	}

@@ -20,6 +20,7 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.storage.RemoteContent;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -55,6 +56,7 @@ public class DirectionService extends Service implements PointsListener,
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
 
+	private RemoteContent remoteContent;
 	private DirectionManager dirManager;
 	private IBinder binder = new DirectionBinder();
 	
@@ -65,11 +67,9 @@ public class DirectionService extends Service implements PointsListener,
 	private GeoPoint lastResultCenter;
 	private Location lastResultLocation;
 
-
 	private Location lastLocation;
 	private IRouting routing;
 	private IMapMatcher mapMatcher;
-
 
 	private String oldNavigationPath;
 	private String navigationPath;
@@ -77,7 +77,10 @@ public class DirectionService extends Service implements PointsListener,
 
 	private LocationIndexCache locationIndexCache;
 	private Thread extractingThread;
+
+	private SharedPreferences dirPref;
 	private SharedPreferences pref;
+
 	private BroadcastReceiver archiveReadyReceiver;
 
 	public class DirectionBinder extends android.os.Binder {
@@ -98,8 +101,12 @@ public class DirectionService extends Service implements PointsListener,
 		File internalDir = getFilesDir();
 		assert internalDir != null;
 
-		pref = getSharedPreferences("gh-dir-pref", MODE_PRIVATE);
-		pref.registerOnSharedPreferenceChangeListener(this);
+		dirPref = getSharedPreferences("gh-dir-dirPref", MODE_PRIVATE);
+		dirPref.registerOnSharedPreferenceChangeListener(this);
+
+		pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+		remoteContent = RemoteContent.getInstance(pref.getString(SettingsActivity.STORAGE_PATH, null));
 
 		ghPath = getFilesDir().getPath() + "/graphhopper";
 
@@ -112,8 +119,7 @@ public class DirectionService extends Service implements PointsListener,
 				.getFilteredPoints());
 
 		PointsManager.getInstance().addListener(this);
-		PreferenceManager.getDefaultSharedPreferences(this)
-				.registerOnSharedPreferenceChangeListener(this);
+		pref.registerOnSharedPreferenceChangeListener(this);
 
 		log.debug("DirectionService created");
 
@@ -132,7 +138,6 @@ public class DirectionService extends Service implements PointsListener,
 			OneToManyRouting routing = new OneToManyRouting(navigationPath, locationIndexCache);
 
 			// Apply encoder from preferences
-			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
 			routing.setEncoder(pref.getString(SettingsActivity.VEHICLE, "CAR"));
 
 			return routing;
@@ -142,7 +147,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	private void updateDirectionsManager() {
-		long ghDirIndex = pref.getLong("gh-dir-index", 1);
+		long ghDirIndex = dirPref.getLong("gh-dir-index", 1);
 		oldNavigationPath = ghPath + "/ghdata" + (ghDirIndex - 1);
 		navigationPath = ghPath + "/ghdata" + ghDirIndex;
 
@@ -165,13 +170,12 @@ public class DirectionService extends Service implements PointsListener,
 			locationReceiver.stop();
 		}
 
-		PreferenceManager.getDefaultSharedPreferences(this)
-				.unregisterOnSharedPreferenceChangeListener(this);
+		pref.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
 
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(archiveReadyReceiver);
-		pref.unregisterOnSharedPreferenceChangeListener(this);
+
 		dirManager.interrupt();
 		dirManager = null;
 
@@ -285,14 +289,17 @@ public class DirectionService extends Service implements PointsListener,
 		dirManager.calculateForPoints(newList);
 	}
 
-	private void extractArchive(String path) {
-		log.info("Extracting archive {}", path);
+	private void extractArchive(String name) {
+		log.info("Extracting archive {}", name);
+
+		String path = remoteContent.getPath(name);
+
 		File file = path == null ? null : new File(path);
 		if (file == null || !file.exists() || !file.canRead())
 			return;
 
 		try {
-			long ghDirIndex = pref.getLong("gh-dir-index", 1) + 1;
+			long ghDirIndex = dirPref.getLong("gh-dir-index", 1) + 1;
 			String newPath = ghPath + "/ghdata" + ghDirIndex;
 
 			new Unzipper().unzip(path, newPath, false);
@@ -304,7 +311,7 @@ public class DirectionService extends Service implements PointsListener,
 			oldNavigationPath = navigationPath;
 			navigationPath = newPath;
 
-			pref.edit().putLong("gh-dir-index", ghDirIndex).apply();
+			dirPref.edit().putLong("gh-dir-index", ghDirIndex).apply();
 
 			LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ARCHIVE_READY));
 
@@ -338,8 +345,8 @@ public class DirectionService extends Service implements PointsListener,
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			dirManager.calculateForPoints(points);
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
-			final String archivePath = sharedPreferences.getString(SettingsActivity.NAVIGATION_DATA, null);
-			if (archivePath == null)
+			final String archiveName = sharedPreferences.getString(SettingsActivity.NAVIGATION_DATA, null);
+			if (archiveName == null)
 				return;
 
 			log.debug("Starting thread");
@@ -347,7 +354,7 @@ public class DirectionService extends Service implements PointsListener,
 			extractingThread = new Thread() {
 				@Override
 				public void run() {
-					extractArchive(archivePath);
+					extractArchive(archiveName);
 				}
 			};
 			extractingThread.start();

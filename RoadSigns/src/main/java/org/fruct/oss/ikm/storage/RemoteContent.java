@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
 import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
+import static org.fruct.oss.ikm.utils.Utils.map;
 
 public class RemoteContent {
 	public static final String[] REMOTE_CONTENT_URLS = {
@@ -262,6 +263,18 @@ public class RemoteContent {
 		if (storage instanceof FileStorage) {
 			FileStorage fs = (FileStorage) storage;
 			return fs.getPath(item);
+		} else {
+			return null;
+		}
+	}
+
+	public String getPath(String mapName) {
+		if (mapName == null)
+			return null;
+
+		if (storage instanceof FileStorage) {
+			FileStorage fs = (FileStorage) storage;
+			return fs.getPath(mapName);
 		} else {
 			return null;
 		}

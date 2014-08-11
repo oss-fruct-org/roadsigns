@@ -309,12 +309,12 @@ public class OnlineContentActivity extends ActionBarActivity
 			for (RemoteContent.StorageItem sItem : currentItem.contentItems) {
 				if (sItem.getItem().getType().equals("mapsforge-map")) {
 					pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply(); // Force notification
-					edit.putString(SettingsActivity.OFFLINE_MAP, remoteContent.getPath(sItem.getItem()));
+					edit.putString(SettingsActivity.OFFLINE_MAP, sItem.getItem().getName());
 				}
 
 				if (sItem.getItem().getType().equals("graphhopper-map")) {
 					pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply(); // Force notification
-					edit.putString(SettingsActivity.NAVIGATION_DATA, remoteContent.getPath(sItem.getItem()));
+					edit.putString(SettingsActivity.NAVIGATION_DATA, sItem.getItem().getName());
 				}
 			}
 			edit.apply();

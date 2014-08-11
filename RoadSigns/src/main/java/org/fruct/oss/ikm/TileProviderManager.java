@@ -3,6 +3,7 @@ package org.fruct.oss.ikm;
 import java.io.File;
 import java.util.HashSet;
 
+import org.fruct.oss.ikm.storage.RemoteContent;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.tileprovider.BitmapPool;
 import org.osmdroid.tileprovider.IRegisterReceiver;
@@ -32,13 +33,21 @@ public class TileProviderManager implements App.Clearable {
 	private MFTileSource mfSource;
 	private OnlineTileSourceBase webSource;
 	private boolean isOnline;
+	private final RemoteContent remoteContent;
 
 	public TileProviderManager(Context context) {
     	SimpleRegisterReceiver register = new SimpleRegisterReceiver(context.getApplicationContext());		
     	
     	SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-    	String mapPath = pref.getString(SettingsActivity.OFFLINE_MAP, "");
-    	
+    	String mapName = pref.getString(SettingsActivity.OFFLINE_MAP, null);
+		String contentPath = pref.getString(SettingsActivity.STORAGE_PATH, null);
+
+		remoteContent = RemoteContent.getInstance(contentPath);
+		String mapPath = remoteContent.getPath(mapName);
+		if (mapPath == null) {
+			mapPath = "";
+		}
+
 		File mapFile = new File(mapPath);
 			
 		mfSource = MFTileSource.createFromFile(mapFile);
@@ -71,10 +80,11 @@ public class TileProviderManager implements App.Clearable {
 		return provider;
 	}
 	
-	public void setFile(String path) {
-		File file = new File(path);
+	public void setFile(String name) {
+		String path = remoteContent.getPath(name);
+		File file = (path == null ? null : new File(path));
 
-		if (path == null || path.isEmpty() || !file.exists()) {
+		if (file == null || path.isEmpty() || !file.exists()) {
 			provider.setTileSource(webSource);
 			isOnline = true;
 			return;

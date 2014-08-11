@@ -35,8 +35,11 @@
     <string name="configure_use_offline_map">Настроить карту</string>
     <string name="warn_no_navigation_data">Нет данных навигации</string>
     <string name="configure_navigation_data">Загрузить данные навигации</string>
-    <string name="pref_storage_path_title">Data storage path</string>
 
+    <string name="pref_storage_path_title">Место хранения данных</string>
+    <string name="storage_path_internal">Внутреннее</string>
+    <string name="storage_path_external">Внешнее</string>
+    <string name="storage_path_sd_card">SD карта</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

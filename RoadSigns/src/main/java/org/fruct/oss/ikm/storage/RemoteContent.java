@@ -37,6 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
+import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
+
 public class RemoteContent {
 	public static final String[] REMOTE_CONTENT_URLS = {
 			"http://example.com/non-working-content-url.xml",
@@ -497,9 +499,9 @@ public class RemoteContent {
 			if (contentPath == null) {
 				SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(App.getContext());
 
-				String[] contentPaths = Utils.getPrivateStorageDirs(App.getContext());
+				StorageDirDesc[] contentPaths = Utils.getPrivateStorageDirs(App.getContext());
 				assert contentPaths.length > 0;
-				contentPath = contentPaths[0];
+				contentPath = contentPaths[0].path;
 				pref.edit().putString(SettingsActivity.STORAGE_PATH, contentPath).apply();
 			}
 

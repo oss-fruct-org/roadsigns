@@ -3,6 +3,7 @@ package org.fruct.oss.ikm;
 import android.app.Application;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.preference.PreferenceManager;
 
 import org.osmdroid.tileprovider.BitmapPool;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class App extends Application {
 	
 		App.context = getApplicationContext();
 		App.app = this;
+		PreferenceManager.setDefaultValues(App.context, R.xml.preferences, false);
 	}
 	
 	public static Context getContext() {

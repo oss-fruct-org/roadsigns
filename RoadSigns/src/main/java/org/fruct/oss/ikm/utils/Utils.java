@@ -152,7 +152,7 @@ public class Utils {
 		
 		return null;
 	}
-	
+
 	@SuppressWarnings("hiding")
 	public static <R,T> List<R> map(List<T> source, Function<R, T> fun) {
 		List<R> list = new ArrayList<R>(source.size());
@@ -342,25 +342,35 @@ public class Utils {
 		return (int) (Math.abs(coord));
 	}
 
-	public static String[] getPrivateStorageDirs(Context context) {
-		List<String> ret = new ArrayList<String>();
+	public static StorageDirDesc[] getPrivateStorageDirs(Context context) {
+		List<StorageDirDesc> ret = new ArrayList<StorageDirDesc>();
 
 		// Internal storage
-		ret.add(context.getDir("storage", 0).getPath());
+		ret.add(new StorageDirDesc(R.string.storage_path_internal, context.getDir("storage", 0).getPath()));
 
 		// External storage
 		File externalDir = context.getExternalFilesDir(null);
 		if (externalDir != null)
-			ret.add(externalDir.getPath());
+			ret.add(new StorageDirDesc(R.string.storage_path_external, externalDir.getPath()));
 
 		// Secondary external storage
 		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
 		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
 			for (String secondaryStoragePath : secondaryStorageString.split(":")) {
-				ret.add(secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files/storage");
+				ret.add(new StorageDirDesc(R.string.storage_path_sd_card, secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files/storage"));
 			}
 		}
 
-		return ret.toArray(new String[ret.size()]);
+		return ret.toArray(new StorageDirDesc[ret.size()]);
+	}
+
+	public static class StorageDirDesc {
+		public final int nameRes;
+		public final String path;
+
+		public StorageDirDesc(int nameRes, String path) {
+			this.nameRes = nameRes;
+			this.path = path;
+		}
 	}
 }

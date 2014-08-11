@@ -17,6 +17,8 @@ import android.widget.Toast;
 import org.fruct.oss.ikm.storage.RemoteContent;
 import org.fruct.oss.ikm.utils.Utils;
 
+import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
+
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
@@ -184,15 +186,29 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		}));
 	}
 
-
 	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
-		String[] storagePaths = Utils.getPrivateStorageDirs(this);
-		storagePathPref.setEntryValues(storagePaths);
-		storagePathPref.setEntries(storagePaths);
+		StorageDirDesc[] storagePaths = Utils.getPrivateStorageDirs(this);
+
+		String[] names = new String[storagePaths.length];
+		String[] paths = new String[storagePaths.length];
 
 		String currentValue = sharedPreferences.getString(STORAGE_PATH, null);
+		int currentNameRes = -1;
+
+		for (int i = 0; i < storagePaths.length; i++) {
+			names[i] = getString(storagePaths[i].nameRes);
+			paths[i] = storagePaths[i].path;
+
+			if (paths[i].equals(currentValue)) {
+				currentNameRes = storagePaths[i].nameRes;
+			}
+		}
+
+		storagePathPref.setEntryValues(paths);
+		storagePathPref.setEntries(names);
+
 		if (currentValue != null)
-			storagePathPref.setSummary(currentValue);
+			storagePathPref.setSummary(currentNameRes);
 
 		oldStoragePath = currentValue;
 		RemoteContent.getInstance(oldStoragePath);

@@ -42,6 +42,7 @@ import static org.fruct.oss.ikm.utils.Utils.map;
 
 public class RemoteContent {
 	public static final String[] REMOTE_CONTENT_URLS = {
+			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
 			"http://example.com/non-working-content-url.xml",
 			"http://oss.fruct.org/projects/roadsigns/root.xml",
 			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};

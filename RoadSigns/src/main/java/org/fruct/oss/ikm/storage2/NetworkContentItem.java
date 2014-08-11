@@ -1,13 +1,15 @@
-package org.fruct.oss.ikm.storage;
+package org.fruct.oss.ikm.storage2;
 
+import org.fruct.oss.ikm.storage.IContentItem;
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
-import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Text;
 
+import java.io.IOException;
+
 @Root(name = "file", strict = false)
-public class ContentItem implements IContentItem {
+public class NetworkContentItem implements ContentItem {
 	@Element(name = "name")
 	private String name;
 
@@ -26,6 +28,8 @@ public class ContentItem implements IContentItem {
 	@Element(name = "description", required = false)
 	private String description;
 
+	private NetworkStorage storage;
+
 	@Override
 	public String getName() {
 		return name;
@@ -36,34 +40,33 @@ public class ContentItem implements IContentItem {
 		return type;
 	}
 
-	@Override
 	public int getSize() {
 		return size;
 	}
 
-	@Override
 	public int getDownloadSize() {
 		return url.size == -1 ? size : url.size;
 	}
 
-	@Override
 	public String getUrl() {
 		return url.url;
 	}
 
-	@Override
 	public String getHash() {
 		return hash;
 	}
 
-	@Override
 	public String getDescription() {
 		return description;
 	}
 
-	@Override
 	public String getCompression() {
 		return url.compression;
+	}
+
+	@Override
+	public String getStorage() {
+		return getClass().getName();
 	}
 
 	@Root(name = "url")
@@ -77,4 +80,14 @@ public class ContentItem implements IContentItem {
 		@Text
 		String url;
 	}
+
+	void setNetworkStorage(NetworkStorage storage) {
+		this.storage = storage;
+	}
+
+	@Override
+	public ContentConnection loadContentItem() throws IOException {
+		return storage.loadContentItem(getUrl());
+	}
+
 }

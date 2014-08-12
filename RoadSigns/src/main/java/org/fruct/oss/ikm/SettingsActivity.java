@@ -1,6 +1,5 @@
 package org.fruct.oss.ikm;
 
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -15,12 +14,20 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.storage.RemoteContent;
+import org.fruct.oss.ikm.storage2.RemoteContentService;
+import org.fruct.oss.ikm.utils.bind.Bind;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
 
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+	private static final Logger log = LoggerFactory.getLogger(SettingsActivity.class);
+
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
 	public static final String WARN_NETWORK_DISABLED = "warn_network_disabled";
 	public static final String WARN_NAVIGATION_DATA_DISABLED = "warn_navigation_data_disabled";
@@ -80,7 +87,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	protected void onPause() {
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
-		
+
 		super.onPause();
 	}
 	

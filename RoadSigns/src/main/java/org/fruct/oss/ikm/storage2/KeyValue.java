@@ -72,7 +72,7 @@ public class KeyValue implements Closeable {
 
 		@Override
 		public void onCreate(SQLiteDatabase db) {
-			db.execSQL("CREATE TABLE ? (key TEXT PRIMARY KEY, value TEXT);", new String[] { name });
+			db.execSQL("CREATE TABLE " + name + " (key TEXT PRIMARY KEY, value TEXT);");
 		}
 
 		@Override

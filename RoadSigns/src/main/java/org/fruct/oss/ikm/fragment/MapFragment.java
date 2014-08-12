@@ -50,6 +50,7 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
+import org.fruct.oss.ikm.storage2.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -223,7 +224,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		log.trace("MapFragment.onCreate");
+		log.debug("MapFragment.onCreate");
 
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
@@ -298,7 +299,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
-		log.trace("MapFragment.onCreate EXIT");
+		getActivity().startService(new Intent(getActivity(), RemoteContentService.class));
 	}
 
 	private int getZoomBySpeed(float speed) {

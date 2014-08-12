@@ -3,75 +3,106 @@ package org.fruct.oss.ikm;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.widget.PopupMenu;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.fragment.MapFragment;
-import org.fruct.oss.ikm.storage.RemoteContent;
-import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.ikm.storage2.ContentItem;
+import org.fruct.oss.ikm.storage2.RemoteContentService;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
+import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
-class ContentListItem {
-	List<RemoteContent.StorageItem> contentItems;
+class ContentListItem implements Comparable<ContentListItem> {
+	List<ContentListSubItem> contentSubItems;
 	String name;
-}
 
-class ContentAdapter extends ArrayAdapter<ContentListItem> {
-	class Tag {
-		View parent;
-		TextView text1;
-		TextView text2;
-		ImageView icon;
-		TextView text3;
-
-		// Item corresponding second text line
-		RemoteContent.StorageItem item1;
-
-		// Item corresponding third text line
-		RemoteContent.StorageItem item2;
+	@Override
+	public int compareTo(ContentListItem another) {
+		return name.compareTo(another.name);
 	}
 
+}
+
+class ContentListSubItem implements Comparable<ContentListSubItem> {
+	ContentListSubItem(ContentItem contentItem, OnlineContentActivity.LocalContentState state) {
+		this.contentItem = contentItem;
+		this.state = state;
+	}
+
+	ContentItem contentItem;
+	OnlineContentActivity.LocalContentState state;
+
+	@Override
+	public int compareTo(ContentListSubItem another) {
+		return contentItem.getType().compareTo(another.contentItem.getType());
+	}
+}
+
+class ContentAdapter extends BaseAdapter {
+	private List<ContentListItem> items;
+	private final Context context;
 	private final int resource;
 
 	public ContentAdapter(Context context, int resource, List<ContentListItem> objects) {
-		super(context, resource, objects);
 		this.resource = resource;
+		this.items = objects;
+		this.context = context;
+	}
+
+	public void setItems(List<ContentListItem> items) {
+		this.items = items;
+		notifyDataSetChanged();
+	}
+
+	@Override
+	public int getCount() {
+		return items.size();
+	}
+
+	@Override
+	public ContentListItem getItem(int position) {
+		return items.get(position);
+	}
+
+	@Override
+	public long getItemId(int position) {
+		return getItem(position).name.hashCode();
 	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		ContentListItem item = getItem(position);
-		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
+		LayoutInflater inflater = ((Activity) context).getLayoutInflater();
 		View view = null;
-		Tag tag = null;
+		Holder tag = null;
 
 		if (convertView != null && convertView.getTag() != null) {
-			tag = (Tag) convertView.getTag();
-			if (tag instanceof Tag) {
+			tag = (Holder) convertView.getTag();
+			if (tag instanceof Holder) {
 				view = convertView;
 			}
 		}
@@ -80,7 +111,7 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			view = inflater.inflate(resource, parent, false);
 			assert view != null;
 
-			tag = new Tag();
+			tag = new Holder();
 			tag.text1 = (TextView) view.findViewById(android.R.id.text1);
 			tag.text2 = (TextView) view.findViewById(android.R.id.text2);
 			tag.text3 = (TextView) view.findViewById(R.id.text3);
@@ -88,13 +119,7 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 			view.setTag(tag);
 			tag.parent = view;
 
-			/*for (IContentItem contentItem : item) {
-				item.contentItem(tag);
-			}*/
 		}
-
-		for (RemoteContent.StorageItem sItem : item.contentItems)
-			sItem.setTag(tag);
 
 		tag.text1.setText(item.name);
 		tag.icon.setVisibility(View.GONE);
@@ -104,14 +129,16 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 		for (TextView view2 : views)
 			view2.setVisibility(View.GONE);
 
-		for (RemoteContent.StorageItem sItem : item.contentItems) {
+		for (ContentListSubItem subItem : item.contentSubItems) {
+			OnlineContentActivity.LocalContentState state = subItem.state;
+			ContentItem sItem = subItem.contentItem;
+
 			boolean active = false;
 			boolean needUpdate = false;
 
-			if (sItem.getState() == RemoteContent.LocalContentState.NOT_EXISTS)
+			if (state == OnlineContentActivity.LocalContentState.NOT_EXISTS) {
 				active = true;
-
-			if (sItem.getState() == RemoteContent.LocalContentState.NEEDS_UPDATE) {
+			} else if (state == OnlineContentActivity.LocalContentState.NEEDS_UPDATE) {
 				active = true;
 				needUpdate = true;
 			}
@@ -125,14 +152,14 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 				tag.item2 = sItem;
 
 			String text = "";
-			if (sItem.getItem().getType().equals("graphhopper-map")) {
-				text = getContext().getString(R.string.navigation_data);
-			} else if (sItem.getItem().getType().equals("mapsforge-map")) {
-				text = getContext().getString(R.string.offline_map);
+			if (sItem.getType().equals("graphhopper-map")) {
+				text = context.getString(R.string.navigation_data);
+			} else if (sItem.getType().equals("mapsforge-map")) {
+				text = context.getString(R.string.offline_map);
 			}
 
 			if (needUpdate)
-				text += " (" + getContext().getString(R.string.update_availabe) +")";
+				text += " (" + context.getString(R.string.update_availabe) + ")";
 			views[idx].setText(text);
 
 			views[idx].setVisibility(View.VISIBLE);
@@ -146,15 +173,30 @@ class ContentAdapter extends ArrayAdapter<ContentListItem> {
 
 		return view;
 	}
+
+	class Holder {
+		View parent;
+		TextView text1;
+		TextView text2;
+		ImageView icon;
+		TextView text3;
+
+		// Item corresponding second text line
+		ContentItem item1;
+
+		// Item corresponding third text line
+		ContentItem item2;
+	}
 }
 
 public class OnlineContentActivity extends ActionBarActivity
-		implements AdapterView.OnItemClickListener, PopupMenu.OnMenuItemClickListener,
-					PopupMenu.OnDismissListener, RemoteContent.Listener, ContentDialog.Listener {
+		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener {
+	public enum LocalContentState {
+		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
+	}
 
 	static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
-	private RemoteContent remoteContent;
 	private ListView listView;
 	private ContentAdapter adapter;
 
@@ -167,28 +209,29 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	private String currentActiveName;
 
+	private RemoteContentService remoteContent;
+
+	private List<ContentItem> localItems = Collections.emptyList();
+	private List<ContentItem> remoteItems = Collections.emptyList();
+
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		log.trace("onCreate");
 
 		if (savedInstanceState != null)
 			currentItemName = savedInstanceState.getString("current-item-idx");
 
 		setContentView(R.layout.online_content_layout);
 
+		adapter = new ContentAdapter(this, R.layout.point_list_item, Collections.<ContentListItem>emptyList());
+
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
 
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-		String contentPath = pref.getString(SettingsActivity.STORAGE_PATH, null);
-
-		remoteContent = RemoteContent.getInstance(contentPath);
-		remoteContent.addListener(this);
-
 		setUpActionBar();
 
-		remoteContent.startInitialize(false);
+		BindHelper.autoBind(this, this);
+
+		listView.setAdapter(adapter);
 	}
 
 	@Override
@@ -199,8 +242,13 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	protected void onDestroy() {
+		BindHelper.autoUnbind(this, this);
+		if (remoteContent != null) {
+			remoteContent.remoteListener(this);
+			remoteContent = null;
+		}
+
 		super.onDestroy();
-		remoteContent.removeListener(this);
 	}
 
 	@Override
@@ -215,57 +263,87 @@ public class OnlineContentActivity extends ActionBarActivity
 		switch (item.getItemId()) {
 		case R.id.action_refresh:
 			if (remoteContent != null) {
-				remoteContent.startInitialize(true);
+				remoteContent.refresh();
 			}
 			break;
 
 		case R.id.action_stop:
-			remoteContent.stopAll();
+			remoteContent.interrupt();
 			break;
 		}
 
 		return super.onOptionsItemSelected(item);
 	}
 
-	private void setContentList(List<RemoteContent.StorageItem> list) {
-		log.trace("setContentList");
+	@BindSetter
+	public void remoteContentServiceReady(RemoteContentService service) {
+		if (service == null)
+			return;
 
-		Map<String /* name */, ContentListItem> listItems = new HashMap<String, ContentListItem>();
-		for (RemoteContent.StorageItem item : list) {
-			final String description = item.getItem().getDescription();
-			ContentListItem listItem = listItems.get(description);
-			if (listItem == null) {
-				listItem = new ContentListItem();
-				listItems.put(description, listItem);
-				listItem.name = description;
-				listItem.contentItems = new ArrayList<RemoteContent.StorageItem>();
-			}
-
-			listItem.contentItems.add(item);
-		}
-
-		// Restore saved currentItem
-		if (currentItemName != null)
-			currentItem = listItems.get(currentItemName);
-
-		adapter = new ContentAdapter(this, R.layout.point_list_item, new ArrayList<ContentListItem>(listItems.values()));
-		listView.setAdapter(adapter);
+		remoteContent = service;
+		remoteContent.addListener(this);
+		setContentList(remoteContent.getLocalItems(), remoteContent.getRemoteItems());
 	}
 
-	@Override
-	public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-		PopupMenu menu = new PopupMenu(this, view);
-		currentItem = adapter.getItem(i);
-		currentItemName = currentItem.name;
+	private void setContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
+		HashMap<String, ContentListSubItem> states
+				= new HashMap<String, ContentListSubItem>(localItems.size());
 
-		if (currentItem.contentItems.size() > 0)
-			useItem = menu.getMenu().add(R.string.use);
-		downloadItem = menu.getMenu().add(R.string.download);
+		for (ContentItem item : localItems) {
+			states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
+		}
 
-		menu.setOnDismissListener(this);
-		menu.setOnMenuItemClickListener(this);
+		for (ContentItem remoteItem : remoteItems) {
+			String name = remoteItem.getName();
 
-		menu.show();
+			ContentListSubItem subItem = states.get(name);
+			ContentItem localItem = subItem == null ? null : subItem.contentItem;
+
+			LocalContentState newState;
+			ContentItem saveItem = remoteItem;
+
+			if (localItem == null) {
+				newState = LocalContentState.NOT_EXISTS;
+			} else if (localItem.getHash().equals(remoteItem.getHash())) {
+				newState = LocalContentState.NEEDS_UPDATE;
+			} else {
+				saveItem = localItem;
+				newState = LocalContentState.UP_TO_DATE;
+			}
+
+			states.put(name, new ContentListSubItem(saveItem, newState));
+		}
+
+		HashMap<String, List<ContentListSubItem>> listViewMap
+				= new HashMap<String, List<ContentListSubItem>>();
+
+		for (Map.Entry<String, ContentListSubItem> entry : states.entrySet()) {
+			String desc = entry.getValue().contentItem.getDescription();
+			List<ContentListSubItem> l = listViewMap.get(desc);
+
+			if (l == null) {
+				l = new ArrayList<ContentListSubItem>();
+				listViewMap.put(desc, l);
+			}
+
+			l.add(entry.getValue());
+		}
+
+		List<ContentListItem> listViewItems = new ArrayList<ContentListItem>();
+		for (Map.Entry<String, List<ContentListSubItem>> entry : listViewMap.entrySet()) {
+			ContentListItem listViewItem = new ContentListItem();
+
+			listViewItem.name = entry.getKey();
+			listViewItem.contentSubItems = entry.getValue();
+
+			Collections.sort(listViewItem.contentSubItems);
+
+			listViewItems.add(listViewItem);
+		}
+
+		Collections.sort(listViewItems);
+
+		adapter.setItems(listViewItems);
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -286,17 +364,17 @@ public class OnlineContentActivity extends ActionBarActivity
 		});
 	}
 
-	private void deleteItem(RemoteContent.StorageItem item) {
+	/*private void deleteItem(ContentItem item) {
 		try {
-			remoteContent.deleteContentItem(item);
+			remoteContent.deleteItem()
 			showToast("Successfully deleted");
 		} catch (IOException e) {
 			e.printStackTrace();
 			showToast("Can not delete");
 		}
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public boolean onMenuItemClick(MenuItem menuItem) {
 		if (menuItem == downloadItem) {
 			final ContentDialog dialog = new ContentDialog(currentItem.contentItems);
@@ -323,47 +401,40 @@ public class OnlineContentActivity extends ActionBarActivity
 		}
 
 		return true;
+	}*/
+
+
+	@Override
+	public void localListReady(List<ContentItem> list) {
+		localItems = list;
+		setContentList(localItems, remoteItems);
 	}
 
 	@Override
-	public void onDismiss(PopupMenu popupMenu) {
-		downloadItem = useItem = null;
+	public void remoteListReady(List<ContentItem> list) {
+		remoteItems = list;
+		setContentList(localItems, remoteItems);
 	}
 
 	@Override
-	public void listReady(final List<RemoteContent.StorageItem> list) {
-		runOnUiThread(new Runnable() {
-			@Override
-				public void run() {
-				setContentList(list);
-			}
-		});
+	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
+		/*ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
+
+		TextView textView = tag.item1 == item ? tag.text2 : tag.text3;
+		textView.setTypeface(null, Typeface.NORMAL);
+
+		float mbMax = (float) max / (1024 * 1024);
+		float mbCurrent = (float) downloaded / (1024 * 1024);
+		textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));*/
 	}
 
 	@Override
-	public void downloadStateUpdated(final RemoteContent.StorageItem item, final int downloaded, final int max) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
-
-				TextView textView = tag.item1 == item ? tag.text2 : tag.text3;
-				textView.setTypeface(null, Typeface.NORMAL);
-
-				float mbMax = (float) max / (1024 * 1024);
-				float mbCurrent = (float) downloaded / (1024 * 1024);
-				textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
-			}
-		});
-	}
-
-	@Override
-	public void downloadFinished(RemoteContent.StorageItem item) {
+	public void downloadFinished(ContentItem localItem, ContentItem remoteItem) {
 		showToast(getString(R.string.download_finished));
 	}
 
 	@Override
-	public void errorDownloading(RemoteContent.StorageItem item, IOException e) {
+	public void errorDownloading(ContentItem item, IOException e) {
 		showToast(getString(R.string.error_downloading));
 	}
 
@@ -373,7 +444,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
-	public void downloadInterrupted(RemoteContent.StorageItem sItem) {
+	public void downloadInterrupted(ContentItem sItem) {
 		showToast(getString(R.string.download_interrupted));
 
 		runOnUiThread(new Runnable() {
@@ -390,6 +461,11 @@ public class OnlineContentActivity extends ActionBarActivity
 			return;
 
 		for (int i : items)
-			remoteContent.startDownloading(currentItem.contentItems.get(i));
+			remoteContent.downloadItem(currentItem.contentSubItems.get(i).contentItem);
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
 	}
 }

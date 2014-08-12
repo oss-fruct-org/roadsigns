@@ -119,7 +119,7 @@ public class Gets implements IGets {
 			requestBuilder.append("</params></request>");
 
 			String responseStr = downloadUrl(getsServerUrl + "loadPoints.php",requestBuilder.toString());
-			log.debug("Req {}", requestBuilder.toString());
+			log.trace("Req {}", requestBuilder.toString());
 			Response resp = processResponse(responseStr);
 			if (resp.getCode() != 0) {
 				log.warn("getCategories returned with code {} message '{}'", resp.getCode(), resp.getMessage());

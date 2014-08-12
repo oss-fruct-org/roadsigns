@@ -63,7 +63,6 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 	private List<ContentItem> localItems = new ArrayList<ContentItem>();
 	private List<ContentItem> remoteItems = new ArrayList<ContentItem>();
 
-
 	public RemoteContentService() {
 	}
 
@@ -80,6 +79,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		log.debug("RemoteContentService created");
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		pref.registerOnSharedPreferenceChangeListener(this);
@@ -89,24 +89,8 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		networkStorage = new NetworkStorage(REMOTE_CONTENT_URLS);
 		localStorage = new DirectoryStorage(digestCache, currentStoragePath);
 
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					localStorage.updateContentList();
-					localItems.addAll(localStorage.getContentList());
-					notifyLocalListReady(localItems);
-
-					networkStorage.updateContentList();
-					remoteItems.addAll(networkStorage.getContentList());
-					notifyRemoteListReady(remoteItems);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-
 		digestCache = new KeyValue(this, "digestCache");
+		refresh();
 	}
 
 	@Override
@@ -115,6 +99,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 		digestCache.close();
 
+		log.debug("RemoteContentService destroyed");
 		super.onDestroy();
 	}
 
@@ -158,6 +143,35 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 	public void remoteListener(Listener listener) {
 		listeners.remove(listener);
+	}
+
+	public List<ContentItem> getLocalItems() {
+		return localItems;
+	}
+
+	public List<ContentItem> getRemoteItems() {
+		return remoteItems;
+	}
+
+	public void refresh() {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					localStorage.updateContentList();
+					localItems.clear();
+					localItems.addAll(localStorage.getContentList());
+					notifyLocalListReady(localItems);
+
+					networkStorage.updateContentList();
+					remoteItems.clear();
+					remoteItems.addAll(networkStorage.getContentList());
+					notifyRemoteListReady(remoteItems);
+				} catch (IOException e) {
+					// TODO: handle exception
+				}
+			}
+		});
 	}
 
 	private void asyncMigrateData(String newPath) {
@@ -304,6 +318,10 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 				}
 			}
 		});
+	}
+
+	public void interrupt() {
+		throw new IllegalStateException("Not supported yet");
 	}
 
 	public interface Listener {

@@ -10,20 +10,21 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DirectoryStorage implements ContentStorage {
-	static interface MigrationListener {
-		void fileCopying(String name, int n, int max);
-	}
-
 	private static final Logger log = LoggerFactory.getLogger(DirectoryStorage.class);
 
 	private String path;
+	private KeyValue digestCache;
 	private List<ContentItem> items;
 
-	public DirectoryStorage(String path) {
+	public DirectoryStorage(KeyValue digestCache, String path) {
+		this.digestCache = digestCache;
 		if (path == null)
 			throw new IllegalArgumentException("Path must not be null");
 
@@ -49,6 +50,38 @@ public class DirectoryStorage implements ContentStorage {
 		}
 	}
 
+	public ContentItem storeContentItem(ContentItem remoteContentItem, InputStream input) throws IOException {
+		OutputStream output = null;
+
+		String fileStr = path + "/" + remoteContentItem.getName();
+
+		File outputFile = new File(fileStr + ".roadsignsdownload");
+		File targetFile = new File(fileStr);
+
+		try {
+			output = new FileOutputStream(outputFile);
+
+			IOUtils.copy(input, output);
+
+			if (!outputFile.renameTo(targetFile))
+				throw new IOException("Can't replace original file with loaded file");
+
+			DirectoryContentItem localItem = new DirectoryContentItem(this, digestCache, remoteContentItem.getName());
+			localItem.setDescription(remoteContentItem.getDescription());
+			localItem.setType(remoteContentItem.getType());
+			localItem.setHash(remoteContentItem.getHash());
+			items.add(localItem);
+
+			return localItem;
+		} catch (IOException e) {
+			outputFile.delete();
+			throw e;
+		} finally {
+			if (output != null)
+				output.close();
+		}
+	}
+
 	private ContentItem createContentItem(File file) throws FileNotFoundException {
 		if (file.getName().endsWith(".map")) {
 			DirectoryContentItem item =  createBaseContentItem(file);
@@ -66,7 +99,7 @@ public class DirectoryStorage implements ContentStorage {
 	}
 
 	private DirectoryContentItem createBaseContentItem(File file) throws FileNotFoundException {
-		return new DirectoryContentItem(this, file.getName());
+		return new DirectoryContentItem(this, digestCache, file.getName());
 	}
 
 	private void fillGhzMetadata(File file, DirectoryContentItem item) throws FileNotFoundException {
@@ -92,6 +125,9 @@ public class DirectoryStorage implements ContentStorage {
 
 	public void migrate(String newPath, MigrationListener listener) throws IOException {
 		String oldPath = path;
+
+		if (oldPath.equals(newPath))
+			return;
 
 		File newDir = new File(newPath);
 		if (newDir.exists() && !newDir.isDirectory())
@@ -165,5 +201,9 @@ public class DirectoryStorage implements ContentStorage {
 
 		oldDir.delete();
 		path = newPath;
+	}
+
+	static interface MigrationListener {
+		void fileCopying(String name, int n, int max);
 	}
 }

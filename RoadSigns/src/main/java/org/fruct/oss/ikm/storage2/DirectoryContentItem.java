@@ -1,21 +1,30 @@
 package org.fruct.oss.ikm.storage2;
 
 import org.fruct.oss.ikm.storage.IContentConnection;
+import org.fruct.oss.ikm.utils.Utils;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class DirectoryContentItem implements ContentItem {
-	private DirectoryStorage storage;
+	private final KeyValue digestCache;
+	private final DirectoryStorage storage;
 
 	private String type;
 	private String name;
 	private String description;
 
-	public DirectoryContentItem(DirectoryStorage storage, String name) {
+	private String hash;
+
+	public DirectoryContentItem(DirectoryStorage storage, KeyValue digestCache, String name) {
 		this.storage = storage;
 		this.name = name;
+		this.digestCache = digestCache;
 	}
 
 	public void setType(String type) {
@@ -46,6 +55,28 @@ public class DirectoryContentItem implements ContentItem {
 		return storage.getStorageName();
 	}
 
+	@Override
+	public String getHash() {
+		if (hash != null) {
+			return hash;
+		}
+
+		hash = digestCache.get(name);
+
+		if (hash == null) {
+			try {
+				FileInputStream input = new FileInputStream(getPath());
+				hash = Utils.hashStream(input);
+				digestCache.put(name, hash);
+			} catch (IOException e) {
+				throw new RuntimeException("Can't get hash of file " + name);
+
+			}
+		}
+
+		return hash;
+	}
+
 	public String getPath() {
 		return storage.getPath() + "/" + getName();
 	}
@@ -67,5 +98,9 @@ public class DirectoryContentItem implements ContentItem {
 				}
 			}
 		};
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
 }

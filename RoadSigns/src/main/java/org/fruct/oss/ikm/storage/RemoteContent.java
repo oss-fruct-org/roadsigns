@@ -377,7 +377,6 @@ public class RemoteContent {
 
 		for (Listener listener : listeners)
 			listener.listReady(storageItems = new ArrayList<StorageItem>(allItems.values()));
-
 	}
 
 	public void startDownloading(final StorageItem item) {

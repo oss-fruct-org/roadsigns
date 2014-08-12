@@ -15,7 +15,7 @@ import java.util.List;
 public class ContentDialog extends DialogFragment implements DialogInterface.OnClickListener, DialogInterface.OnMultiChoiceClickListener {
 	private boolean[] active;
 	private String[] strings;
-	private List<RemoteContent.StorageItem> storageItems;
+	private List<ContentListSubItem> storageItems;
 
 	interface Listener {
 		void downloadsSelected(List<Integer> items);
@@ -26,7 +26,7 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	public ContentDialog() {
 	}
 
-	public ContentDialog(List<RemoteContent.StorageItem> storageItems) {
+	public void setStorageItems(List<ContentListSubItem> storageItems) {
 		this.storageItems = storageItems;
 	}
 
@@ -39,6 +39,13 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	}
 
 	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		setRetainInstance(true);
+	}
+
+	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
 
@@ -46,15 +53,15 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 		active = new boolean[storageItems.size()];
 
 		for (int i = 0; i < storageItems.size(); i++) {
-			RemoteContent.StorageItem sItem = storageItems.get(i);
+			ContentListSubItem sItem = storageItems.get(i);
 
-			String type = sItem.getItem().getType();
+			String type = sItem.contentItem.getType();
 			if (type.equals("mapsforge-map"))
 				strings[i] = getString(R.string.offline_map);
 			else if (type.equals("graphhopper-map"))
 				strings[i] = getString(R.string.navigation_data);
 
-			active[i] = (sItem.getState() != RemoteContent.LocalContentState.UP_TO_DATE);
+			active[i] = (sItem.state != OnlineContentActivity.LocalContentState.UP_TO_DATE);
 		}
 
 		try {

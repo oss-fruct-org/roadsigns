@@ -86,10 +86,11 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 		currentStoragePath = getLocalStoragePath();
 
+		digestCache = new KeyValue(this, "digestCache");
+
 		networkStorage = new NetworkStorage(REMOTE_CONTENT_URLS);
 		localStorage = new DirectoryStorage(digestCache, currentStoragePath);
 
-		digestCache = new KeyValue(this, "digestCache");
 		refresh();
 	}
 

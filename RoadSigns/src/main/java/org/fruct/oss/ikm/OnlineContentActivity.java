@@ -7,6 +7,7 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.view.ActionMode;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -55,6 +57,7 @@ class ContentListSubItem implements Comparable<ContentListSubItem> {
 
 	ContentItem contentItem;
 	OnlineContentActivity.LocalContentState state;
+	Object tag;
 
 	@Override
 	public int compareTo(ContentListSubItem another) {
@@ -118,7 +121,6 @@ class ContentAdapter extends BaseAdapter {
 			tag.icon = (ImageView) view.findViewById(android.R.id.icon1);
 			view.setTag(tag);
 			tag.parent = view;
-
 		}
 
 		tag.text1.setText(item.name);
@@ -130,6 +132,7 @@ class ContentAdapter extends BaseAdapter {
 			view2.setVisibility(View.GONE);
 
 		for (ContentListSubItem subItem : item.contentSubItems) {
+			subItem.tag = tag;
 			OnlineContentActivity.LocalContentState state = subItem.state;
 			ContentItem sItem = subItem.contentItem;
 
@@ -174,6 +177,35 @@ class ContentAdapter extends BaseAdapter {
 		return view;
 	}
 
+	public void updateDownloadString(ContentItem ci, String downloadString) {
+		// This optimization can cause error after list rotation
+		if (ci != lastUpdateItem) {
+			for (ContentListItem cli : items) {
+				// TODO: cache
+				for (ContentListSubItem clsi : cli.contentSubItems) {
+					if (ci == clsi.contentItem) {
+						lastUpdateTag = (Holder) clsi.tag;
+						lastUpdateItem = ci;
+						break;
+					}
+				}
+			}
+		}
+
+		TextView textView = null;
+
+		if (lastUpdateTag.item1 == ci) {
+			textView = lastUpdateTag.text2;
+		} else 	if (lastUpdateTag.item2 == ci) {
+			textView = lastUpdateTag.text3;
+		}
+
+		if (textView != null) {
+			textView.setTypeface(null, Typeface.NORMAL);
+			textView.setText(downloadString);
+		}
+	}
+
 	class Holder {
 		View parent;
 		TextView text1;
@@ -187,10 +219,14 @@ class ContentAdapter extends BaseAdapter {
 		// Item corresponding third text line
 		ContentItem item2;
 	}
+
+	// Optimization of download string update
+	private Holder lastUpdateTag;
+	private ContentItem lastUpdateItem;
 }
 
 public class OnlineContentActivity extends ActionBarActivity
-		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener {
+		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback {
 	public enum LocalContentState {
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
 	}
@@ -304,7 +340,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 			if (localItem == null) {
 				newState = LocalContentState.NOT_EXISTS;
-			} else if (localItem.getHash().equals(remoteItem.getHash())) {
+			} else if (!localItem.getHash().equals(remoteItem.getHash())) {
 				newState = LocalContentState.NEEDS_UPDATE;
 			} else {
 				saveItem = localItem;
@@ -374,36 +410,6 @@ public class OnlineContentActivity extends ActionBarActivity
 		}
 	}*/
 
-	/*@Override
-	public boolean onMenuItemClick(MenuItem menuItem) {
-		if (menuItem == downloadItem) {
-			final ContentDialog dialog = new ContentDialog(currentItem.contentItems);
-
-			dialog.show(getSupportFragmentManager(), "content-dialog");
-		} else if (menuItem == useItem) {
-			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-
-			final SharedPreferences.Editor edit = pref.edit();
-			for (RemoteContent.StorageItem sItem : currentItem.contentItems) {
-				if (sItem.getItem().getType().equals("mapsforge-map")) {
-					pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply(); // Force notification
-					edit.putString(SettingsActivity.OFFLINE_MAP, sItem.getItem().getName());
-				}
-
-				if (sItem.getItem().getType().equals("graphhopper-map")) {
-					pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply(); // Force notification
-					edit.putString(SettingsActivity.NAVIGATION_DATA, sItem.getItem().getName());
-				}
-			}
-			edit.apply();
-
-			finish();
-		}
-
-		return true;
-	}*/
-
-
 	@Override
 	public void localListReady(List<ContentItem> list) {
 		localItems = list;
@@ -418,14 +424,21 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
-		/*ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
+		/*
+		ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
 
 		TextView textView = tag.item1 == item ? tag.text2 : tag.text3;
 		textView.setTypeface(null, Typeface.NORMAL);
 
 		float mbMax = (float) max / (1024 * 1024);
 		float mbCurrent = (float) downloaded / (1024 * 1024);
-		textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));*/
+		textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
+		*/
+
+		float mbMax = (float) max / (1024 * 1024);
+		float mbCurrent = (float) downloaded / (1024 * 1024);
+		String downloadString = String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax);
+		adapter.updateDownloadString(item, downloadString);
 	}
 
 	@Override
@@ -466,6 +479,40 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+		ContentListItem listItem = adapter.getItem(position);
+		startSupportActionMode(this);
 
+		currentItem = listItem;
+
+	}
+
+	@Override
+	public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+		actionMode.getMenuInflater().inflate(R.menu.online_content_action, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+		return false;
+	}
+
+	@Override
+	public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+		if (menuItem.getItemId() == R.id.action_download) {
+			final ContentDialog dialog = new ContentDialog();
+			dialog.setStorageItems(currentItem.contentSubItems);
+			dialog.show(getSupportFragmentManager(), "content-dialog");
+			actionMode.finish();
+			return true;
+		} else if (menuItem.getItemId() == R.id.action_delete) {
+			throw new IllegalStateException("Not implemented yet");
+		}
+
+		return false;
+	}
+
+	@Override
+	public void onDestroyActionMode(ActionMode actionMode) {
 	}
 }

@@ -18,6 +18,7 @@ public class DirectoryContentItem implements ContentItem {
 	private String type;
 	private String name;
 	private String description;
+	private String regionId;
 
 	private String hash;
 
@@ -66,15 +67,19 @@ public class DirectoryContentItem implements ContentItem {
 		if (hash == null) {
 			try {
 				FileInputStream input = new FileInputStream(getPath());
-				hash = Utils.hashStream(input);
+				hash = Utils.hashStream(input, "sha1");
 				digestCache.put(name, hash);
 			} catch (IOException e) {
 				throw new RuntimeException("Can't get hash of file " + name);
-
 			}
 		}
 
 		return hash;
+	}
+
+	@Override
+	public String getRegionId() {
+		return regionId;
 	}
 
 	public String getPath() {
@@ -103,4 +108,9 @@ public class DirectoryContentItem implements ContentItem {
 	public void setHash(String hash) {
 		this.hash = hash;
 	}
+
+	public void setRegionId(String regionId) {
+		this.regionId = regionId;
+	}
+
 }

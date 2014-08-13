@@ -9,6 +9,7 @@ public interface ContentItem {
 	String getDescription();
 	String getStorage();
 	String getHash();
+	String getRegionId();
 
 	ContentConnection loadContentItem() throws IOException;
 }

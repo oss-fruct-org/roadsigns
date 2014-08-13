@@ -100,15 +100,15 @@ public class Utils {
 		return toHex(hash);
 	}
 	
-	public static String hashStream(InputStream in) throws IOException {
+	public static String hashStream(InputStream in, String hash) throws IOException {
 		MessageDigest md5 = null;
 		try {
-			md5 = MessageDigest.getInstance("MD5");
+			md5 = MessageDigest.getInstance(hash);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
 		
-		int bsize = 1024;
+		int bsize = 4096;
 		byte[] buffer = new byte[bsize];
 		int length;
 		
@@ -117,6 +117,10 @@ public class Utils {
 		}
 		
 		return toHex(md5.digest());
+	}
+
+	public static String hashStream(InputStream in) throws IOException {
+		return hashStream(in, "MD5");
 	}
 
 	public static String inputStreamToString(InputStream stream) throws IOException {

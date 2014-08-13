@@ -15,6 +15,8 @@ public class KeyValue implements Closeable {
 	private final String name;
 	private final SQLiteDatabase db;
 
+	private static final String[] QUERY_COLUMNS = {"value"};
+
 	public KeyValue(Context context, String name) {
 		this.context = context;
 		this.name = name;
@@ -47,7 +49,7 @@ public class KeyValue implements Closeable {
 	}
 
 	public String get(String key, String defaultValue) {
-		Cursor cursor = db.rawQuery("SELECT value FROM ? WHERE key=?;", new String[]{name, key});
+		Cursor cursor = db.query(name, QUERY_COLUMNS, "key=?", new String[]{key}, null, null, null);
 		if (!cursor.moveToFirst()) {
 			cursor.close();
 			return defaultValue;

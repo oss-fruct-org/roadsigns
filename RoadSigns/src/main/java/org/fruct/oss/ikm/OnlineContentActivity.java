@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.view.ActionMode;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,11 +31,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
 
 class ContentListItem implements Comparable<ContentListItem> {
 	List<ContentListSubItem> contentSubItems;
@@ -181,7 +178,6 @@ class ContentAdapter extends BaseAdapter {
 		// This optimization can cause error after list rotation
 		if (ci != lastUpdateItem) {
 			for (ContentListItem cli : items) {
-				// TODO: cache
 				for (ContentListSubItem clsi : cli.contentSubItems) {
 					if (ci == clsi.contentItem) {
 						lastUpdateTag = (Holder) clsi.tag;
@@ -318,7 +314,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 		remoteContent = service;
 		remoteContent.addListener(this);
-		setContentList(remoteContent.getLocalItems(), remoteContent.getRemoteItems());
+		setContentList(localItems = remoteContent.getLocalItems(), remoteItems = remoteContent.getRemoteItems());
 	}
 
 	private void setContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
@@ -329,6 +325,7 @@ public class OnlineContentActivity extends ActionBarActivity
 			states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
 		}
 
+		// TODO: can cause concurrent modification
 		for (ContentItem remoteItem : remoteItems) {
 			String name = remoteItem.getName();
 
@@ -354,12 +351,12 @@ public class OnlineContentActivity extends ActionBarActivity
 				= new HashMap<String, List<ContentListSubItem>>();
 
 		for (Map.Entry<String, ContentListSubItem> entry : states.entrySet()) {
-			String desc = entry.getValue().contentItem.getDescription();
-			List<ContentListSubItem> l = listViewMap.get(desc);
+			String rId = entry.getValue().contentItem.getRegionId();
+			List<ContentListSubItem> l = listViewMap.get(rId);
 
 			if (l == null) {
 				l = new ArrayList<ContentListSubItem>();
-				listViewMap.put(desc, l);
+				listViewMap.put(rId, l);
 			}
 
 			l.add(entry.getValue());
@@ -369,11 +366,10 @@ public class OnlineContentActivity extends ActionBarActivity
 		for (Map.Entry<String, List<ContentListSubItem>> entry : listViewMap.entrySet()) {
 			ContentListItem listViewItem = new ContentListItem();
 
-			listViewItem.name = entry.getKey();
+			listViewItem.name = entry.getValue().get(0).contentItem.getDescription();
 			listViewItem.contentSubItems = entry.getValue();
 
 			Collections.sort(listViewItem.contentSubItems);
-
 			listViewItems.add(listViewItem);
 		}
 

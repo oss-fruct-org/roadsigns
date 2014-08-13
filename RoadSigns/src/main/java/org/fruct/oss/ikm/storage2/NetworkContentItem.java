@@ -28,6 +28,9 @@ public class NetworkContentItem implements ContentItem {
 	@Element(name = "description", required = false)
 	private String description;
 
+	@Element(name = "region-id")
+	private String regionId;
+
 	private NetworkStorage storage;
 
 	@Override
@@ -54,6 +57,11 @@ public class NetworkContentItem implements ContentItem {
 
 	public String getHash() {
 		return hash;
+	}
+
+	@Override
+	public String getRegionId() {
+		return regionId;
 	}
 
 	public String getDescription() {

@@ -276,7 +276,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	protected void onDestroy() {
 		BindHelper.autoUnbind(this, this);
 		if (remoteContent != null) {
-			remoteContent.remoteListener(this);
+			remoteContent.removeListener(this);
 			remoteContent = null;
 		}
 

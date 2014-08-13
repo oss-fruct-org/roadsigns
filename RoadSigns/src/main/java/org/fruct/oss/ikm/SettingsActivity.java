@@ -13,11 +13,9 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.storage.RemoteContent;
 import org.fruct.oss.ikm.storage2.RemoteContentService;
-import org.fruct.oss.ikm.utils.bind.Bind;
-import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +53,17 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private ListPreference storagePathPref;
 
-	private String oldStoragePath = null;
+	private RemoteContentService remoteContent;
+
+	@BindSetter
+	public void remoteContentServiceReady(RemoteContentService service) {
+		if (service != null) {
+			remoteContent = service;
+			remoteContent.setMigrateListener(migrateListener);
+		} else {
+			remoteContent.setMigrateListener(null);
+		}
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -82,11 +90,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		updateStoragePath(sharedPreferences, storagePathPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+
+		BindHelper.autoBind(this, this);
 	}
 
 	@Override
 	protected void onPause() {
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+
+		BindHelper.autoUnbind(this, this);
 
 		super.onPause();
 	}
@@ -102,8 +114,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		} else if (key.equals(VEHICLE)) {
 			updateVehicle();
-		} else if (key.equals(STORAGE_PATH)) {
-			migrateContent();
 		}
 	}
 
@@ -134,47 +144,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		vehiclePref.setSummary(vehiclePref.getEntry());
 	}
 
-	private void migrateContent() {
-		final SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-
-		String newStoragePath = pref.getString(STORAGE_PATH, null);
-		assert newStoragePath != null;
-
-		if (oldStoragePath == null || oldStoragePath.equals(newStoragePath))
-			return;
-
-		final ProgressDialog dialog = ProgressDialog.show(this, "Copying", "Copying...", false, false);
-
-		RemoteContent remoteContent = RemoteContent.getInstance(oldStoragePath);
-		remoteContent.moveData(newStoragePath, new Handler(new Handler.Callback() {
-			@Override
-			public boolean handleMessage(Message message) {
-				if (message.arg2 == 1) {
-					if (message.arg1 == 0) {
-						Toast.makeText(SettingsActivity.this, "Local content successfully moved", Toast.LENGTH_LONG).show();
-						updateStoragePath(pref, storagePathPref);
-					} else {
-						Toast.makeText(SettingsActivity.this, "Cannot move local content", Toast.LENGTH_LONG).show();
-						String tmp = oldStoragePath;
-						oldStoragePath = null;
-						pref.edit().putString(STORAGE_PATH, tmp).apply();
-					}
-					dialog.dismiss();
-					return true;
-				}
-
-				String name = message.getData().getString("name");
-				int n = message.getData().getInt("n");
-				int max = message.getData().getInt("max");
-
-				dialog.setMax(max);
-				dialog.setProgress(n);
-				dialog.setMessage("Copying " + name);
-				return true;
-			}
-		}));
-	}
-
 	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
 		StorageDirDesc[] storagePaths = Utils.getPrivateStorageDirs(this);
 
@@ -198,8 +167,37 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		if (currentValue != null)
 			storagePathPref.setSummary(currentNameRes);
-
-		oldStoragePath = currentValue;
-		RemoteContent.getInstance(oldStoragePath);
 	}
+
+	private RemoteContentService.MigrateListener migrateListener = new RemoteContentService.MigrateListener() {
+		private ProgressDialog dialog;
+		private SharedPreferences pref;
+
+		@Override
+		public void migrateFile(String name, int n, int max) {
+			if (dialog == null) {
+				dialog = ProgressDialog.show(SettingsActivity.this, "Copying", "Copying...", false, false);
+				pref = PreferenceManager.getDefaultSharedPreferences(SettingsActivity.this);
+			}
+
+			dialog.setMax(max);
+			dialog.setProgress(n);
+			dialog.setMessage("Copying " + name);
+		}
+
+		@Override
+		public void migrateFinished() {
+			dialog.dismiss();
+			dialog = null;
+			updateStoragePath(pref, storagePathPref);
+			Toast.makeText(SettingsActivity.this, "Local content successfully moved", Toast.LENGTH_LONG).show();
+		}
+
+		@Override
+		public void migrateError() {
+			dialog.dismiss();
+			dialog = null;
+			Toast.makeText(SettingsActivity.this, "Cannot move local content", Toast.LENGTH_LONG).show();
+		}
+	};
 }

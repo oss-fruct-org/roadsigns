@@ -26,6 +26,7 @@ public class NetworkStorage implements ContentStorage {
 
 	@Override
 	public void updateContentList() throws IOException {
+		items = null;
 		for (String contentUrl : rootUrls) {
 			try {
 				List<String> singleContentUrl = new ArrayList<String>(1);

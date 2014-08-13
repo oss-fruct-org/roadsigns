@@ -40,10 +40,13 @@
     <string name="storage_path_internal">Внутреннее</string>
     <string name="storage_path_external">Внешнее</string>
     <string name="storage_path_sd_card">SD карта</string>
+    <string name="action_use">Использовать</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_download">Загрузить</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>
-        <item quantity="few">Расстояние: %d метра</item>        
+        <item quantity="few">Расстояние: %d метра</item>
         <item quantity="many">Расстояние: %d метров</item>
         <item quantity="other">Расстояние: %d метров</item>
     </plurals>

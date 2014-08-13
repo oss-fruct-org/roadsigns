@@ -3,9 +3,11 @@ package org.fruct.oss.ikm;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.view.ActionMode;
 import android.view.LayoutInflater;
@@ -223,6 +225,7 @@ class ContentAdapter extends BaseAdapter {
 
 public class OnlineContentActivity extends ActionBarActivity
 		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback {
+
 	public enum LocalContentState {
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
 	}
@@ -246,6 +249,8 @@ public class OnlineContentActivity extends ActionBarActivity
 	private List<ContentItem> localItems = Collections.emptyList();
 	private List<ContentItem> remoteItems = Collections.emptyList();
 
+	private SharedPreferences pref;
+
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
@@ -264,6 +269,8 @@ public class OnlineContentActivity extends ActionBarActivity
 		BindHelper.autoBind(this, this);
 
 		listView.setAdapter(adapter);
+
+		pref = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 
 	@Override
@@ -422,17 +429,6 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
-		/*
-		ContentAdapter.Tag tag = (ContentAdapter.Tag) item.getTag();
-
-		TextView textView = tag.item1 == item ? tag.text2 : tag.text3;
-		textView.setTypeface(null, Typeface.NORMAL);
-
-		float mbMax = (float) max / (1024 * 1024);
-		float mbCurrent = (float) downloaded / (1024 * 1024);
-		textView.setText(String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax));
-		*/
-
 		float mbMax = (float) max / (1024 * 1024);
 		float mbCurrent = (float) downloaded / (1024 * 1024);
 		String downloadString = String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax);
@@ -503,10 +499,24 @@ public class OnlineContentActivity extends ActionBarActivity
 			actionMode.finish();
 			return true;
 		} else if (menuItem.getItemId() == R.id.action_delete) {
+			actionMode.finish();
 			throw new IllegalStateException("Not implemented yet");
+		} else if (menuItem.getItemId() == R.id.action_use) {
+			useContentItem(currentItem);
+			actionMode.finish();
 		}
 
 		return false;
+	}
+
+	private void useContentItem(ContentListItem currentItem) {
+		for (ContentListSubItem item : currentItem.contentSubItems) {
+			if (item.contentItem.getType().equals("graphhopper-map")) {
+				pref.edit().putString(SettingsActivity.NAVIGATION_DATA, item.contentItem.getName()).apply();
+			} else if (item.contentItem.getType().equals("mapsforge-map")) {
+				pref.edit().putString(SettingsActivity.OFFLINE_MAP, item.contentItem.getName()).apply();
+			}
+		}
 	}
 
 	@Override

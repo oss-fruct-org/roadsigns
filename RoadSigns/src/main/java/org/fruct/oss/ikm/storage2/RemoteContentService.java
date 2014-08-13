@@ -26,8 +26,10 @@ import java.io.InterruptedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
@@ -64,6 +66,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
 	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
+	private final Map<String,ContentItem> itemsByName = new HashMap<String, ContentItem>();
 
 	public RemoteContentService() {
 	}
@@ -164,6 +167,20 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		return remoteItems;
 	}
 
+	public ContentItem getContentItem(String name) {
+		synchronized (itemsByName) {
+			return itemsByName.get(name);
+		}
+	}
+
+	public String getFilePath(ContentItem item) {
+		if (item instanceof DirectoryContentItem) {
+			return ((DirectoryContentItem) item).getPath();
+		} else {
+			throw new IllegalArgumentException("Content item doesn't contain any path");
+		}
+	}
+
 	public void refresh() {
 		executor.execute(new Runnable() {
 			@Override
@@ -173,6 +190,8 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 					List<ContentItem> localItems = new ArrayList<ContentItem>();
 					localItems.addAll(localStorage.getContentList());
 					RemoteContentService.this.localItems = localItems;
+
+					updateItemsByName();
 					notifyLocalListReady(localItems);
 				} catch (IOException e) {
 					notifyErrorInitializing(e);
@@ -191,6 +210,16 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 				}
 			}
 		});
+	}
+
+	private void updateItemsByName() {
+		synchronized (itemsByName) {
+			itemsByName.clear();
+
+			for (ContentItem localItem : localItems) {
+				itemsByName.put(localItem.getName(), localItem);
+			}
+		}
 	}
 
 	private void asyncMigrateData(String newPath) {
@@ -253,6 +282,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 				localItems.add(item);
 			}
 
+			updateItemsByName();
 			notifyLocalListReady(localItems);
 			notifyDownloadFinished(item, remoteItem);
 		} catch (InterruptedIOException ex) {

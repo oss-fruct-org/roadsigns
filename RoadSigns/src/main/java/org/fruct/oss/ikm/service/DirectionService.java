@@ -20,12 +20,15 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.storage.RemoteContent;
+import org.fruct.oss.ikm.storage2.ContentItem;
+import org.fruct.oss.ikm.storage2.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
 import org.fruct.oss.ikm.service.LocationReceiver.Listener;
+import org.fruct.oss.ikm.utils.bind.Bind;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +59,9 @@ public class DirectionService extends Service implements PointsListener,
 	
 	private static final String MOCK_PROVIDER = "mock-provider";
 
-	private RemoteContent remoteContent;
+	@Bind
+	public RemoteContentService remoteContent;
+
 	private DirectionManager dirManager;
 	private IBinder binder = new DirectionBinder();
 	
@@ -106,8 +111,6 @@ public class DirectionService extends Service implements PointsListener,
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-		remoteContent = RemoteContent.getInstance(pref.getString(SettingsActivity.STORAGE_PATH, null));
-
 		ghPath = getFilesDir().getPath() + "/graphhopper";
 
 		locationReceiver = new LocationReceiver(this);
@@ -131,6 +134,30 @@ public class DirectionService extends Service implements PointsListener,
 			}
 		};
 		LocalBroadcastManager.getInstance(this).registerReceiver(archiveReadyReceiver, new IntentFilter(ARCHIVE_READY));
+
+		BindHelper.autoBind(this, this);
+	}
+
+	@Override
+	public void onDestroy() {
+		log.debug("DirectionService destroyed");
+		if (locationReceiver != null && locationReceiver.isStarted()) {
+			locationReceiver.stop();
+		}
+
+		pref.unregisterOnSharedPreferenceChangeListener(this);
+
+		PointsManager.getInstance().removeListener(this);
+
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(archiveReadyReceiver);
+
+		dirManager.interrupt();
+		dirManager = null;
+
+		locationIndexCache.close();
+		locationIndexCache = null;
+
+		BindHelper.autoUnbind(this, this);
 	}
 
 	private IRouting createRouting() {
@@ -163,26 +190,6 @@ public class DirectionService extends Service implements PointsListener,
 		}
 	}
 
-	@Override
-	public void onDestroy() {
-		log.debug("DirectionService destroyed");
-		if (locationReceiver != null && locationReceiver.isStarted()) {
-			locationReceiver.stop();
-		}
-
-		pref.unregisterOnSharedPreferenceChangeListener(this);
-
-		PointsManager.getInstance().removeListener(this);
-
-		LocalBroadcastManager.getInstance(this).unregisterReceiver(archiveReadyReceiver);
-
-		dirManager.interrupt();
-		dirManager = null;
-
-		locationIndexCache.close();
-		locationIndexCache = null;
-	}
-		
 	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
@@ -292,7 +299,9 @@ public class DirectionService extends Service implements PointsListener,
 	private void extractArchive(String name) {
 		log.info("Extracting archive {}", name);
 
-		String path = remoteContent.getPath(name);
+		// TODO: remoteContent may be null
+		ContentItem contentItem = remoteContent.getContentItem(name);
+		String path = remoteContent.getFilePath(contentItem);
 
 		File file = path == null ? null : new File(path);
 		if (file == null || !file.exists() || !file.canRead())
@@ -314,7 +323,6 @@ public class DirectionService extends Service implements PointsListener,
 			dirPref.edit().putLong("gh-dir-index", ghDirIndex).apply();
 
 			LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ARCHIVE_READY));
-
 
 			log.debug("Listing graphhopper directory:");
 			File ghDirFile = new File(ghPath);

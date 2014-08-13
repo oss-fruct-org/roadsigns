@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -60,8 +61,8 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-	private List<ContentItem> localItems = new ArrayList<ContentItem>();
-	private List<ContentItem> remoteItems = new ArrayList<ContentItem>();
+	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
+	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
 
 	public RemoteContentService() {
 	}
@@ -160,16 +161,18 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 			public void run() {
 				try {
 					localStorage.updateContentList();
-					localItems.clear();
+					List<ContentItem> localItems = new ArrayList<ContentItem>();
 					localItems.addAll(localStorage.getContentList());
+					RemoteContentService.this.localItems = localItems;
 					notifyLocalListReady(localItems);
 
 					networkStorage.updateContentList();
-					remoteItems.clear();
+					List<ContentItem> remoteItems = new ArrayList<ContentItem>();
 					remoteItems.addAll(networkStorage.getContentList());
+					RemoteContentService.this.remoteItems = remoteItems;
 					notifyRemoteListReady(remoteItems);
 				} catch (IOException e) {
-					// TODO: handle exception
+					notifyErrorInitializing(e);
 				}
 			}
 		});
@@ -316,6 +319,17 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 			public void run() {
 				for (Listener listener : listeners) {
 					listener.errorDownloading(remoteItem, ex);
+				}
+			}
+		});
+	}
+
+	private void notifyErrorInitializing(final IOException ex) {
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				for (Listener listener : listeners) {
+					listener.errorInitializing(ex);
 				}
 			}
 		});

@@ -314,7 +314,9 @@ public class OnlineContentActivity extends ActionBarActivity
 
 		remoteContent = service;
 		remoteContent.addListener(this);
-		setContentList(localItems = remoteContent.getLocalItems(), remoteItems = remoteContent.getRemoteItems());
+
+		setContentList(localItems = new ArrayList<ContentItem>(remoteContent.getLocalItems()),
+				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
 	}
 
 	private void setContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
@@ -408,13 +410,13 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void localListReady(List<ContentItem> list) {
-		localItems = list;
+		localItems = new ArrayList<ContentItem>(list);
 		setContentList(localItems, remoteItems);
 	}
 
 	@Override
 	public void remoteListReady(List<ContentItem> list) {
-		remoteItems = list;
+		remoteItems = new ArrayList<ContentItem>(list);
 		setContentList(localItems, remoteItems);
 	}
 
@@ -479,7 +481,6 @@ public class OnlineContentActivity extends ActionBarActivity
 		startSupportActionMode(this);
 
 		currentItem = listItem;
-
 	}
 
 	@Override

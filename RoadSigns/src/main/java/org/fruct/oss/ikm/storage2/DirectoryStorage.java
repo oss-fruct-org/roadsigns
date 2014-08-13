@@ -83,6 +83,7 @@ public class DirectoryStorage implements ContentStorage {
 			localItem.setDescription(remoteContentItem.getDescription());
 			localItem.setType(remoteContentItem.getType());
 			localItem.setHash(remoteContentItem.getHash());
+			localItem.setRegionId(remoteContentItem.getRegionId());
 			items.add(localItem);
 
 			return localItem;

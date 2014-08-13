@@ -230,7 +230,7 @@ public class OnlineContentActivity extends ActionBarActivity
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
 	}
 
-	static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
+	private final static Logger log = LoggerFactory.getLogger(OnlineContentActivity.class);
 
 	private ListView listView;
 	private ContentAdapter adapter;
@@ -512,8 +512,10 @@ public class OnlineContentActivity extends ActionBarActivity
 	private void useContentItem(ContentListItem currentItem) {
 		for (ContentListSubItem item : currentItem.contentSubItems) {
 			if (item.contentItem.getType().equals("graphhopper-map")) {
+				pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
 				pref.edit().putString(SettingsActivity.NAVIGATION_DATA, item.contentItem.getName()).apply();
 			} else if (item.contentItem.getType().equals("mapsforge-map")) {
+				pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
 				pref.edit().putString(SettingsActivity.OFFLINE_MAP, item.contentItem.getName()).apply();
 			}
 		}

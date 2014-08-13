@@ -24,8 +24,7 @@ public class MFTileModuleProvider extends MapTileFileStorageProviderBase {
 	 * @param file
 	 * @param tileSource
 	 */
-	public MFTileModuleProvider(IRegisterReceiver receiverRegistrar, File file, MFTileSource tileSource) {
-
+	public MFTileModuleProvider(IRegisterReceiver receiverRegistrar, MFTileSource tileSource) {
 		super(receiverRegistrar, NUMBER_OF_TILE_FILESYSTEM_THREADS, TILE_FILESYSTEM_MAXIMUM_QUEUE_SIZE);
 
 		this.tileSource = tileSource;

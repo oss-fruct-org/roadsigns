@@ -50,12 +50,16 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
+import org.fruct.oss.ikm.storage2.ContentItem;
 import org.fruct.oss.ikm.storage2.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
+import org.fruct.oss.ikm.utils.bind.Bind;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
+import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
@@ -192,6 +196,7 @@ public class MapFragment extends Fragment implements MapListener,
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
+	private RemoteContentService remoteContent;
 	private TileProviderManager tileProviderManager;
 
 	public MapFragment() {
@@ -300,6 +305,7 @@ public class MapFragment extends Fragment implements MapListener,
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		getActivity().startService(new Intent(getActivity(), RemoteContentService.class));
+		BindHelper.autoBind(this.getActivity(), this);
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -588,6 +594,8 @@ public class MapFragment extends Fragment implements MapListener,
                 .putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		PointsManager.getInstance().removeListener(this);
+
+		BindHelper.autoUnbind(this.getActivity(), this);
 
 		super.onDestroy();
 	}
@@ -889,6 +897,32 @@ public class MapFragment extends Fragment implements MapListener,
 			stopTracking();
 	}
 
+	@BindSetter
+	public void remoteContentServiceReady(RemoteContentService service) {
+		if (service == null) {
+			remoteContent = null;
+		} else {
+			remoteContent = service;
+			setupOfflineMap();
+		}
+	}
+
+	private void setupOfflineMap() {
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+		String offlineMapName = pref.getString(SettingsActivity.OFFLINE_MAP, null);
+		if (offlineMapName != null) {
+			ContentItem contentItem = remoteContent.getContentItem(offlineMapName);
+			String offlineMapPath = remoteContent.getFilePath(contentItem);
+			if (offlineMapPath != null) {
+				tileProviderManager.setFile(offlineMapPath);
+				mapView.invalidate();
+			}
+		} else {
+			tileProviderManager.setFile(null);
+		}
+	}
+
 	private void updateRadius() {
 		Projection proj = mapView.getProjection();
 
@@ -929,14 +963,9 @@ public class MapFragment extends Fragment implements MapListener,
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
-		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
-			String value = sharedPreferences.getString(key, null);
-			if (value == null)
-				return;
-
-			tileProviderManager.setFile(value);
-
-			mapView.invalidate();
+		} else if ((key.equals(SettingsActivity.STORE_LOCATION) || key.equals(SettingsActivity.OFFLINE_MAP))
+				&& remoteContent != null) {
+			setupOfflineMap();
 		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();
 		} else if (key.equals(SettingsActivity.GETS_RADIUS)) {

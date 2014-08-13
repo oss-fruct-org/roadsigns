@@ -43,10 +43,6 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 			"http://oss.fruct.org/projects/roadsigns/root.xml",
 			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
 
-	public static final String BC_MIGRATE = "org.fruct.oss.ikm.BC_MIGRATE_STARTED";
-	public static final String BC_MIGRATE_ERROR = "org.fruct.oss.ikm.BC_MIGRATE_ERROR";
-	public static final String BC_MIGRATE_COMPLETE = "org.fruct.oss.ikm.BC_MIGRATE_ERROR";
-
 	private Handler handler = new Handler(Looper.getMainLooper());
 
 	private final LocalBinder binder = new LocalBinder();
@@ -174,6 +170,9 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 	}
 
 	public String getFilePath(ContentItem item) {
+		if (item == null)
+			return null;
+
 		if (item instanceof DirectoryContentItem) {
 			return ((DirectoryContentItem) item).getPath();
 		} else {

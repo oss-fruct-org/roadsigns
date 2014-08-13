@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,7 +7,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import java.io.Closeable;
-import java.io.IOException;
 
 public class KeyValue implements Closeable {
 	private final Helper helper;

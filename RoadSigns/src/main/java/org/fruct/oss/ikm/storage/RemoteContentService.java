@@ -1,20 +1,17 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.storage.IContentConnection;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
 import org.slf4j.Logger;
@@ -27,7 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;

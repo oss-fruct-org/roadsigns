@@ -1,7 +1,6 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import org.apache.commons.io.IOUtils;
-import org.fruct.oss.ikm.storage.IStorage;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -13,14 +12,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.RandomAccess;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 

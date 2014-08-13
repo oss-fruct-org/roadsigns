@@ -14,16 +14,16 @@ import java.util.List;
  * Maps content xml to java object
  */
 @Root(name = "content", strict = false)
-public class Content {
-	@ElementList(inline = true, entry = "file", type = ContentItem.class, empty = false, required = false)
-	private List<IContentItem> content;
+class Content {
+	@ElementList(inline = true, entry = "file", type = NetworkContentItem.class, empty = false, required = false)
+	private List<NetworkContentItem> content;
 
-	public Content(@ElementList(inline = true, entry = "file", type = ContentItem.class, empty = false, required = false)
-				   List<IContentItem> content_) {
-		this.content = (content_ == null ? new ArrayList<IContentItem>() : content_);
+	public Content(@ElementList(inline = true, entry = "file", type = NetworkContentItem.class, empty = false, required = false)
+				   List<NetworkContentItem> content_) {
+		this.content = (content_ == null ? new ArrayList<NetworkContentItem>() : content_);
 	}
 
-	public List<IContentItem> getContent() {
+	public List<NetworkContentItem> getContent() {
 		return content;
 	}
 

@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import java.io.IOException;
 import java.util.List;

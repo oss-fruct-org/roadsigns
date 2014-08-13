@@ -22,8 +22,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.storage2.ContentItem;
-import org.fruct.oss.ikm.storage2.RemoteContentService;
+import org.fruct.oss.ikm.storage.ContentItem;
+import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.slf4j.Logger;

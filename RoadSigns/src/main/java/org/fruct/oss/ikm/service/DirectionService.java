@@ -20,8 +20,8 @@ import com.graphhopper.util.PointList;
 import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.storage2.ContentItem;
-import org.fruct.oss.ikm.storage2.RemoteContentService;
+import org.fruct.oss.ikm.storage.ContentItem;
+import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;

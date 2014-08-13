@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementMap;

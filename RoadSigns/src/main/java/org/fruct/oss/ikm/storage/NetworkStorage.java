@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

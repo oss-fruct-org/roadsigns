@@ -1,15 +1,10 @@
-package org.fruct.oss.ikm.storage2;
+package org.fruct.oss.ikm.storage;
 
-import org.fruct.oss.ikm.storage.IContentConnection;
 import org.fruct.oss.ikm.utils.Utils;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 
 public class DirectoryContentItem implements ContentItem {
 	private final KeyValue digestCache;

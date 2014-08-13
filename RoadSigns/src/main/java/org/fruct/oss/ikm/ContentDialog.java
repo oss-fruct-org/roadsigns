@@ -7,8 +7,6 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
-import org.fruct.oss.ikm.storage.RemoteContent;
-
 import java.util.ArrayList;
 import java.util.List;
 

@@ -81,7 +81,7 @@
             android:permission="android.permission.BIND_REMOTEVIEWS" >
         </service>
         <service
-            android:name=".storage2.RemoteContentService"
+            android:name=".storage.RemoteContentService"
             android:enabled="true"
             android:exported="false" >
         </service>

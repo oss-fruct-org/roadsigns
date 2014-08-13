@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 
-public interface IContentConnection extends Closeable {
+public interface ContentConnection extends Closeable {
 	InputStream getStream() throws IOException;
 
 	@Override

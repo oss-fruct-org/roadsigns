@@ -2,11 +2,6 @@ package org.fruct.oss.ikm.test;
 
 import android.test.AndroidTestCase;
 
-import org.fruct.oss.ikm.storage.FileStorage;
-import org.fruct.oss.ikm.storage.IContentConnection;
-import org.fruct.oss.ikm.storage.IContentItem;
-import org.fruct.oss.ikm.storage.NetworkProvider;
-import org.fruct.oss.ikm.storage.RemoteContent;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Serializer;

@@ -36,6 +36,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String OFFLINE_MAP = "offline_map";
 	public static final String NAVIGATION_DATA = "navigation_data";
 
+	//public static final String
+
 	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
@@ -153,7 +155,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		for (int i = 0; i < storagePaths.length; i++) {
 			names[i] = getString(storagePaths[i].nameRes);
-			paths[i] = storagePaths[i].path;
+			paths[i] = storagePaths[i].path + "/storage";
 
 			if (paths[i].equals(currentValue)) {
 				currentNameRes = storagePaths[i].nameRes;

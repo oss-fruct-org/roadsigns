@@ -33,6 +33,8 @@ public class DirectoryStorage implements ContentStorage {
 			throw new IllegalArgumentException("Path must not be null");
 
 		this.path = path;
+
+		new File(path).mkdirs();
 	}
 
 	@Override

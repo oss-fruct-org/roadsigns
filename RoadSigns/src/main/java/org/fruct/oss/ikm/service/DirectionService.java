@@ -357,7 +357,6 @@ public class DirectionService extends Service implements PointsListener,
 			if (archiveName == null)
 				return;
 
-			log.debug("Starting thread");
 			locationIndexCache.reset();
 			extractingThread = new Thread() {
 				@Override

@@ -85,6 +85,9 @@ public class MyPositionOverlay extends Overlay {
 	}
 
 	private void drawMatchedLocation(Canvas canvas) {
+		if (matchedLocation == null)
+			return;
+
 		Projection proj = mapView.getProjection();
 		proj.toMapPixels(new GeoPoint(matchedLocation), point);
 		canvas.drawCircle(point.x, point.y, 8, paintRed);

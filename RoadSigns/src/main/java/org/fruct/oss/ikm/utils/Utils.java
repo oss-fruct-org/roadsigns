@@ -350,7 +350,7 @@ public class Utils {
 		List<StorageDirDesc> ret = new ArrayList<StorageDirDesc>();
 
 		// Internal storage
-		ret.add(new StorageDirDesc(R.string.storage_path_internal, context.getDir("storage", 0).getPath()));
+		ret.add(new StorageDirDesc(R.string.storage_path_internal, context.getDir("other", 0).getPath()));
 
 		// External storage
 		File externalDir = context.getExternalFilesDir(null);
@@ -361,7 +361,7 @@ public class Utils {
 		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
 		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
 			for (String secondaryStoragePath : secondaryStorageString.split(":")) {
-				ret.add(new StorageDirDesc(R.string.storage_path_sd_card, secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files/storage"));
+				ret.add(new StorageDirDesc(R.string.storage_path_sd_card, secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files"));
 			}
 		}
 

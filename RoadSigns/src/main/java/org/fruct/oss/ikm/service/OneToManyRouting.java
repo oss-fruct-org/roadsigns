@@ -113,6 +113,7 @@ public class OneToManyRouting extends GHRouting {
 		// TODO: possibly use more efficient multi-map
 		TIntObjectMap<List<PointDesc>> targetNodes = new TIntObjectHashMap<List<PointDesc>>(targetPoints.length);
 
+		// Prepare location index
 		for (PointDesc point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
 			if (nodeId >= 0) {

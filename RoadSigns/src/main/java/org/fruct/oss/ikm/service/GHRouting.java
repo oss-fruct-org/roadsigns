@@ -77,6 +77,7 @@ public abstract class GHRouting implements IRouting {
 
 			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
+			hopper.close();
 
 			locationIndexArray = createLocationIndexArray();
 			nodeAccess = hopper.getGraph().getNodeAccess();

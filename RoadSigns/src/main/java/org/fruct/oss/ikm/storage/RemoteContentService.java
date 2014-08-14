@@ -106,7 +106,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 		if (contentPath == null) {
 			Utils.StorageDirDesc[] contentPaths = Utils.getPrivateStorageDirs(App.getContext());
-			contentPath = contentPaths[0].path;
+			contentPath = contentPaths[0].path + "/storage";
 			pref.edit().putString(SettingsActivity.STORAGE_PATH, contentPath).apply();
 		}
 		return contentPath;

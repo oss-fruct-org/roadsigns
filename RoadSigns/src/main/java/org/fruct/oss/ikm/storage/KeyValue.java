@@ -33,9 +33,14 @@ public class KeyValue implements Closeable {
 		cv.put("value", value);
 
 		db.beginTransaction();
-		if (0 == db.update(name, cv, "key=?", new String[]{key})) {
-			cv.put("key", key);
-			db.insert(name, null, cv);
+		try {
+			if (0 == db.update(name, cv, "key=?", new String[]{key})) {
+				cv.put("key", key);
+				db.insert(name, null, cv);
+			}
+			db.setTransactionSuccessful();
+		} finally {
+			db.endTransaction();
 		}
 	}
 

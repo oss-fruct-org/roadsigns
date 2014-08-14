@@ -169,13 +169,11 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private RemoteContentService.MigrateListener migrateListener = new RemoteContentService.MigrateListener() {
 		private ProgressDialog dialog;
-		private SharedPreferences pref;
 
 		@Override
 		public void migrateFile(String name, int n, int max) {
 			if (dialog == null) {
 				dialog = ProgressDialog.show(SettingsActivity.this, "Copying", "Copying...", false, false);
-				pref = PreferenceManager.getDefaultSharedPreferences(SettingsActivity.this);
 			}
 
 			dialog.setMax(max);
@@ -185,16 +183,24 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		@Override
 		public void migrateFinished() {
-			dialog.dismiss();
-			dialog = null;
+			if (dialog != null) {
+				dialog.dismiss();
+				dialog = null;
+			}
+
+			SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(SettingsActivity.this);
 			updateStoragePath(pref, storagePathPref);
+
 			Toast.makeText(SettingsActivity.this, "Local content successfully moved", Toast.LENGTH_LONG).show();
 		}
 
 		@Override
 		public void migrateError() {
-			dialog.dismiss();
-			dialog = null;
+			if (dialog != null) {
+				dialog.dismiss();
+				dialog = null;
+			}
+
 			Toast.makeText(SettingsActivity.this, "Cannot move local content", Toast.LENGTH_LONG).show();
 		}
 	};

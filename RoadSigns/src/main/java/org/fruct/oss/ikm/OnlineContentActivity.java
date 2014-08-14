@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -326,7 +327,7 @@ public class OnlineContentActivity extends ActionBarActivity
 				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
 	}
 
-	private void setContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
+	private List<ContentListItem> asyncGenerateContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
 		HashMap<String, ContentListSubItem> states
 				= new HashMap<String, ContentListSubItem>(localItems.size());
 
@@ -384,7 +385,24 @@ public class OnlineContentActivity extends ActionBarActivity
 
 		Collections.sort(listViewItems);
 
-		adapter.setItems(listViewItems);
+		return listViewItems;
+	}
+
+	private void setContentList(final List<ContentItem> localItems, final List<ContentItem> remoteItems) {
+		// List building can take significant time due to hash calculation of new files
+		new AsyncTask<Void, Void, List<ContentListItem>>() {
+			@Override
+			protected List<ContentListItem> doInBackground(Void... params) {
+				return asyncGenerateContentList(localItems, remoteItems);
+			}
+
+			@Override
+			protected void onPostExecute(List<ContentListItem> items) {
+				if (items != null && adapter != null) {
+					adapter.setItems(items);
+				}
+			}
+		}.execute();
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)

@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.storage;
 
 import org.apache.commons.io.IOUtils;
+import org.fruct.oss.ikm.utils.Utils;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 import org.slf4j.Logger;
@@ -226,87 +227,9 @@ public class DirectoryStorage implements ContentStorage {
 		return "directory-storage";
 	}
 
-	public void migrate(String newPath, MigrationListener listener) throws IOException {
+	public void migrate(String newPath, Utils.MigrationListener listener) throws IOException {
 		String oldPath = path;
-
-		if (oldPath.equals(newPath))
-			return;
-
-		File newDir = new File(newPath);
-		if (newDir.exists() && !newDir.isDirectory())
-			throw new IOException("Target directory already exists and actually not an directory");
-
-		// First, enumerate all files in old directory
-		File oldDir = new File(oldPath);
-		File[] oldFiles = oldDir.listFiles();
-
-		boolean canRename = false;
-		// Check that files in directories can be simply renamed
-		File tmpFile = new File(oldDir, ".roadsignstemporary" + System.currentTimeMillis());
-		if (tmpFile.createNewFile()) {
-			File tmpNewFile = new File(newDir, ".roadsignstemporary" + System.currentTimeMillis());
-			canRename = tmpFile.renameTo(tmpNewFile);
-			tmpFile.delete();
-			tmpNewFile.delete();
-		}
-
-		if (!newDir.mkdirs() && !newDir.isDirectory()) {
-			throw new IOException("Cannot create migration target directory " + newDir);
-		}
-
-		List<File> copiedFiles = new ArrayList<File>();
-
-		try {
-			for (int i = 0, oldFilesLength = oldFiles.length; i < oldFilesLength; i++) {
-				File file = oldFiles[i];
-				if (file.isDirectory()) {
-					log.warn("Content directory contains subdirectory {}", file);
-					continue;
-				}
-
-				String name = file.getName();
-				File newFile = new File(newDir, name);
-
-				if (canRename) {
-					if (!file.renameTo(newFile)) {
-						log.warn("Can't rename file but previous test show that renaming is possible. Fallback to copying");
-						canRename = false;
-					}
-				}
-
-				if (!canRename) {
-					listener.fileCopying(name, i, oldFilesLength);
-					FileInputStream inputStream = new FileInputStream(file);
-					FileOutputStream outputStream = new FileOutputStream(newFile);
-
-					IOUtils.copy(inputStream, outputStream);
-
-					IOUtils.closeQuietly(inputStream);
-					IOUtils.closeQuietly(outputStream);
-
-					copiedFiles.add(newFile);
-				}
-			}
-		} catch (IOException e) {
-			// Clean up target directory before exit
-			for (File file : copiedFiles) {
-				file.delete();
-			}
-
-			newDir.delete();
-			throw e;
-		}
-
-		// Delete old directory
-		for (File file : oldFiles) {
-			file.delete();
-		}
-
-		oldDir.delete();
+		Utils.atomicCopy(oldPath, newPath, listener);
 		path = newPath;
-	}
-
-	static interface MigrationListener {
-		void fileCopying(String name, int n, int max);
 	}
 }

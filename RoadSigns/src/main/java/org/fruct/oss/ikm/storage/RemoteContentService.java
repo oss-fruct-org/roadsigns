@@ -219,7 +219,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 	private void asyncMigrateData(String newPath) {
 		try {
-			localStorage.migrate(newPath, new DirectoryStorage.MigrationListener() {
+			localStorage.migrate(newPath, new Utils.MigrationListener() {
 				@Override
 				public void fileCopying(String name, int n, int max) {
 					notifyMigrateFile(name, n, max);

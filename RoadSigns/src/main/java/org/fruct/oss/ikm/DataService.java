@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DataService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -156,7 +157,10 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 					});
 					while (dataListenerLatch.getCount() > 0) {
 						try {
-							dataListenerLatch.await();
+							if (!dataListenerLatch.await(10, TimeUnit.SECONDS)) {
+								// Ignore timeout
+								break;
+							}
 						} catch (InterruptedException ignored) {
 						}
 					}

@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.storage;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Region;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -14,6 +15,9 @@ import org.fruct.oss.ikm.ProgressInputStream;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.osmdroid.api.Polyline;
+import org.osmdroid.bonuspack.overlays.Polygon;
+import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -352,6 +356,16 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	@Override
 	public int getPriority() {
 		return 0;
+	}
+
+	public void findRegion(double latitude, double longitude) {
+		RegionsTask regionsTask = new RegionsTask() {
+			@Override
+			protected void onPostExecute(String s) {
+				log.debug("REGION " + s);
+			}
+		};
+		regionsTask.execute(new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
 	}
 
 	public interface Listener {

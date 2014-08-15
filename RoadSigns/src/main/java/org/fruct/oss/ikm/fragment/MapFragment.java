@@ -920,6 +920,7 @@ public class MapFragment extends Fragment implements MapListener,
 		} else {
 			dataService = service;
 			dataService.addDataListener(this);
+			setupOfflineMap();
 		}
 	}
 

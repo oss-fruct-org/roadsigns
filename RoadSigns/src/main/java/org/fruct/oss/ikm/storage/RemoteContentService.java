@@ -1,17 +1,22 @@
 package org.fruct.oss.ikm.storage;
 
+import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Region;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 
+import org.fruct.oss.ikm.BuildConfig;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
+import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
@@ -30,8 +35,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 public class RemoteContentService extends Service implements DataService.DataListener {
@@ -57,6 +64,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private KeyValue digestCache;
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
+	private RegionsTask regionsTask;
 
 	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
 	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
@@ -112,6 +120,12 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 		if (dataService != null) {
 			dataService.removeDataListener(this);
+		}
+
+		executor.shutdownNow();
+		if (regionsTask != null) {
+			regionsTask.cancel(true);
+			regionsTask = null;
 		}
 
 		log.debug("RemoteContentService destroyed");
@@ -345,11 +359,40 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	@Override
-	public void dataPathChanged(String newDataPath) {
+	public void dataPathChanged(final String newDataPath) {
 		if (localStorage != null) {
-			currentStoragePath = newDataPath;
-			localStorage.migrate(newDataPath + "/storage");
-			dataService.dataListenerReady();
+			executor.shutdownNow();
+			if (regionsTask != null) {
+				regionsTask.cancel(true);
+			}
+
+			new AsyncTask<Void, Void, Void>() {
+				@Override
+				protected Void doInBackground(Void... params) {
+					try {
+						executor.awaitTermination(10, TimeUnit.SECONDS);
+						if (regionsTask != null) {
+							regionsTask.get();
+						}
+					} catch (InterruptedException ignore) {
+					} catch (ExecutionException ignored) {
+					}
+
+					executor = null;
+					regionsTask = null;
+
+					return null;
+				}
+
+				@Override
+				protected void onPostExecute(Void aVoid) {
+					executor = Executors.newSingleThreadExecutor();
+
+					currentStoragePath = newDataPath;
+					localStorage.migrate(newDataPath + "/storage");
+					dataService.dataListenerReady();
+				}
+			}.execute();
 		}
 	}
 
@@ -358,14 +401,37 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		return 0;
 	}
 
-	public void findRegion(double latitude, double longitude) {
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	public void activateRegionByLocation(double latitude, double longitude) {
 		RegionsTask regionsTask = new RegionsTask() {
 			@Override
-			protected void onPostExecute(String s) {
-				log.debug("REGION " + s);
+			protected void onPostExecute(String id) {
+				if (id != null) {
+					activateRegionById(id);
+				}
 			}
 		};
-		regionsTask.execute(new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
+
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+			regionsTask.execute(new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
+		} else {
+			regionsTask.executeOnExecutor(executor,
+					new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
+		}
+	}
+
+	public void activateRegionById(String regionId) {
+		for (ContentItem contentItem : localItems) {
+			if (contentItem.getRegionId().equals(regionId)) {
+				if (contentItem.getType().equals("graphhopper-map")) {
+					pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
+					pref.edit().putString(SettingsActivity.NAVIGATION_DATA, contentItem.getName()).apply();
+				} else if (contentItem.getType().equals("mapsforge-map")) {
+					pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
+					pref.edit().putString(SettingsActivity.OFFLINE_MAP, contentItem.getName()).apply();
+				}
+			}
+		}
 	}
 
 	public interface Listener {

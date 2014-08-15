@@ -193,6 +193,10 @@ class ContentAdapter extends BaseAdapter {
 
 		TextView textView = null;
 
+		if (lastUpdateTag == null) {
+			return;
+		}
+
 		if (lastUpdateTag.item1 == ci) {
 			textView = lastUpdateTag.text2;
 		} else 	if (lastUpdateTag.item2 == ci) {
@@ -528,14 +532,8 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	private void useContentItem(ContentListItem currentItem) {
-		for (ContentListSubItem item : currentItem.contentSubItems) {
-			if (item.contentItem.getType().equals("graphhopper-map")) {
-				pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
-				pref.edit().putString(SettingsActivity.NAVIGATION_DATA, item.contentItem.getName()).apply();
-			} else if (item.contentItem.getType().equals("mapsforge-map")) {
-				pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
-				pref.edit().putString(SettingsActivity.OFFLINE_MAP, item.contentItem.getName()).apply();
-			}
+		if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
+			remoteContent.activateRegionById(currentItem.contentSubItems.get(0).contentItem.getRegionId());
 		}
 	}
 

@@ -47,12 +47,18 @@ class RegionsTask extends AsyncTask<RegionsTask.RegionTasksArg, Integer, String>
 					log.warn("Can't read polygon file from content item " + dir.getName(), e);
 				}
 			}
+
+			if (Thread.interrupted())
+				return null;
 		}
 
 		for (Map.Entry<String, List<Region>> entry : regions.entrySet()) {
 			if (testHit(arg.lat, arg.lon, entry.getValue())) {
 				return entry.getKey();
 			}
+
+			if (Thread.interrupted())
+				return null;
 		}
 
 		return null;

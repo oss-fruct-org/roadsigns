@@ -3,6 +3,7 @@ package org.fruct.oss.ikm;
 
 import static org.fruct.oss.ikm.utils.Utils.log;
 import org.fruct.oss.ikm.fragment.MapFragment;
+import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,9 @@ public class MainActivity extends ActionBarActivity {
 			}
 		};*/
 		//debugThread.start();
+
+		startService(new Intent(this, RemoteContentService.class));
+		startService(new Intent(this, DataService.class));
 	}
 
 	@Override

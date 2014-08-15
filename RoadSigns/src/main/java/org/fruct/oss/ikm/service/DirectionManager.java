@@ -22,15 +22,11 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class DirectionManager implements IRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
 
-	public interface Listener {
-		void directionsUpdated(List<Direction> directions, GeoPoint center);
-		void pathReady(PointList pointList);
-	}
-	
 	private Listener listener;
 	
 	public void setListener(Listener listener) {
@@ -45,7 +41,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	private GeoPoint userPosition;
 	private Location location;
 
-	private final ExecutorService executor = Executors.newSingleThreadExecutor();
+	private final ExecutorService executor;
 	private Future<?> calculationTask;
 
 		// POI, for that directions ready
@@ -55,14 +51,21 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
 	
 	public DirectionManager(IRouting routing) {
+		executor = Executors.newSingleThreadExecutor();
 		this.routing = routing;
 	}
 
-	public void setRouting(IRouting routing) {
-		// TODO: no thread safe
-		this.routing = routing;
+	public void closeSync() {
+		listener = null;
+		interrupt();
+
+		try {
+			executor.shutdown();
+			executor.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException ignored) {
+		}
 	}
-	
+
 	private Comparator<PointDesc> distanceComparator = new Comparator<PointDesc>() {
 		private GeoPoint point = new GeoPoint(0, 0);
 		
@@ -77,31 +80,21 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		}
 	};
 
-	// TODO: add support for interrupting to OneToManyRouting
-	private void interruptCurrentCalculation() {
-		synchronized (executor) {
-			if (calculationTask != null) {
-				calculationTask.cancel(true);
-				calculationTask = null;
-			}
-		}
-	}
-
 	public void calculateForPoints(final List<PointDesc> points) {
-		interruptCurrentCalculation();
+		interrupt();
 
+		// This task will no start earlier than previous task interrupted
 		calculationTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				activePoints = new ArrayList<PointDesc>(points);
-
 				doCalculateForPoints();
 			}
 		});
 	}
 	
 	public void updateLocation(final Location location) {
-		interruptCurrentCalculation();
+		interrupt();
 
 		executor.execute(new Runnable() {
 			@Override
@@ -111,7 +104,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 
 				// Find nearest road node
 				// Can throw if not initialized, ignoring
-				GeoPoint nearestNode = routing.getNearestRoadNode(current);				
+				GeoPoint nearestNode = routing.getNearestRoadNode(current);
 				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
 					return;
 
@@ -216,7 +209,15 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		}
 	}
 
-	public void interrupt() {
-		interruptCurrentCalculation();
+	private void interrupt() {
+		if (calculationTask != null) {
+			calculationTask.cancel(true);
+			calculationTask = null;
+		}
+	}
+
+	public interface Listener {
+		void directionsUpdated(List<Direction> directions, GeoPoint center);
+		void pathReady(PointList pointList);
 	}
 }

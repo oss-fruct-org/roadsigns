@@ -41,6 +41,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
+
 	public static final String STORAGE_PATH = "storage_path";
 
 	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
@@ -53,15 +54,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	private ListPreference storagePathPref;
 
-	private RemoteContentService remoteContent;
+	private DataService dataService;
 
 	@BindSetter
-	public void remoteContentServiceReady(RemoteContentService service) {
+	public void remoteContentServiceReady(DataService service) {
 		if (service != null) {
-			remoteContent = service;
-			remoteContent.setMigrateListener(migrateListener);
+			dataService = service;
+			dataService.setMigrateListener(migrateListener);
 		} else {
-			remoteContent.setMigrateListener(null);
+			dataService.setMigrateListener(null);
 		}
 	}
 
@@ -155,7 +156,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		for (int i = 0; i < storagePaths.length; i++) {
 			names[i] = getString(storagePaths[i].nameRes);
-			paths[i] = storagePaths[i].path + "/storage";
+			paths[i] = storagePaths[i].path;
 
 			if (paths[i].equals(currentValue)) {
 				currentNameRes = storagePaths[i].nameRes;
@@ -169,7 +170,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			storagePathPref.setSummary(currentNameRes);
 	}
 
-	private RemoteContentService.MigrateListener migrateListener = new RemoteContentService.MigrateListener() {
+	private DataService.MigrateListener migrateListener = new DataService.MigrateListener() {
 		private ProgressDialog dialog;
 
 		@Override

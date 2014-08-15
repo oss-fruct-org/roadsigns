@@ -35,7 +35,10 @@ public class DirectoryStorage implements ContentStorage {
 
 		this.path = path;
 
-		new File(path).mkdirs();
+		File file = new File(path);
+		if (!file.mkdirs() && !file.isDirectory()) {
+			log.warn("Can't mkdirs new path");
+		}
 	}
 
 	@Override
@@ -227,9 +230,11 @@ public class DirectoryStorage implements ContentStorage {
 		return "directory-storage";
 	}
 
-	public void migrate(String newPath, Utils.MigrationListener listener) throws IOException {
-		String oldPath = path;
-		Utils.atomicCopy(oldPath, newPath, listener);
+	public void migrate(String newPath) {
 		path = newPath;
+		File file = new File(path);
+		if (!file.mkdirs() && !file.isDirectory()) {
+			log.warn("Can't mkdirs new path");
+		}
 	}
 }

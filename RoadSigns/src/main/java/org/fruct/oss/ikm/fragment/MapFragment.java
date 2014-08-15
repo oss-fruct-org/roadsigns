@@ -42,6 +42,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
@@ -75,7 +76,9 @@ import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -135,7 +138,7 @@ class MapState implements Parcelable {
 
 public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
-		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener {
+		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener, DataService.DataListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	private DefaultInfoWindow infoWindow;
@@ -195,6 +198,7 @@ public class MapFragment extends Fragment implements MapListener,
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
+	private DataService dataService;
 	private RemoteContentService remoteContent;
 	private TileProviderManager tileProviderManager;
 
@@ -303,7 +307,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
-		getActivity().startService(new Intent(getActivity(), RemoteContentService.class));
 		BindHelper.autoBind(this.getActivity(), this);
 	}
 
@@ -464,7 +467,7 @@ public class MapFragment extends Fragment implements MapListener,
 			@SuppressWarnings("deprecation")
 			@Override
 			public void onGlobalLayout() {
-				log.debug("New size {} {}", mapView.getWidth(), mapView.getHeight());
+				log.trace("New size {} {}", mapView.getWidth(), mapView.getHeight());
 
 				mapView.getController().setZoom(mapView.getZoomLevel());
 				updateRadius();
@@ -593,6 +596,10 @@ public class MapFragment extends Fragment implements MapListener,
                 .putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		PointsManager.getInstance().removeListener(this);
+
+		if (dataService != null) {
+			dataService.removeDataListener(this);
+		}
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
@@ -906,7 +913,30 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	}
 
+	@BindSetter
+	public void dataServiceReady(DataService service) {
+		if (service == null) {
+			dataService = null;
+		} else {
+			dataService = service;
+			dataService.addDataListener(this);
+		}
+	}
+
+	@Override
+	public void dataPathChanged(String newDataPath) {
+		setupOfflineMap();
+	}
+
+	@Override
+	public int getPriority() {
+		return 2;
+	}
+
 	private void setupOfflineMap() {
+		if (remoteContent == null || dataService == null)
+			return;
+
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		String offlineMapName = pref.getString(SettingsActivity.OFFLINE_MAP, null);
@@ -920,6 +950,8 @@ public class MapFragment extends Fragment implements MapListener,
 		} else {
 			tileProviderManager.setFile(null);
 		}
+
+		dataService.dataListenerReady();
 	}
 
 	private void updateRadius() {
@@ -930,9 +962,9 @@ public class MapFragment extends Fragment implements MapListener,
 		IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
 
 		final int dist = Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
-		log.debug("Size {} {}", mapView.getWidth(),  mapView.getHeight());
-		log.debug("Dist {} {}", p1.distanceTo(p2), p1.distanceTo(p3));
-		log.debug("Zoom level {}", mapView.getZoomLevel());
+		log.trace("Size {} {}", mapView.getWidth(), mapView.getHeight());
+		log.trace("Dist {} {}", p1.distanceTo(p2), p1.distanceTo(p3));
+		log.trace("Zoom level {}", mapView.getZoomLevel());
 
 		if (dist == 0)
 			return;
@@ -962,8 +994,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
-		} else if ((key.equals(SettingsActivity.STORE_LOCATION) || key.equals(SettingsActivity.OFFLINE_MAP))
-				&& remoteContent != null) {
+		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
 			setupOfflineMap();
 		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();

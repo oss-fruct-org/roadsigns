@@ -51,7 +51,6 @@ public class OneToManyRouting extends GHRouting {
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
 		log.debug("OneToManyRouting created");
-
 	}
 
 	@Override
@@ -133,6 +132,10 @@ public class OneToManyRouting extends GHRouting {
 			} else {
 				log.warn("Location index {} not found for {}", nodeId, point.getName());
 			}
+
+			if (Thread.interrupted()) {
+				return;
+			}
 		}
 
 		while (!heap.isEmpty() && targetNodes.size() > 0) {
@@ -140,6 +143,10 @@ public class OneToManyRouting extends GHRouting {
 			if (targetNodes.containsKey(node)) {
 				List<PointDesc> nodePoints = targetNodes.remove(node);
 				sendPointDirection(node, nodePoints, radius, callback);
+			}
+
+			if (Thread.interrupted()) {
+				return;
 			}
 		}
 	}

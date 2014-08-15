@@ -8,12 +8,12 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 
-import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
-import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
+import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
-public class RemoteContentService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class RemoteContentService extends Service implements DataService.DataListener {
 	private static final Logger log = LoggerFactory.getLogger(RemoteContentService.class);
 
 	public static final String[] REMOTE_CONTENT_URLS = {
@@ -38,6 +38,7 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 			"http://example.com/non-working-content-url.xml",
 			"http://oss.fruct.org/projects/roadsigns/root.xml",
 			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
+	public static final int REPORT_INTERVAL = 100000;
 
 	private Handler handler = new Handler(Looper.getMainLooper());
 
@@ -45,9 +46,6 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 	private SharedPreferences pref;
 
 	private List<Listener> listeners = new ArrayList<Listener>();
-	private MigrateListener migrateListener;
-
-	private String currentStoragePath = null;
 
 	private NetworkStorage networkStorage;
 	private DirectoryStorage localStorage;
@@ -58,7 +56,11 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 
 	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
 	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
-	private final Map<String,ContentItem> itemsByName = new HashMap<String, ContentItem>();
+	private final Map<String, ContentItem> itemsByName = new HashMap<String, ContentItem>();
+
+	private DataService dataService;
+
+	private String currentStoragePath;
 
 	public RemoteContentService() {
 	}
@@ -79,53 +81,38 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		log.debug("RemoteContentService created");
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
+		BindHelper.autoBind(this, this);
+	}
 
-		currentStoragePath = getLocalStoragePath();
+	@BindSetter
+	public void setDataService(DataService service) {
+		this.dataService = service;
 
+		if (service == null) {
+			return;
+		}
+
+		dataService.addDataListener(this);
 		digestCache = new KeyValue(this, "digestCache");
+
 		networkStorage = new NetworkStorage(REMOTE_CONTENT_URLS);
-		localStorage = new DirectoryStorage(digestCache, currentStoragePath);
 
-		pref.registerOnSharedPreferenceChangeListener(this);
-
+		currentStoragePath = dataService.getDataPath();
+		localStorage = new DirectoryStorage(digestCache, currentStoragePath + "/storage");
 		refresh();
 	}
 
 	@Override
 	public void onDestroy() {
-		pref.unregisterOnSharedPreferenceChangeListener(this);
-
 		digestCache.close();
 
+		if (dataService != null) {
+			dataService.removeDataListener(this);
+		}
+
 		log.debug("RemoteContentService destroyed");
+		BindHelper.autoUnbind(this, this);
 		super.onDestroy();
-	}
-
-	private String getLocalStoragePath() {
-		String contentPath = pref.getString(SettingsActivity.STORAGE_PATH, null);
-
-		if (contentPath == null) {
-			Utils.StorageDirDesc[] contentPaths = Utils.getPrivateStorageDirs(App.getContext());
-			contentPath = contentPaths[0].path + "/storage";
-			pref.edit().putString(SettingsActivity.STORAGE_PATH, contentPath).apply();
-		}
-		return contentPath;
-	}
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, final String key) {
-		if (key.equals(SettingsActivity.STORAGE_PATH)) {
-			final String newPath = pref.getString(key, null);
-			if (newPath == null || newPath.equals(localStorage.getPath()))
-				return;
-
-			executor.execute(new Runnable() {
-				@Override
-				public void run() {
-					asyncMigrateData(newPath);
-				}
-			});
-		}
 	}
 
 	public void downloadItem(ContentItem contentItem) {
@@ -147,9 +134,6 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		listeners.remove(listener);
 	}
 
-	public void setMigrateListener(MigrateListener listener) {
-		migrateListener = listener;
-	}
 
 	public List<ContentItem> getLocalItems() {
 		return localItems;
@@ -217,29 +201,13 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		}
 	}
 
-	private void asyncMigrateData(String newPath) {
-		try {
-			localStorage.migrate(newPath, new Utils.MigrationListener() {
-				@Override
-				public void fileCopying(String name, int n, int max) {
-					notifyMigrateFile(name, n, max);
-				}
-			});
-
-			notifyMigrateFinished();
-		} catch (IOException e) {
-			pref.edit().putString(SettingsActivity.STORAGE_PATH, localStorage.getPath()).apply();
-			notifyMigrateError();
-		}
-	}
-
 	private void asyncDownloadItem(final NetworkContentItem remoteItem) {
 		ContentConnection conn = null;
 		try {
 			conn = networkStorage.loadContentItem(remoteItem.getUrl());
 
 			InputStream inputStream = new ProgressInputStream(conn.getStream(), remoteItem.getDownloadSize(),
-					10000, new ProgressInputStream.ProgressListener() {
+					REPORT_INTERVAL, new ProgressInputStream.ProgressListener() {
 				@Override
 				public void update(int current, int max) {
 					notifyDownloadStateUpdated(remoteItem, current, max);
@@ -368,41 +336,22 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		});
 	}
 
-	private void notifyMigrateFile(final String name, final int n, final int max) {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				if (migrateListener != null) {
-					migrateListener.migrateFile(name, n, max);
-				}
-			}
-		});
-	}
-
-	private void notifyMigrateFinished() {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				if (migrateListener != null) {
-					migrateListener.migrateFinished();
-				}
-			}
-		});
-	}
-
-	private void notifyMigrateError() {
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				if (migrateListener != null) {
-					migrateListener.migrateError();
-				}
-			}
-		});
-	}
-
 	public void interrupt() {
 		throw new IllegalStateException("Not supported yet");
+	}
+
+	@Override
+	public void dataPathChanged(String newDataPath) {
+		if (localStorage != null) {
+			currentStoragePath = newDataPath;
+			localStorage.migrate(newDataPath + "/storage");
+			dataService.dataListenerReady();
+		}
+	}
+
+	@Override
+	public int getPriority() {
+		return 0;
 	}
 
 	public interface Listener {
@@ -415,12 +364,6 @@ public class RemoteContentService extends Service implements SharedPreferences.O
 		void errorDownloading(ContentItem item, IOException e);
 		void errorInitializing(IOException e);
 		void downloadInterrupted(ContentItem item);
-	}
-
-	public interface MigrateListener {
-		void migrateFile(String name, int n, int max);
-		void migrateFinished();
-		void migrateError();
 	}
 
 	public class LocalBinder extends BindHelperBinder {

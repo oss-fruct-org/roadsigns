@@ -43,6 +43,10 @@
     <string name="action_delete">Delete</string>
     <string name="action_download">Download</string>
 
+    <string name="pref_use_offline_map">Use offline map</string>
+    <string name="pref_use_offline_map_sumon">Enabled</string>
+    <string name="pref_use_offline_map_sumoff">Disabled</string>
+
     <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>
         <item quantity="other">Distance: %d meters</item>

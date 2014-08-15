@@ -939,8 +939,10 @@ public class MapFragment extends Fragment implements MapListener,
 
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
+		boolean useOfflineMap = pref.getBoolean(SettingsActivity.USE_OFFLINE_MAP, false);
 		String offlineMapName = pref.getString(SettingsActivity.OFFLINE_MAP, null);
-		if (offlineMapName != null) {
+
+		if (useOfflineMap && offlineMapName != null) {
 			ContentItem contentItem = remoteContent.getContentItem(offlineMapName);
 			String offlineMapPath = remoteContent.getFilePath(contentItem);
 			if (offlineMapPath != null) {
@@ -994,7 +996,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
-		} else if (key.equals(SettingsActivity.OFFLINE_MAP)) {
+		} else if (key.equals(SettingsActivity.OFFLINE_MAP) || key.equals(SettingsActivity.USE_OFFLINE_MAP)) {
 			setupOfflineMap();
 		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();

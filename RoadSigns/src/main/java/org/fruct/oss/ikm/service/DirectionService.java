@@ -59,6 +59,8 @@ public class DirectionService extends Service implements PointsListener,
 	public static final String PREF_NAVIGATION_DIR = "navigation-dir";
 
 	private RemoteContentService remoteContent;
+
+	private final Object dataServiceMutex = new Object();
 	private DataService dataService;
 
 	private final Object dirManagerMutex = new Object();
@@ -123,14 +125,18 @@ public class DirectionService extends Service implements PointsListener,
 
 	@BindSetter
 	public void setDataService(DataService service) {
-		dataService = service;
+		synchronized (dataServiceMutex) {
+			if (service != null) {
+				service.addDataListener(this);
+			} else if (dataService != null) {
+				dataService.removeDataListener(this);
+			}
 
-		if (dataService != null) {
-			dataService.addDataListener(this);
-		}
+			dataService = service;
 
-		if (dataService != null && remoteContent != null) {
-			updateDirectionsManager();
+			if (dataService != null && remoteContent != null) {
+				updateDirectionsManager();
+			}
 		}
 	}
 
@@ -138,8 +144,10 @@ public class DirectionService extends Service implements PointsListener,
 	public void setRemoteContentService(RemoteContentService service) {
 		remoteContent = service;
 
-		if (dataService != null && remoteContent != null) {
-			updateDirectionsManager();
+		synchronized (dataServiceMutex) {
+			if (dataService != null && remoteContent != null) {
+				updateDirectionsManager();
+			}
 		}
 	}
 
@@ -182,8 +190,10 @@ public class DirectionService extends Service implements PointsListener,
 			}
 		}.execute();
 
-		if (dataService != null) {
-			dataService.removeDataListener(this);
+		synchronized (dataServiceMutex) {
+			if (dataService != null) {
+				dataService.removeDataListener(this);
+			}
 		}
 
 		BindHelper.autoUnbind(this, this);
@@ -207,11 +217,16 @@ public class DirectionService extends Service implements PointsListener,
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
-				if (dataService != null) {
-					currentStoragePath = dataService.getDataPath();
-					asyncUpdateDirectionsManager();
+				currentStoragePath = null;
+				synchronized (dataServiceMutex) {
+					if (dataService != null) {
+						currentStoragePath = dataService.getDataPath();
+					}
 				}
 
+				if (currentStoragePath != null) {
+					asyncUpdateDirectionsManager();
+				}
 				return null;
 			}
 

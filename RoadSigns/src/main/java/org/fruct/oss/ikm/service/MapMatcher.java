@@ -29,6 +29,8 @@ public class MapMatcher implements IMapMatcher {
 	public static final String PROVIDER = "org.fruct.oss.ikm.MAP_MATCHER_PROVIDER";
 
 	public static final double MAX_DISTANCE = 40f;
+	public static final double MAX_INITIAL_DISTANCE = 4000f;
+
 	public static final int MAX_RECURSION = 10;
 
 	private final GHRouting routing;
@@ -86,7 +88,7 @@ public class MapMatcher implements IMapMatcher {
 			return false;
 
 		GeoPoint baseNodePoint =  routing.getPoint(baseNodeId, tmpPoint);
-		if (locationPoint.distanceTo(baseNodePoint) > MAX_DISTANCE) {
+		if (locationPoint.distanceTo(baseNodePoint) > MAX_INITIAL_DISTANCE) {
 			return false;
 		}
 

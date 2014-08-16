@@ -214,7 +214,8 @@ public class DirectionService extends Service implements PointsListener,
 
 			@Override
 			protected void onPostExecute(Void aVoid) {
-				dataService.dataListenerReady();
+				if (dataService != null)
+					dataService.dataListenerReady();
 			}
 		}.execute();
 	}

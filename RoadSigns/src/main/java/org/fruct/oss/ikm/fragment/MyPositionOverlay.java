@@ -81,7 +81,7 @@ public class MyPositionOverlay extends Overlay {
 		}
 
 		drawLocation(canvas);
-		drawMatchedLocation(canvas);
+		//drawMatchedLocation(canvas);
 	}
 
 	private void drawMatchedLocation(Canvas canvas) {

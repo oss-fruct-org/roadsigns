@@ -249,4 +249,12 @@ public class OneToManyRouting extends GHRouting {
 
 		return new MapMatcher(hopper.getGraph(), this, encoderString);
 	}
+
+	@Override
+	public IMapMatcher createSimpleMapMatcher() {
+		ensureInitialized();
+
+		return new SimpleMapMatcher(this);
+	}
+
 }

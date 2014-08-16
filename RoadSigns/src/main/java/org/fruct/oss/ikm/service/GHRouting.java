@@ -148,6 +148,8 @@ public abstract class GHRouting {
 
 	public abstract IMapMatcher createMapMatcher();
 
+	public abstract IMapMatcher createSimpleMapMatcher();
+
 	public interface RoutingCallback {
 		void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc);
 	}

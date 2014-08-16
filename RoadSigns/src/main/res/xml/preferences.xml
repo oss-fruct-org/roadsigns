@@ -71,6 +71,15 @@
         android:summaryOff="@string/pref_off"
         />
 
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="mapmatching"
+        android:title="@string/pref_mapmatching"
+        android:summaryOn="@string/pref_on"
+        android:summaryOff="@string/pref_off"
+        />
+
+
     <ListPreference
         android:title="@string/pref_vehicle_title"
         android:key="vehicle"

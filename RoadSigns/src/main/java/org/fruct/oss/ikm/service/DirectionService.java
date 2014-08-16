@@ -228,7 +228,7 @@ public class DirectionService extends Service implements PointsListener,
 		if (routing == null)
 			return;
 
-		mapMatcher = routing.createMapMatcher();
+		updateMapMatcher();
 
 		DirectionManager oldDirManager = dirManager;
 		synchronized (dirManagerMutex) {
@@ -430,7 +430,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
 		log.debug("DirectionService.onSharedPreferenceChanged");
 		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
@@ -441,11 +441,24 @@ public class DirectionService extends Service implements PointsListener,
 				}
 			}
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
-			handleNavigationDataChange(pref.getString(SettingsActivity.NAVIGATION_DATA, null));
+			handleNavigationDataChange(this.pref.getString(SettingsActivity.NAVIGATION_DATA, null));
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (routing != null) {
-				routing.setEncoder(sharedPreferences.getString(key, "CAR"));
+				routing.setEncoder(pref.getString(key, "CAR"));
+				updateMapMatcher();
+			}
+		} else if (key.equals(SettingsActivity.MAPMATCHING)) {
+			updateMapMatcher();
+		}
+	}
+
+	private void updateMapMatcher() {
+		boolean enabled = pref.getBoolean(SettingsActivity.MAPMATCHING, true);
+		if (routing != null) {
+			if (enabled) {
 				mapMatcher = routing.createMapMatcher();
+			} else {
+				mapMatcher = routing.createSimpleMapMatcher();
 			}
 		}
 	}

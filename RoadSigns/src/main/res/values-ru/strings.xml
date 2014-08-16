@@ -47,6 +47,7 @@
     <string name="pref_use_offline_map">Использовать оффлайн-карту</string>
     <string name="pref_use_offline_map_sumon">Используется</string>
     <string name="pref_use_offline_map_sumoff">Не используется</string>
+    <string name="pref_autoregion">Auto-detect region</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

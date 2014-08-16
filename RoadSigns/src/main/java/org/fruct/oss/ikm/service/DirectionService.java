@@ -306,9 +306,11 @@ public class DirectionService extends Service implements PointsListener,
 	public void newLocation(Location location) {
 		lastLocation = location;
 
+		boolean autoRegion = pref.getBoolean(SettingsActivity.AUTOREGION, true);
+
 		if (routing != null && !routing.isInner(location.getLatitude(), location.getLongitude())) {
-			// Auto-detect region
-			remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
+			if (autoRegion)
+				remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
 			return;
 		} else if (mapMatcher != null) {
 			// TODO: can be time consuming
@@ -328,8 +330,8 @@ public class DirectionService extends Service implements PointsListener,
 				}
 			}
 		} else if (remoteContent != null) {
-			// Auto-detect region
-			remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
+			if (autoRegion)
+				remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
 		}
 	}
 

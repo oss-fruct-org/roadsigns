@@ -10,8 +10,8 @@
     <string name="pref_offline_map_path">Карта</string>
     
     <string name="pref_autozoom">Автоматический масштаб</string>
-    <string name="pref_autozoom_sumon">Включено</string>
-    <string name="pref_autozoom_sumoff">Выключено</string>
+    <string name="pref_on">Включено</string>
+    <string name="pref_off">Выключено</string>
 
     <string name="pref_disable_warn_network_sum">Не предупреждать о недоступной сети</string>
     <string name="pref_disable_warn_network">Недоступная сеть</string>

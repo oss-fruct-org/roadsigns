@@ -46,6 +46,7 @@
     <string name="pref_use_offline_map">Use offline map</string>
     <string name="pref_use_offline_map_sumon">Enabled</string>
     <string name="pref_use_offline_map_sumoff">Disabled</string>
+    <string name="pref_autoregion">Auto-detect region</string>
 
     <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>

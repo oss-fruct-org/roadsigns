@@ -59,8 +59,16 @@
         android:defaultValue="true"
         android:key="autozoom"
         android:title="@string/pref_autozoom"
-        android:summaryOn="@string/pref_autozoom_sumon"
-        android:summaryOff="@string/pref_autozoom_sumoff"
+        android:summaryOn="@string/pref_on"
+        android:summaryOff="@string/pref_off"
+        />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="autoregion"
+        android:title="@string/pref_autoregion"
+        android:summaryOn="@string/pref_on"
+        android:summaryOff="@string/pref_off"
         />
 
     <ListPreference

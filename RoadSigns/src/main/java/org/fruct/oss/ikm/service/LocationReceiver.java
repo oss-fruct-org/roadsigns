@@ -110,7 +110,7 @@ public class LocationReceiver implements LocationListener {
 
 			log.info(dbg + " accepted. Reason = " + lastReason);
 		} else {
-			log.info(dbg + " dropped. Reson = " + lastReason);
+			log.info(dbg + " dropped. Reason = " + lastReason);
 		}
 	}
 

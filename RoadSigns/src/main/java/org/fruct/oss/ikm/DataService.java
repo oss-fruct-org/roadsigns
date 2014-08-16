@@ -123,21 +123,21 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 		}
 	}
 
-	private void migrateData(String newDataPath) {
+	private void migrateData(final String newDataPath) {
 		// Migration in progress
 		if (oldPath != null) {
 			notifyMigrateError();
 			return;
 		}
 
-		new AsyncTask<String, Void, Boolean>() {
-			private String newDataPath;
-
-			@Override
-			protected Boolean doInBackground(String... params) {
-				newDataPath = params[0];
+		new Thread() {
+			{
+				setName("Migration thread");
+			}
+			
+			public void run() {
 				if (!asyncMigrateData(newDataPath)) {
-					return false;
+					return;
 				}
 
 				oldPath = dataPath;
@@ -170,10 +170,8 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 				oldPath = null;
 
 				notifyMigrateFinished();
-
-				return true;
 			}
-		}.execute(newDataPath);
+		}.start();
 	}
 
 	private boolean asyncMigrateData(String newDataPath) {

@@ -224,8 +224,6 @@ public class MapFragment extends Fragment implements MapListener,
 			directionService = ((DirectionService.DirectionBinder) service).getService();
 			assert directionService != null;
 
-			directionService.startTracking();
-			
 			setState(State.DS_CREATED);
 		}
 	};

@@ -211,7 +211,7 @@ public class DirectionService extends Service implements PointsListener,
 					currentStoragePath = dataService.getDataPath();
 					asyncUpdateDirectionsManager();
 				}
-				
+
 				return null;
 			}
 
@@ -219,6 +219,8 @@ public class DirectionService extends Service implements PointsListener,
 			protected void onPostExecute(Void aVoid) {
 				if (dataService != null)
 					dataService.dataListenerReady();
+
+				startTracking();
 			}
 		}.execute();
 	}
@@ -297,16 +299,23 @@ public class DirectionService extends Service implements PointsListener,
 		}
 
 		locationReceiver.setListener(this);
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
-			locationReceiver.sendLastLocation();
-		}
 
 		locationReceiver.start();
+		locationReceiver.sendLastLocation();
 	}
 
 	@Override
-	public void newLocation(Location location) {
+	public void newLocation(final Location location) {
+		new AsyncTask<Void, Void, Void>() {
+			@Override
+			protected Void doInBackground(Void... params) {
+				asyncNewLocation(location);
+				return null;
+			}
+		}.execute();
+	}
+
+	public void asyncNewLocation(Location location) {
 		lastLocation = location;
 
 		boolean autoRegion = pref.getBoolean(SettingsActivity.AUTOREGION, true);

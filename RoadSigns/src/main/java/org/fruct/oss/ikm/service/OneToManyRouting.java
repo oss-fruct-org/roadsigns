@@ -54,7 +54,7 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	@Override
-	public void prepare(GeoPoint from) {
+	public void prepare(int fromId) {
 		if (!ensureInitialized())
 			return;
 
@@ -66,8 +66,6 @@ public class OneToManyRouting extends GHRouting {
 		weightCalc = new FastestWeighting(encoder);
 
 		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
-
-		int fromId = getPointIndex(from, false);
 
 		parents = new int[graph.getNodes()];
 		Arrays.fill(parents, -1);

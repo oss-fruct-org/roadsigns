@@ -9,6 +9,7 @@ import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 
-public abstract class GHRouting implements IRouting {
+public abstract class GHRouting {
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
 	protected final LocationIndexCache locationIndexCache;
 
@@ -28,20 +29,9 @@ public abstract class GHRouting implements IRouting {
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
 
-	public abstract void prepare(GeoPoint from);
-	public abstract PointList route(GeoPoint to);
-
 	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
 		this.locationIndexCache = locationIndexCache;
-	}
-
-	public void reset(GeoPoint from) {
-		if (!ensureInitialized())
-			return;
-		
-		if (!from.equals(oldGeoPoint))
-			prepare(from);
 	}
 
 	private LocationIndex[] createLocationIndexArray() {
@@ -100,18 +90,6 @@ public abstract class GHRouting implements IRouting {
 		return !isInitializationFailed;
 	}
 
-	public GeoPoint getNearestRoadNode(GeoPoint current) {
-		if (!ensureInitialized())
-			return null;
-
-		int nodeId = getPointIndex(current, false);
-
-		double lat = nodeAccess.getLatitude(nodeId);
-		double lon = nodeAccess.getLongitude(nodeId);
-
-		return new GeoPoint(lat, lon);
-	}
-
 	public GeoPoint getPoint(int nodeId) {
 		double lat = nodeAccess.getLatitude(nodeId);
 		double lon = nodeAccess.getLongitude(nodeId);
@@ -146,5 +124,18 @@ public abstract class GHRouting implements IRouting {
 		}
 
 		return -1;
+	}
+
+	public abstract void prepare(int fromId);
+
+	public abstract  PointList route(GeoPoint to);
+	public abstract void route(PointDesc[] targetPoints, float radius, RoutingCallback callback);
+
+	public abstract void setEncoder(String encoding);
+
+	public abstract IMapMatcher createMapMatcher();
+
+	public interface RoutingCallback {
+		void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc);
 	}
 }

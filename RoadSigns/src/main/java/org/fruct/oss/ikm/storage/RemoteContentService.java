@@ -4,7 +4,6 @@ import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Region;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -12,7 +11,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 
-import org.fruct.oss.ikm.BuildConfig;
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
@@ -20,9 +18,6 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
-import org.osmdroid.api.Polyline;
-import org.osmdroid.bonuspack.overlays.Polygon;
-import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

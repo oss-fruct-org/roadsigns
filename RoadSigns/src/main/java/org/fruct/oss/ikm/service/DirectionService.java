@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -75,7 +74,10 @@ public class DirectionService extends Service implements PointsListener,
 	private Location lastResultLocation;
 
 	private Location lastLocation;
-	private IRouting routing;
+	private Location lastMatchedLocation;
+	private int lastMatchedNode;
+
+	private GHRouting routing;
 	private IMapMatcher mapMatcher;
 
 	private String ghPath;
@@ -170,9 +172,11 @@ public class DirectionService extends Service implements PointsListener,
 			@Override
 			protected Void doInBackground(Void... params) {
 				synchronized (dirManagerMutex) {
-					dirManager.closeSync();
-					dirManager = null;
-					locationIndexCache.close();
+					if (dirManager != null) {
+						dirManager.closeSync();
+						dirManager = null;
+						locationIndexCache.close();
+					}
 				}
 				return null;
 			}
@@ -185,7 +189,7 @@ public class DirectionService extends Service implements PointsListener,
 		BindHelper.autoUnbind(this, this);
 	}
 
-	private IRouting createRouting() {
+	private GHRouting createRouting() {
 		String navigationPath = ghPath + "/" + navigationDir;
 
 		if (new File(navigationPath + "/nodes").exists()) {
@@ -196,7 +200,7 @@ public class DirectionService extends Service implements PointsListener,
 
 			return routing;
 		} else
-			return new StubRouting();
+			return null;
 	}
 
 	private void updateDirectionsManager() {
@@ -220,6 +224,9 @@ public class DirectionService extends Service implements PointsListener,
 		navigationDir = pref.getString(PREF_NAVIGATION_DIR, null);
 
 		routing = createRouting();
+		if (routing == null)
+			return;
+
 		mapMatcher = routing.createMapMatcher();
 
 		DirectionManager oldDirManager = dirManager;
@@ -273,10 +280,11 @@ public class DirectionService extends Service implements PointsListener,
 		}
 	}
 
-
 	public void startTracking() {
 		if (locationReceiver.isStarted()) {
-			notifyLocationChanged(lastLocation, mapMatcher.getMatchedLocation());
+			if (lastMatchedLocation != null) {
+				notifyLocationChanged(lastMatchedLocation, lastMatchedLocation);
+			}
 
 			if (lastResultDirections != null)
 				sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
@@ -297,17 +305,26 @@ public class DirectionService extends Service implements PointsListener,
 	public void newLocation(Location location) {
 		lastLocation = location;
 
-		if (mapMatcher == null)
-			return;
+		if (mapMatcher != null) {
+			// TODO: can be time consuming
+			mapMatcher.updateLocation(location);
 
-		// TODO: can be time consuming
-		mapMatcher.updateLocation(location);
+			lastMatchedLocation = mapMatcher.getMatchedLocation();
+			lastMatchedNode = mapMatcher.getMatchedNode();
+		}
 
-		notifyLocationChanged(mapMatcher.getMatchedLocation(), mapMatcher.getMatchedLocation());
+		if (lastMatchedLocation != null) {
+			notifyLocationChanged(lastMatchedLocation, lastMatchedLocation);
 
-		synchronized (dirManagerMutex) {
-			dirManager.updateLocation(mapMatcher.getMatchedLocation());
-			dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+			synchronized (dirManagerMutex) {
+				if (dirManager != null) {
+					dirManager.updateLocation(lastMatchedLocation, lastMatchedNode);
+					dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+				}
+			}
+		} else if (remoteContent != null) {
+			// Auto-detect region
+			remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
 		}
 	}
 
@@ -323,7 +340,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	private void notifyLocationChanged(Location location, Location matchedLocation) {
-		if (location == null)
+		if (location == null || matchedLocation == null)
 			return;
 
 		Intent intent = new Intent(LOCATION_CHANGED);
@@ -334,7 +351,9 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	public void findPath(GeoPoint to) {
-		dirManager.findPath(to);
+		if (dirManager != null) {
+			dirManager.findPath(to);
+		}
 	}
 
 	@Override
@@ -389,9 +408,7 @@ public class DirectionService extends Service implements PointsListener,
 				pref.edit().putString(PREF_NAVIGATION_DIR, navigationDir).apply();
 
 				synchronized (dirManagerMutex) {
-					if (dirManager != null) {
-						asyncUpdateDirectionsManager();
-					}
+					asyncUpdateDirectionsManager();
 				}
 
 				if (oldNavigationDir != null) {
@@ -412,7 +429,9 @@ public class DirectionService extends Service implements PointsListener,
 		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			synchronized (dirManagerMutex) {
-				dirManager.calculateForPoints(points);
+				if (dirManager != null) {
+					dirManager.calculateForPoints(points);
+				}
 			}
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
 			handleNavigationDataChange(pref.getString(SettingsActivity.NAVIGATION_DATA, null));

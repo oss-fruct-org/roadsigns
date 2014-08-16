@@ -6,34 +6,21 @@ import android.location.Location;
 import android.os.Build;
 import android.os.SystemClock;
 
-import com.graphhopper.coll.IntDoubleBinHeap;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
-import com.graphhopper.routing.util.FastestWeighting;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.ShortestWeighting;
 import com.graphhopper.routing.util.Weighting;
-import com.graphhopper.storage.Edge;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.DistanceCalcEarth;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
 import com.graphhopper.util.EdgeIteratorState;
-import com.graphhopper.util.shapes.GHPoint;
 
 import org.osmdroid.util.GeoPoint;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-
-import gnu.trove.map.TIntDoubleMap;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntDoubleHashMap;
-import gnu.trove.map.hash.TIntIntHashMap;
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.toRadians;
@@ -48,6 +35,7 @@ public class MapMatcher implements IMapMatcher {
 
 	private Location lastLocation;
 	private Location matchedLocation;
+	private int matchedNode;
 
 	private Set<Edge> activeEdges = new HashSet<Edge>();
 
@@ -74,19 +62,36 @@ public class MapMatcher implements IMapMatcher {
 	}
 
 	@Override
-	public void updateLocation(Location location) {
+	public boolean updateLocation(Location location) {
 		if (activeEdges.isEmpty()) {
-			setInitialLocation(location);
+			if (!setInitialLocation(location)) {
+				return false;
+			}
 		}
 
 		setLocation(location);
 
 		lastLocation = location;
+		return true;
 	}
 
-	private void setInitialLocation(Location location) {
-		int baseNodeId = routing.getPointIndex(new GeoPoint(location), false);
+	private boolean setInitialLocation(Location location) {
+		matchedNode = -1;
+		matchedLocation = null;
+
+		GeoPoint locationPoint = new GeoPoint(location);
+
+		int baseNodeId = routing.getPointIndex(locationPoint, false);
+		if (baseNodeId == -1)
+			return false;
+
+		GeoPoint baseNodePoint =  routing.getPoint(baseNodeId, tmpPoint);
+		if (locationPoint.distanceTo(baseNodePoint) > MAX_DISTANCE) {
+			return false;
+		}
+
 		activateNodeEdges(baseNodeId, -1);
+		return true;
 	}
 
 	private int activateNodeEdges(int nodeId, int exclude) {
@@ -128,6 +133,7 @@ public class MapMatcher implements IMapMatcher {
 
 			if (bestEvalResult.node == -1) {
 				matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
+				matchedNode = routing.getPointIndex(new GeoPoint(matchedLocation), false);
 				return;
 			}
 
@@ -145,13 +151,14 @@ public class MapMatcher implements IMapMatcher {
 					continue;
 				} else {
 					matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
+					matchedNode = bestEvalResult.node;
 					return;
 				}
 			}
 		}
 
-		setInitialLocation(location);
-		setLocation(location);
+		if (setInitialLocation(location))
+			setLocation(location);
 	}
 
 	private EvalResult evalEdge(Edge edge, final double rLat, final double rLon) {
@@ -201,12 +208,13 @@ public class MapMatcher implements IMapMatcher {
 	}
 
 	@Override
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public Location getMatchedLocation() {
-		if (matchedLocation == null)
-			return lastLocation;
-		else
-			return matchedLocation;
+		return matchedLocation;
+	}
+
+	@Override
+	public int getMatchedNode() {
+		return matchedNode;
 	}
 
 	// Copied and modified from graphhopper's DistanceCalcEarth.java

@@ -5,8 +5,7 @@ import android.location.Location;
 import android.os.Build;
 
 public interface IMapMatcher {
-	void updateLocation(Location location);
-
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+	boolean updateLocation(Location location);
 	Location getMatchedLocation();
+	int getMatchedNode();
 }

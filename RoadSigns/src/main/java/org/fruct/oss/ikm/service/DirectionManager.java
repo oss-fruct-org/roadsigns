@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class DirectionManager implements IRouting.RoutingCallback {
+public class DirectionManager implements GHRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
 
 	private Listener listener;
@@ -36,7 +36,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	public final int BATCH_SIZE = 10;
 	
 	private int radius = 45;
-	private IRouting routing;
+	private GHRouting routing;
 
 	private GeoPoint userPosition;
 	private Location location;
@@ -50,7 +50,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 	// POI, that pass filters
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
 	
-	public DirectionManager(IRouting routing) {
+	public DirectionManager(GHRouting routing) {
 		executor = Executors.newSingleThreadExecutor();
 		this.routing = routing;
 	}
@@ -93,7 +93,7 @@ public class DirectionManager implements IRouting.RoutingCallback {
 		});
 	}
 	
-	public void updateLocation(final Location location) {
+	public void updateLocation(final Location location, final int node) {
 		interrupt();
 
 		executor.execute(new Runnable() {
@@ -102,17 +102,11 @@ public class DirectionManager implements IRouting.RoutingCallback {
 				DirectionManager.this.location = location;
 				GeoPoint current = new GeoPoint(location);
 
-				// Find nearest road node
-				// Can throw if not initialized, ignoring
-				GeoPoint nearestNode = routing.getNearestRoadNode(current);
-				if (nearestNode == null || current.distanceTo(nearestNode) > 40)
-					return;
-
-				DirectionManager.this.userPosition = nearestNode;
+				routing.getPoint(node, current);
+				DirectionManager.this.userPosition = current;
 				readyPoints.clear();
 
-				// Can throw if not initialized, ignore
-				routing.reset(userPosition);
+				routing.prepare(node);
 			}
 		});
 	}
@@ -198,12 +192,10 @@ public class DirectionManager implements IRouting.RoutingCallback {
 
 	public void doFindPath(GeoPoint to) {
 		try {
-			if (routing instanceof GHRouting) {
-				PointList pointList = routing.route(to);
+			PointList pointList = routing.route(to);
 
-				if (listener != null)
-					listener.pathReady(pointList);
-			}
+			if (listener != null)
+				listener.pathReady(pointList);
 		} catch (Exception ex) {
 			log.error("findPath throw exception", ex);
 		}

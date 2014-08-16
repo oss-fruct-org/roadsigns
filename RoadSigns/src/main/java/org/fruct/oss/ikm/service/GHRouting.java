@@ -10,11 +10,13 @@ import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.utils.Region;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 
 public abstract class GHRouting {
@@ -28,6 +30,8 @@ public abstract class GHRouting {
 	protected GraphHopper hopper;
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
+
+	private Region region;
 
 	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
@@ -70,6 +74,10 @@ public abstract class GHRouting {
 
 			locationIndexArray = createLocationIndexArray();
 			nodeAccess = hopper.getGraph().getNodeAccess();
+
+			FileInputStream polygonFileStream = new FileInputStream(path + "/polygon.poly");
+			region = new Region(polygonFileStream);
+			polygonFileStream.close();
 
 			if (res) {
 				log.info("graphopper for path {} successfully initialized", path);
@@ -124,6 +132,11 @@ public abstract class GHRouting {
 		}
 
 		return -1;
+	}
+
+	public boolean isInner(double lat, double lon) {
+		ensureInitialized();
+		return region.testHit(lat, lon);
 	}
 
 	public abstract void prepare(int fromId);

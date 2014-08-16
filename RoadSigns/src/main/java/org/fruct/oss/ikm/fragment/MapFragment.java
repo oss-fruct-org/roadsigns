@@ -60,6 +60,7 @@ import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
@@ -854,7 +855,7 @@ public class MapFragment extends Fragment implements MapListener,
 			mapView.getOverlays().remove(pathOverlay);
 		}
 		
-		pathOverlay = new PathOverlay(Color.BLUE, getActivity());
+		pathOverlay = new PathOverlay(Color.BLUE, 6f, new DefaultResourceProxyImpl(getActivity()));
 		pathOverlay.setAlpha(127);
 
 		for (GeoPoint geoPoint : path)

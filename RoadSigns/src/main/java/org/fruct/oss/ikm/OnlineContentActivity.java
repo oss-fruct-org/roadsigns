@@ -339,7 +339,6 @@ public class OnlineContentActivity extends ActionBarActivity
 			states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
 		}
 
-		// TODO: can cause concurrent modification
 		for (ContentItem remoteItem : remoteItems) {
 			String name = remoteItem.getName();
 

@@ -79,15 +79,20 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 20 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="osmbonuspack_v4.2" level="project" />
-    <orderEntry type="library" exported="" name="osmdroid-android-4.0" level="project" />
-    <orderEntry type="library" exported="" name="mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies" level="project" />
+    <orderEntry type="library" exported="" name="svg-android-0.4.3" level="project" />
+    <orderEntry type="library" exported="" name="mapsforge-core-0.4.3" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-20.0.0" level="project" />
+    <orderEntry type="library" exported="" name="osmbonuspack_v4.8" level="project" />
     <orderEntry type="library" exported="" name="graphhopper-0.4-SNAPSHOT-android" level="project" />
+    <orderEntry type="library" exported="" name="kxml2-2.3.0" level="project" />
+    <orderEntry type="library" exported="" name="mapsforge-map-0.4.3" level="project" />
+    <orderEntry type="library" exported="" name="mapsforge-map-reader-0.4.3" level="project" />
     <orderEntry type="library" exported="" name="simple-xml-2.7.1" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-20.0.0" level="project" />
     <orderEntry type="library" exported="" name="support-v4-20.0.0" level="project" />
     <orderEntry type="library" exported="" name="slf4j-android-1.6.1-RC1" level="project" />
+    <orderEntry type="library" exported="" name="mapsforge-map-android-0.4.3" level="project" />
+    <orderEntry type="library" exported="" name="osmdroid-android-4.2" level="project" />
   </component>
 </module>
 

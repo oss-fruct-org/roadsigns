@@ -5,7 +5,7 @@ import java.util.List;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.MapView.Projection;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.DirectedLocationOverlay;
 
 import android.content.Context;
@@ -28,15 +28,13 @@ public class ClickableDirectedLocationOverlay extends DirectedLocationOverlay {
 	@Override
 	public boolean onSingleTapUp(MotionEvent e, MapView mapView) {
 		Projection proj = mapView.getProjection();
-		screenPoint = proj.toMapPixels(mLocation, screenPoint);
+		screenPoint = proj.toPixels(mLocation, screenPoint);
 
-		float mx = e.getX();
-		float my = e.getY();
-		
-		Point marker = proj.fromMapPixels((int) mx, (int) my, null);
-		
-		float dx = screenPoint.x - marker.x;
-		float dy = screenPoint.y - marker.y;
+		float mx = e.getX() + proj.getIntrinsicScreenRect().left;
+		float my = e.getY() + proj.getIntrinsicScreenRect().top;
+
+		float dx = screenPoint.x - mx;
+		float dy = screenPoint.y - my;
 		
 		float d2 = dx * dx + dy * dy;
 		

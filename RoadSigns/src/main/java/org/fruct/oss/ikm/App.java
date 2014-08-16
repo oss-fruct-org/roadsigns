@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.preference.PreferenceManager;
 
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.osmdroid.tileprovider.BitmapPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class App extends Application {
 		App.context = getApplicationContext();
 		App.app = this;
 		PreferenceManager.setDefaultValues(App.context, R.xml.preferences, false);
+		AndroidGraphicFactory.createInstance(this);
 	}
 	
 	public static Context getContext() {

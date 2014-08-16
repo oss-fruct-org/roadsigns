@@ -4,7 +4,7 @@ import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.MapView.Projection;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Overlay;
 
 import android.content.Context;
@@ -89,7 +89,7 @@ public class MyPositionOverlay extends Overlay {
 			return;
 
 		Projection proj = mapView.getProjection();
-		proj.toMapPixels(new GeoPoint(matchedLocation), point);
+		proj.toPixels(new GeoPoint(matchedLocation), point);
 		canvas.drawCircle(point.x, point.y, 8, paintRed);
 	}
 
@@ -98,8 +98,8 @@ public class MyPositionOverlay extends Overlay {
 		GeoPoint locationPoint = new GeoPoint(location);
 		IGeoPoint mapCenter = mapView.getMapCenter();
 
-		proj.toMapPixels(locationPoint, point);
-		proj.toMapPixels(mapCenter, centerPoint);
+		proj.toPixels(locationPoint, point);
+		proj.toPixels(mapCenter, centerPoint);
 
 		canvas.save();
 

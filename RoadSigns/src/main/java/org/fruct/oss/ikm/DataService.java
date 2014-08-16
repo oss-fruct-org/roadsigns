@@ -231,6 +231,9 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 	}
 
 	private boolean deleteDir(File dir) {
+		if (dir == null || !dir.isDirectory())
+			return false;
+
 		boolean success = true;
 		for (File file : dir.listFiles()) {
 			if (file.isFile()) {

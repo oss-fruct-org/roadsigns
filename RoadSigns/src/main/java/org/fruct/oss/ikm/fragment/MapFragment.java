@@ -52,6 +52,7 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.storage.ContentItem;
+import org.fruct.oss.ikm.storage.RemoteContentListenerAdapter;
 import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -71,7 +72,7 @@ import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
-import org.osmdroid.views.MapView.Projection;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
@@ -201,6 +202,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	private DataService dataService;
 	private RemoteContentService remoteContent;
+	private boolean localListReady = true;
 	private TileProviderManager tileProviderManager;
 
 	public MapFragment() {
@@ -350,6 +352,7 @@ public class MapFragment extends Fragment implements MapListener,
 	private void setupOverlays() {
 		// Setup device position overlay
 		Overlay overlay = new Overlay(getActivity()) {
+			final Point point = new Point();
 			Paint paint = new Paint();
 			{
 				paint.setColor(Color.GRAY);
@@ -364,7 +367,7 @@ public class MapFragment extends Fragment implements MapListener,
 					return;
 
 				Projection proj = mapView.getProjection();
-				Point mapCenter = proj.toMapPixels(mapView.getMapCenter(), null);
+				Point mapCenter = proj.toPixels(mapView.getMapCenter(), point);
 				canvas.drawCircle(mapCenter.x, mapCenter.y, 5, paint);
 			}
 		};
@@ -415,22 +418,25 @@ public class MapFragment extends Fragment implements MapListener,
 		// Listen for new points in PointManager
 		PointsManager.getInstance().addListener(this);
 
+		final GeoPoint initialPosition;
+		final int initialZoom;
+
 		// Restore saved instance state
 		if (savedInstanceState == null) {
-			mapView.getController().setZoom(DEFAULT_ZOOM);
 
             SharedPreferences localPref = getActivity().getSharedPreferences("MapFragment", Context.MODE_PRIVATE);
             int lat = localPref.getInt("last-pos-lat", PTZ.getLatitudeE6());
             int lon = localPref.getInt("last-pos-lon", PTZ.getLongitudeE6());
 
-			mapView.getController().setCenter(new GeoPoint(lat, lon));
+			initialPosition = new GeoPoint(lat, lon);
+			initialZoom = DEFAULT_ZOOM;
 		} else {
 			log.debug("Restore mapCenter = " + mapState.center);
 			
 			MapState mapState = savedInstanceState.getParcelable("map-state");
 			assert mapState != null;
-			mapView.getController().setZoom(mapState.zoomLevel);
-			mapView.getController().setCenter(mapState.center);
+			initialZoom = mapState.zoomLevel;
+			initialPosition = mapState.center;
 			providersToastShown = networkToastShown = navigationDataToastShown = mapState.warningShown;
 
 			if (!mapState.directions.isEmpty())
@@ -468,7 +474,8 @@ public class MapFragment extends Fragment implements MapListener,
 			public void onGlobalLayout() {
 				log.trace("New size {} {}", mapView.getWidth(), mapView.getHeight());
 
-				mapView.getController().setZoom(mapView.getZoomLevel());
+				mapView.getController().setZoom(initialZoom);
+				mapView.getController().setCenter(initialPosition);
 				updateRadius();
 
 				ViewTreeObserver obs = mapView.getViewTreeObserver();
@@ -595,10 +602,6 @@ public class MapFragment extends Fragment implements MapListener,
                 .putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		PointsManager.getInstance().removeListener(this);
-
-		if (dataService != null) {
-			dataService.removeDataListener(this);
-		}
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
@@ -763,7 +766,7 @@ public class MapFragment extends Fragment implements MapListener,
 		List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
 					public ExtendedOverlayItem apply(PointDesc point) {
 						ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
-								.getDescription(), point.toPoint(), context);
+								.getDescription(), point.toPoint());
 						item.setRelatedObject(point);
 						return item;
 					}
@@ -905,9 +908,13 @@ public class MapFragment extends Fragment implements MapListener,
 	@BindSetter
 	public void remoteContentServiceReady(RemoteContentService service) {
 		if (service == null) {
+			remoteContent.removeListener(remoteContentAdapter);
 			remoteContent = null;
+			localListReady = false;
 		} else {
 			remoteContent = service;
+			localListReady = !remoteContent.getLocalItems().isEmpty();
+			remoteContent.addListener(remoteContentAdapter);
 			setupOfflineMap();
 		}
 	}
@@ -915,6 +922,7 @@ public class MapFragment extends Fragment implements MapListener,
 	@BindSetter
 	public void dataServiceReady(DataService service) {
 		if (service == null) {
+			dataService.removeDataListener(this);
 			dataService = null;
 		} else {
 			dataService = service;
@@ -934,9 +942,10 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void setupOfflineMap() {
-		if (remoteContent == null || dataService == null)
+		if (remoteContent == null || dataService == null || !localListReady)
 			return;
 
+		remoteContent.removeListener(remoteContentAdapter);
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		boolean useOfflineMap = pref.getBoolean(SettingsActivity.USE_OFFLINE_MAP, false);
@@ -1018,4 +1027,14 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		});
 	}
+
+	private RemoteContentService.Listener remoteContentAdapter = new RemoteContentListenerAdapter() {
+		@Override
+		public void localListReady(List<ContentItem> list) {
+			if (!localListReady) {
+				localListReady = true;
+				setupOfflineMap();
+			}
+		}
+	};
 }

@@ -207,8 +207,11 @@ public class DirectionService extends Service implements PointsListener,
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
-				currentStoragePath = dataService.getDataPath();
-				asyncUpdateDirectionsManager();
+				if (dataService != null) {
+					currentStoragePath = dataService.getDataPath();
+					asyncUpdateDirectionsManager();
+				}
+				
 				return null;
 			}
 

@@ -71,15 +71,14 @@ public abstract class GHRouting {
 
 			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
-
-			locationIndexArray = createLocationIndexArray();
-			nodeAccess = hopper.getGraph().getNodeAccess();
-
-			FileInputStream polygonFileStream = new FileInputStream(path + "/polygon.poly");
-			region = new Region(polygonFileStream);
-			polygonFileStream.close();
-
 			if (res) {
+				locationIndexArray = createLocationIndexArray();
+				nodeAccess = hopper.getGraph().getNodeAccess();
+
+				FileInputStream polygonFileStream = new FileInputStream(path + "/polygon.poly");
+				region = new Region(polygonFileStream);
+				polygonFileStream.close();
+
 				log.info("graphopper for path {} successfully initialized", path);
 				isInitialized = true;
 			} else {

@@ -1,14 +1,11 @@
 apply plugin: 'com.android.application'
 
-repositories {
-    mavenCentral()
-}
-
 android {
     compileSdkVersion 20
-    buildToolsVersion '20'
+    buildToolsVersion '20.0.0'
 
     defaultConfig {
+        applicationId 'org.fruct.oss.ikm'
         minSdkVersion 10
         targetSdkVersion 20
         versionCode 12
@@ -16,50 +13,18 @@ android {
 //        installLocation 'auto'
     }
 
-    sourceSets {
-        instrumentTest {
-            java.srcDirs = ['src/instrumentTest/java']
-        }
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
     }
 
-    if (false) {
-        signingConfigs {
-            release {
-                storeFile file(System.getenv("KEYSTORE"))
-                storePassword System.getenv("KEYSTORE_PASSWORD")
-                keyAlias System.getenv("KEY_ALIAS")
-                keyPassword System.getenv("KEY_PASSWORD")
-            }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'roadsigns-rules.pro'
         }
-
-        buildTypes {
-            /*debug {
-                runProguard true
-                proguardFile getDefaultProguardFile('proguard-android.txt')
-                proguardFile file('roadsigns-rules.txt')
-                zipAlign true
-            }*/
-
-            release {
-                signingConfig signingConfigs.release
-
-                if (false) {
-                    runProguard true
-                    proguardFile getDefaultProguardFile('proguard-android.txt')
-                    proguardFile file('roadsigns-rules.txt')
-                }
-            }
-        }
-
-        android {
-            lintOptions {
-                checkReleaseBuilds false
-                // Or, if you prefer, you can continue to check for errors in release builds,
-                // but continue the build even when errors are found:
-                abortOnError false
-            }
-        }
-
     }
 }
 

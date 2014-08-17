@@ -25,4 +25,6 @@ Online content screen shows what content is available and notifies about content
     <string name="stop_desc">Stop button interrupts any current download task. Existing content will not be touched.</string>
     <string name="sights_screen">Sights screen</string><string name="sights_screen_desc">In sights screen you can browse all available points of interest and filter them by name and category.
    Use tabs to show points of interest from one category.</string>
+    <string name="additional_content_title">Additional content</string>
+    <string name="additional_content">You can place any compatible third-party maps to "roadsigns" folder on your SD-Card</string>
 </resources>

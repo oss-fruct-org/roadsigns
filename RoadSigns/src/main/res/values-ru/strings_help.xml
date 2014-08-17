@@ -28,4 +28,6 @@
     <string name="sights_screen">Экран достопримечательностей</string>
     <string name="sights_screen_desc">На этом экране вы можете просматривать доступные достопримечательности и фильтровать их по имени и категории.
 Используйте закладки чтобы отобразить достопримечательности только одной категории.</string>
+    <string name="additional_content_title">Сторонний контент</string>
+    <string name="additional_content">Вы можете поместить сторонние карты в папку "roadsigns" на SD-карте</string>
 </resources>

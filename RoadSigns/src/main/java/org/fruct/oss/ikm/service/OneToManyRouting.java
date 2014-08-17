@@ -41,6 +41,8 @@ public class OneToManyRouting extends GHRouting {
 	private int[] parents;
 	private float[] costs;
 	private boolean[] closed;
+	private int[] distances;
+
 	private IntDoubleBinHeap heap;
 
 	private EdgeExplorer outEdgeExplorer;
@@ -71,7 +73,9 @@ public class OneToManyRouting extends GHRouting {
 		parents = new int[graph.getNodes()];
 		Arrays.fill(parents, -1);
 
+		distances = new int[graph.getNodes()];
 		costs = new float[graph.getNodes()];
+
 		closed = new boolean[graph.getNodes()];
 		heap = new IntDoubleBinHeap();
 
@@ -153,10 +157,12 @@ public class OneToManyRouting extends GHRouting {
 	private void sendPointDirection(int node, List<PointDesc> targetPoints, float radius, RoutingCallback callback) {
 		// Build direction for found target point
 		buildPath(node, tmpPath);
+		int dist = distances[node];
 
 		Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
 		if (dirPair != null) {
 			for (PointDesc pointDesc : targetPoints) {
+				pointDesc.setDistance(dist);
 				callback.pointReady(dirPair.first, dirPair.second, pointDesc);
 			}
 		}
@@ -165,6 +171,7 @@ public class OneToManyRouting extends GHRouting {
 	private int findNextNode() {
 		final int node = heap.peek_element();
 		final double cost = heap.peek_key();
+		final int dist = distances[node];
 		heap.poll_element();
 		closed[node] = true;
 
@@ -174,14 +181,17 @@ public class OneToManyRouting extends GHRouting {
 			if (closed[adjNode])
 				continue;
 
+			int tdist = dist + (int) iter.getDistance();
 			float tcost = (float) (cost + weightCalc.calcWeight(iter, false));
 			if (parents[adjNode] == -1) {
 				parents[adjNode] = node;
 				costs[adjNode] = tcost;
+				distances[adjNode] = tdist;
 				heap.insert(tcost, adjNode);
 			} else if (tcost < costs[adjNode]) {
 				parents[adjNode] = node;
 				costs[adjNode] = tcost;
+				distances[adjNode] = tdist;
 				heap.update(tcost, adjNode);
 			}
 		}

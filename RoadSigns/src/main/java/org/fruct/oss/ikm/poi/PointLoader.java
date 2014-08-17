@@ -37,12 +37,14 @@ public abstract class PointLoader {
 	/**
 	 * Notify loader about position change
 	 * @param geoPoint new position
-	 * @return true if loader can be updated
 	 */
-	public boolean updatePosition(GeoPoint geoPoint) {
-		return false;
+	public void updatePosition(GeoPoint geoPoint) {
+
 	}
 
+	public boolean needUpdate() {
+		return true;
+	}
 
 	public void loadFromStorage(PointsStorage storage) {
 		points = storage.loadAll(getName());

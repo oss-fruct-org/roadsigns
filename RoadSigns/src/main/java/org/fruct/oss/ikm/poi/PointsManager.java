@@ -63,6 +63,27 @@ public class PointsManager {
 		});
 	}
 
+	public void refresh() {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				for (PointLoader loader : loaders) {
+					try {
+						List<PointDesc> currentPoints = loader.getPoints();
+						loader.loadPoints();
+						if (loader.getPoints() != currentPoints) {
+							storage.insertPoints(loader.getPoints(), loader.getName());
+						}
+					} catch (Exception ex) {
+						log.error("Can't load points from loader " + loader.getClass().getName(), ex);
+					}
+				}
+
+				recreatePointList();
+			}
+		});
+	}
+
 	private void removePointLoader(final PointLoader pointLoader) {
 		loaders.remove(pointLoader);
 	}
@@ -74,10 +95,12 @@ public class PointsManager {
 
 			List<PointDesc> currentPoints = pointLoader.getPoints();
 
-			pointLoader.loadPoints();
-			if (pointLoader.getPoints() != currentPoints) {
-				storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
-				recreatePointList();
+			if (pointLoader.needUpdate()) {
+				pointLoader.loadPoints();
+				if (pointLoader.getPoints() != currentPoints) {
+					storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
+					recreatePointList();
+				}
 			}
 		} catch (Exception ex) {
 			log.error("Can't load points from loader " + pointLoader.getClass().getName(), ex);
@@ -89,8 +112,8 @@ public class PointsManager {
 			@Override
 			public void run() {
 				for (PointLoader loader : loaders) {
-					boolean needUpdate = loader.updatePosition(position);
-					if (needUpdate) {
+					loader.updatePosition(position);
+					if (loader.needUpdate()) {
 						updatePointLoader(loader);
 					}
 				}

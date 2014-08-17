@@ -31,6 +31,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -38,6 +41,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 class PointAdapter extends ArrayAdapter<PointDesc> {
 	private static Logger log = LoggerFactory.getLogger(PointAdapter.class);
@@ -116,6 +120,30 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	private String searchText;
 
 	private PointDesc lastShownPoint;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		setHasOptionsMenu(true);
+	}
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		super.onCreateOptionsMenu(menu, inflater);
+
+		inflater.inflate(R.menu.points_fragment, menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		if (item.getItemId() == R.id.action_refresh) {
+			PointsManager.getInstance().refresh();
+			Toast.makeText(getActivity(), R.string.str_updating_points, Toast.LENGTH_SHORT).show();
+		}
+
+		return super.onOptionsItemSelected(item);
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,

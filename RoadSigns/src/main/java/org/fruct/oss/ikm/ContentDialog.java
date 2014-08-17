@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ContentDialog extends DialogFragment implements DialogInterface.OnClickListener, DialogInterface.OnMultiChoiceClickListener {
@@ -16,7 +17,7 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	private List<ContentListSubItem> storageItems;
 
 	interface Listener {
-		void downloadsSelected(List<Integer> items);
+		void downloadsSelected(List<ContentListSubItem> items);
 	}
 
 	private Listener listener;
@@ -25,7 +26,17 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	}
 
 	public void setStorageItems(List<ContentListSubItem> storageItems) {
-		this.storageItems = storageItems;
+		List<ContentListSubItem> storageItemsCopy = new ArrayList<ContentListSubItem>(storageItems);
+
+		for (Iterator<ContentListSubItem> iterator = storageItemsCopy.iterator(); iterator.hasNext(); ) {
+			ContentListSubItem storageItem = iterator.next();
+
+			if (!storageItem.contentItem.isDownloadable()) {
+				iterator.remove();
+			}
+		}
+
+		this.storageItems = storageItemsCopy;
 	}
 
 	@Override
@@ -92,11 +103,11 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 	@Override
 	public void onClick(DialogInterface dialogInterface, int i) {
 		if (i == DialogInterface.BUTTON_POSITIVE && listener != null) {
-			List<Integer> ret = new ArrayList<Integer>();
+			List<ContentListSubItem> ret = new ArrayList<ContentListSubItem>();
 
 			for (int j = 0; j < active.length; j++) {
 				if (active[j])
-					ret.add(j);
+					ret.add(storageItems.get(j));
 			}
 
 			listener.downloadsSelected(ret);

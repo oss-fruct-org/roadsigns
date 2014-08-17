@@ -77,6 +77,16 @@ public class DirectoryContentItem implements ContentItem {
 		return regionId;
 	}
 
+	@Override
+	public boolean isDownloadable() {
+		return false;
+	}
+
+	@Override
+	public boolean isReadonly() {
+		return !(storage instanceof WritableDirectoryStorage);
+	}
+
 	public String getPath() {
 		return storage.getPath() + "/" + getName();
 	}

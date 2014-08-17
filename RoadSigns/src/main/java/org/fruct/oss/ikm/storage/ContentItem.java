@@ -10,5 +10,8 @@ public interface ContentItem {
 	String getHash();
 	String getRegionId();
 
+	boolean isDownloadable();
+	boolean isReadonly();
+
 	ContentConnection loadContentItem() throws IOException;
 }

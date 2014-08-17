@@ -486,25 +486,45 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	@Override
-	public void downloadsSelected(List<Integer> items) {
+	public void downloadsSelected(List<ContentListSubItem> items) {
 		if (currentItem == null)
 			return;
 
-		for (int i : items)
-			remoteContent.downloadItem(currentItem.contentSubItems.get(i).contentItem);
+		for (ContentListSubItem item : items)
+			remoteContent.downloadItem(item.contentItem);
 	}
 
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-		ContentListItem listItem = adapter.getItem(position);
+		currentItem = adapter.getItem(position);
 		startSupportActionMode(this);
-
-		currentItem = listItem;
 	}
 
 	@Override
 	public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
 		actionMode.getMenuInflater().inflate(R.menu.online_content_action, menu);
+
+		boolean hasDeletable = false;
+		boolean hasDownloadable = false;
+
+		for (ContentListSubItem contentSubItem : currentItem.contentSubItems) {
+			if (contentSubItem.contentItem.isDownloadable() || contentSubItem.state == LocalContentState.NEEDS_UPDATE) {
+				hasDownloadable = true;
+			}
+
+			if (!contentSubItem.contentItem.isReadonly()) {
+				hasDeletable = true;
+			}
+		}
+
+		if (!hasDeletable) {
+			menu.findItem(R.id.action_delete).setVisible(false);
+		}
+
+		if (!hasDownloadable) {
+			menu.findItem(R.id.action_download).setVisible(false);
+		}
+
 		return true;
 	}
 

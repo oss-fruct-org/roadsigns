@@ -63,6 +63,16 @@ public class NetworkContentItem implements ContentItem {
 		return regionId;
 	}
 
+	@Override
+	public boolean isDownloadable() {
+		return true;
+	}
+
+	@Override
+	public boolean isReadonly() {
+		return true;
+	}
+
 	public String getDescription() {
 		return description;
 	}

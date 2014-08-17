@@ -11,6 +11,7 @@ import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
+import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.utils.Utils;
@@ -256,5 +257,4 @@ public class OneToManyRouting extends GHRouting {
 
 		return new SimpleMapMatcher(this);
 	}
-
 }

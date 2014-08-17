@@ -1,12 +1,15 @@
 package org.fruct.oss.ikm.service;
 
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.storage.GraphHopperStorage;
 import com.graphhopper.storage.MMapDirectory;
 import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.Location2IDFullIndex;
 import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.LocationIndex;
+import com.graphhopper.storage.index.QueryResult;
+import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -132,6 +135,18 @@ public abstract class GHRouting {
 
 		return -1;
 	}
+
+	public QueryResult getQueryResult(GeoPoint geoPoint) {
+		for (LocationIndex index : locationIndexArray) {
+			QueryResult id = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), EdgeFilter.ALL_EDGES);
+			if (id.isValid()) {
+				log.trace("LocationIndex edge found in {}", id, index.getClass().getName());
+				return id;
+			}
+		}
+		return null;
+	}
+
 
 	public boolean isInner(double lat, double lon) {
 		ensureInitialized();

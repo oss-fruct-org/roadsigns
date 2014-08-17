@@ -2,9 +2,11 @@ package org.fruct.oss.ikm.service;
 
 
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Build;
 import android.os.SystemClock;
+import android.support.v4.content.LocalBroadcastManager;
 
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
@@ -12,15 +14,20 @@ import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.ShortestWeighting;
 import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
+import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.DistanceCalcEarth;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
 import com.graphhopper.util.EdgeIteratorState;
 
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.fragment.TestLinesOverlay;
 import org.osmdroid.util.GeoPoint;
 
 import java.util.HashSet;
 import java.util.Set;
+
+import gnu.trove.list.array.TDoubleArrayList;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.toRadians;
@@ -42,7 +49,10 @@ public class MapMatcher implements IMapMatcher {
 	private Set<Edge> activeEdges = new HashSet<Edge>();
 
 	private final Graph graph;
+
 	private final EdgeExplorer outEdgeExplorer;
+	private final EdgeExplorer allEdgeExplorer;
+
 	private final DistanceCalcEarth distanceCalc;
 	private final Weighting weightCalc;
 
@@ -59,13 +69,16 @@ public class MapMatcher implements IMapMatcher {
 		FlagEncoder encoder = encodingManager.getEncoder(encoderString);
 
 		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
+		allEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, true, true));
+
 		distanceCalc = new DistanceCalcEarth();
 		weightCalc = new ShortestWeighting();
 	}
 
 	@Override
 	public boolean updateLocation(Location location) {
-		if (activeEdges.isEmpty()) {
+		if (activeEdges.isEmpty() || (matchedLocation != null && location.distanceTo(matchedLocation) > MAX_DISTANCE)) {
+			activeEdges.clear();
 			if (!setInitialLocation(location)) {
 				return false;
 			}
@@ -83,22 +96,24 @@ public class MapMatcher implements IMapMatcher {
 
 		GeoPoint locationPoint = new GeoPoint(location);
 
-		int baseNodeId = routing.getPointIndex(locationPoint, false);
-		if (baseNodeId == -1)
+		QueryResult result = routing.getQueryResult(locationPoint);
+
+		if (result == null)
 			return false;
 
-		GeoPoint baseNodePoint =  routing.getPoint(baseNodeId, tmpPoint);
-		if (locationPoint.distanceTo(baseNodePoint) > MAX_INITIAL_DISTANCE) {
+		if (result.getQueryDistance() > MAX_INITIAL_DISTANCE) {
 			return false;
 		}
 
-		activateNodeEdges(baseNodeId, -1);
+		EdgeIteratorState closestEdge = result.getClosestEdge();
+		activateNodeEdges(closestEdge.getAdjNode(), closestEdge.getEdge(), allEdgeExplorer);
+		activateNodeEdges(closestEdge.getBaseNode(), -1, allEdgeExplorer);
 		return true;
 	}
 
-	private int activateNodeEdges(int nodeId, int exclude) {
+	private int activateNodeEdges(int nodeId, int exclude, EdgeExplorer explorer) {
 		int added = 0;
-		EdgeIterator iterator = outEdgeExplorer.setBaseNode(nodeId);
+		EdgeIterator iterator = explorer.setBaseNode(nodeId);
 		while (iterator.next()) {
 			Edge edge = new Edge(iterator);
 			if (edge.edgeId != exclude) {
@@ -117,6 +132,12 @@ public class MapMatcher implements IMapMatcher {
 			EvalResult bestEvalResult = null;
 			double maxValue = -Double.MAX_VALUE;
 
+			initLines();
+			for (Edge edge : activeEdges) {
+				addLine(edge);
+			}
+			sendLines();
+
 			for (Edge edge : activeEdges) {
 				EvalResult evalResult = evalEdge(edge, rLat, rLon);
 				double value = evalResult.value;
@@ -129,21 +150,11 @@ public class MapMatcher implements IMapMatcher {
 
 			assert bestEvalResult != null;
 
-			if (distanceCalc.calcDist(rLat, rLon, bestEvalResult.cLat, bestEvalResult.cLon) > MAX_DISTANCE) {
-				break;
-			}
-
-			if (bestEvalResult.node == -1) {
-				matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
-				matchedNode = routing.getPointIndex(new GeoPoint(matchedLocation), false);
-				return;
-			}
-
 			EdgeIteratorState edgeProps = graph.getEdgeProps(bestEvalResult.edge.edgeId, bestEvalResult.edge.baseNodeId);
 
 			activeEdges.clear();
-			int addedBase = activateNodeEdges(edgeProps.getBaseNode(), bestEvalResult.edge.edgeId);
-			int addedAdj = activateNodeEdges(edgeProps.getAdjNode(), bestEvalResult.edge.edgeId);
+			int addedBase = activateNodeEdges(edgeProps.getBaseNode(), bestEvalResult.edge.edgeId, outEdgeExplorer);
+			int addedAdj = activateNodeEdges(edgeProps.getAdjNode(), bestEvalResult.edge.edgeId, outEdgeExplorer);
 			activeEdges.add(bestEvalResult.edge);
 
 			if (bestEvalResult.node != -1) {
@@ -152,13 +163,19 @@ public class MapMatcher implements IMapMatcher {
 				} else if (addedAdj > 0 && bestEvalResult.node == edgeProps.getAdjNode()) {
 					continue;
 				} else {
+					// Dead end
 					matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
 					matchedNode = bestEvalResult.node;
 					return;
 				}
+			} else {
+				matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
+				matchedNode = routing.getPointIndex(new GeoPoint(matchedLocation), false);
+				return;
 			}
 		}
 
+		activeEdges.clear();
 		if (setInitialLocation(location))
 			setLocation(location);
 	}
@@ -217,6 +234,40 @@ public class MapMatcher implements IMapMatcher {
 	@Override
 	public int getMatchedNode() {
 		return matchedNode;
+	}
+
+
+	// Debug broadcasts
+	private TDoubleArrayList lines = new TDoubleArrayList();
+
+	private void initLines() {
+		lines.clear();
+	}
+
+	private void addLine(int node1, int node2) {
+		routing.getPoint(node1, tmpPoint);
+		lines.add(tmpPoint.getLatitude());
+		lines.add(tmpPoint.getLongitude());
+		routing.getPoint(node2, tmpPoint);
+		lines.add(tmpPoint.getLatitude());
+		lines.add(tmpPoint.getLongitude());
+	}
+
+	private void addLine(Edge edge) {
+		EdgeIteratorState edgeProps = graph.getEdgeProps(edge.edgeId, edge.baseNodeId);
+		addLine(edgeProps.getBaseNode(), edgeProps.getAdjNode());
+	}
+
+	private void sendLines() {
+		Intent intent = new Intent(TestLinesOverlay.BROADCAST);
+		intent.putExtra("lines", lines.toArray());
+		LocalBroadcastManager.getInstance(App.getContext()).sendBroadcast(intent);
+
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// Copied and modified from graphhopper's DistanceCalcEarth.java

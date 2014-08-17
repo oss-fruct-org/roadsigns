@@ -49,6 +49,7 @@
     <string name="pref_autoregion">Auto-detect region</string>
     <string name="pref_mapmatching">Map matching</string>
     <string name="str_updating_points">Updating points…</string>
+    <string name="str_cant_delete_active_content">Can\'t delete active content</string>
 
     <plurals name="distance_meters">
         <item quantity="one">Distance: %d meter</item>

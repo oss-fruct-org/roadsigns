@@ -65,6 +65,13 @@ public class DirectoryStorage implements ContentStorage {
 		}
 	}
 
+	public void deleteContentItem(ContentItem contentItem) {
+		DirectoryContentItem directoryContentItem = (DirectoryContentItem) contentItem;
+		File file = new File(directoryContentItem.getPath());
+		file.delete();
+		items.remove(contentItem);
+	}
+
 	public ContentItem storeContentItem(ContentItem remoteContentItem, InputStream input) throws IOException {
 		OutputStream output = null;
 

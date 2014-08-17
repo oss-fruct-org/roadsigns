@@ -522,14 +522,28 @@ public class OnlineContentActivity extends ActionBarActivity
 			actionMode.finish();
 			return true;
 		} else if (menuItem.getItemId() == R.id.action_delete) {
+			deleteContentItem(currentItem);
 			actionMode.finish();
-			throw new IllegalStateException("Not implemented yet");
 		} else if (menuItem.getItemId() == R.id.action_use) {
 			useContentItem(currentItem);
 			actionMode.finish();
 		}
 
 		return false;
+	}
+
+	private void deleteContentItem(ContentListItem currentItem) {
+		boolean wasError = false;
+		if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
+			for (ContentListSubItem subItem : currentItem.contentSubItems) {
+				if (!remoteContent.deleteContentItem(subItem.contentItem))
+					wasError = true;
+			}
+		}
+
+		if (wasError) {
+			Toast.makeText(this, getString(R.string.str_cant_delete_active_content), Toast.LENGTH_LONG).show();
+		}
 	}
 
 	private void useContentItem(ContentListItem currentItem) {

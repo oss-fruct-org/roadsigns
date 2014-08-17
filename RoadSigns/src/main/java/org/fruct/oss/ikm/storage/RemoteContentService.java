@@ -448,6 +448,35 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 	}
 
+	public boolean deleteContentItem(ContentItem contentItem) {
+		if (!localItems.contains(contentItem)) {
+			return true;
+		}
+
+		if (contentItem.getType().equals("graphhopper-map")) {
+			String map = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
+			if (contentItem.getName().equals(map)) {
+				return false;
+			}
+
+			localStorage.deleteContentItem(contentItem);
+			localItems.remove(contentItem);
+			notifyLocalListReady(localItems);
+		} else if (contentItem.getType().equals("mapsforge-map")) {
+			String map = pref.getString(SettingsActivity.OFFLINE_MAP, null);
+			if (contentItem.getName().equals(map)) {
+				return false;
+			}
+
+			localStorage.deleteContentItem(contentItem);
+			localItems.remove(contentItem);
+			notifyLocalListReady(localItems);
+		}
+
+		return true;
+	}
+
+
 	public interface Listener {
 		void localListReady(List<ContentItem> list);
 		void remoteListReady(List<ContentItem> list);

@@ -23,9 +23,7 @@ import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
 
 public class Gets implements IGets {
 	public static final String GET_CATEGORIES_REQUEST =
-			"<request><params>" +
-				"<auth_token>%s</auth_token>" +
-			"</params></request>";
+			"<request><params/></request>";
 	public static final String LOGIN_REQUEST =
 			"<request><params>" +
 				"<login>%s</login>" +

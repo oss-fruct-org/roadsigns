@@ -132,11 +132,11 @@ public class MapMatcher implements IMapMatcher {
 			EvalResult bestEvalResult = null;
 			double maxValue = -Double.MAX_VALUE;
 
-			initLines();
+			/*initLines();
 			for (Edge edge : activeEdges) {
 				addLine(edge);
 			}
-			sendLines();
+			sendLines();*/
 
 			for (Edge edge : activeEdges) {
 				EvalResult evalResult = evalEdge(edge, rLat, rLon);

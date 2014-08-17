@@ -14,6 +14,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
@@ -26,6 +27,7 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -364,13 +366,39 @@ public class Utils {
 		return (int) (Math.abs(coord));
 	}
 
+	public static String[] getSecondaryDirs() {
+		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
+		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
+			return secondaryStorageString.split(":");
+		} else {
+			return null;
+		}
+	}
+
+	public static String[] getExternalDirs(Context context) {
+		List<String> paths = new ArrayList<String>();
+		String[] secondaryDirs = getSecondaryDirs();
+		if (secondaryDirs != null) {
+			for (String secondaryDir : secondaryDirs) {
+				paths.add(secondaryDir + "/roadsigns");
+			}
+		}
+
+		File externalStorageDir = Environment.getExternalStorageDirectory();
+		if (externalStorageDir != null && externalStorageDir.isDirectory()) {
+			paths.add(Environment.getExternalStorageDirectory().getPath() + "/roadsigns");
+		}
+
+		return paths.toArray(new String[paths.size()]);
+	}
+
 	public static StorageDirDesc[] getPrivateStorageDirs(Context context) {
 		List<StorageDirDesc> ret = new ArrayList<StorageDirDesc>();
 
 		// Secondary external storage
-		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
-		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
-			for (String secondaryStoragePath : secondaryStorageString.split(":")) {
+		String[] secondaryDirs = getSecondaryDirs();
+		if (secondaryDirs != null) {
+			for (String secondaryStoragePath : secondaryDirs) {
 				ret.add(new StorageDirDesc(R.string.storage_path_sd_card, secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files"));
 			}
 		}

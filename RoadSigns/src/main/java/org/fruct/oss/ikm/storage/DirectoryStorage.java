@@ -24,9 +24,9 @@ import java.util.zip.ZipFile;
 public class DirectoryStorage implements ContentStorage {
 	private static final Logger log = LoggerFactory.getLogger(DirectoryStorage.class);
 
-	private String path;
-	private KeyValue digestCache;
-	private List<ContentItem> items;
+	protected String path;
+	protected KeyValue digestCache;
+	protected List<ContentItem> items;
 
 	public DirectoryStorage(KeyValue digestCache, String path) {
 		this.digestCache = digestCache;
@@ -34,11 +34,6 @@ public class DirectoryStorage implements ContentStorage {
 			throw new IllegalArgumentException("Path must not be null");
 
 		this.path = path;
-
-		File file = new File(path);
-		if (!file.mkdirs() && !file.isDirectory()) {
-			log.warn("Can't mkdirs new path");
-		}
 	}
 
 	@Override
@@ -62,46 +57,6 @@ public class DirectoryStorage implements ContentStorage {
 					log.warn("Unsupported file " + file.getName() + " found in directory " + dir.getName());
 				}
 			}
-		}
-	}
-
-	public void deleteContentItem(ContentItem contentItem) {
-		DirectoryContentItem directoryContentItem = (DirectoryContentItem) contentItem;
-		File file = new File(directoryContentItem.getPath());
-		file.delete();
-		items.remove(contentItem);
-	}
-
-	public ContentItem storeContentItem(ContentItem remoteContentItem, InputStream input) throws IOException {
-		OutputStream output = null;
-
-		String fileStr = path + "/" + remoteContentItem.getName();
-
-		File outputFile = new File(fileStr + ".roadsignsdownload");
-		File targetFile = new File(fileStr);
-
-		try {
-			output = new FileOutputStream(outputFile);
-
-			Utils.copyStream(input, output);
-
-			if (!outputFile.renameTo(targetFile))
-				throw new IOException("Can't replace original file with loaded file");
-
-			DirectoryContentItem localItem = new DirectoryContentItem(this, digestCache, remoteContentItem.getName());
-			localItem.setDescription(remoteContentItem.getDescription());
-			localItem.setType(remoteContentItem.getType());
-			localItem.setHash(remoteContentItem.getHash());
-			localItem.setRegionId(remoteContentItem.getRegionId());
-			items.add(localItem);
-
-			return localItem;
-		} catch (IOException e) {
-			outputFile.delete();
-			throw e;
-		} finally {
-			if (output != null)
-				output.close();
 		}
 	}
 
@@ -237,11 +192,4 @@ public class DirectoryStorage implements ContentStorage {
 		return "directory-storage";
 	}
 
-	public void migrate(String newPath) {
-		path = newPath;
-		File file = new File(path);
-		if (!file.mkdirs() && !file.isDirectory()) {
-			log.warn("Can't mkdirs new path");
-		}
-	}
 }

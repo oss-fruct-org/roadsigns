@@ -15,6 +15,7 @@ import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
 import org.fruct.oss.ikm.ProgressInputStream;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
@@ -56,7 +57,8 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private List<Listener> listeners = new ArrayList<Listener>();
 
 	private NetworkStorage networkStorage;
-	private DirectoryStorage localStorage;
+	private WritableDirectoryStorage mainLocalStorage;
+	private List<ContentStorage> localStorages = new ArrayList<ContentStorage>();
 
 	private KeyValue digestCache;
 
@@ -108,7 +110,14 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		networkStorage = new NetworkStorage(REMOTE_CONTENT_URLS);
 
 		currentStoragePath = dataService.getDataPath();
-		localStorage = new DirectoryStorage(digestCache, currentStoragePath + "/storage");
+		mainLocalStorage = new WritableDirectoryStorage(digestCache, currentStoragePath + "/storage");
+
+		String[] additionalStoragePaths = Utils.getExternalDirs(this);
+		for (String path : additionalStoragePaths) {
+			DirectoryStorage storage = new DirectoryStorage(digestCache, path);
+			localStorages.add(storage);
+		}
+
 		refresh();
 	}
 
@@ -192,9 +201,20 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			@Override
 			public void run() {
 				try {
-					localStorage.updateContentList();
 					List<ContentItem> localItems = new ArrayList<ContentItem>();
-					localItems.addAll(localStorage.getContentList());
+
+					mainLocalStorage.updateContentList();
+					localItems.addAll(mainLocalStorage.getContentList());
+
+					for (ContentStorage storage : localStorages) {
+						try {
+							storage.updateContentList();
+							localItems.addAll(storage.getContentList());
+						} catch (IOException e) {
+							log.warn("Can't load additional local storage");
+						}
+					}
+
 					RemoteContentService.this.localItems = localItems;
 
 					updateItemsByName();
@@ -202,6 +222,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				} catch (IOException e) {
 					notifyErrorInitializing(e);
 				}
+
 
 				try {
 					RemoteContentService.this.remoteItems = Collections.emptyList();
@@ -255,7 +276,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				log.warn("Unsupported hash algorithm");
 			}
 
-			ContentItem item = localStorage.storeContentItem(remoteItem, inputStream);
+			ContentItem item = mainLocalStorage.storeContentItem(remoteItem, inputStream);
 
 			// Update existing item
 			boolean found = false;
@@ -374,7 +395,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 	@Override
 	public void dataPathChanged(final String newDataPath) {
-		if (localStorage != null) {
+		if (mainLocalStorage != null) {
 			executor.shutdownNow();
 			if (regionsTask != null) {
 				regionsTask.cancel(true);
@@ -403,7 +424,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 					executor = Executors.newSingleThreadExecutor();
 
 					currentStoragePath = newDataPath;
-					localStorage.migrate(newDataPath + "/storage");
+					mainLocalStorage.migrate(newDataPath + "/storage");
 					dataService.dataListenerReady();
 				}
 			}.execute();
@@ -449,7 +470,9 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public boolean deleteContentItem(ContentItem contentItem) {
-		if (!localItems.contains(contentItem)) {
+		if (!localItems.contains(contentItem)
+				|| !contentItem.getStorage().equals(mainLocalStorage.getStorageName())) {
+			// Can delete only from main storage
 			return true;
 		}
 
@@ -459,7 +482,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				return false;
 			}
 
-			localStorage.deleteContentItem(contentItem);
+			mainLocalStorage.deleteContentItem(contentItem);
 			localItems.remove(contentItem);
 			notifyLocalListReady(localItems);
 		} else if (contentItem.getType().equals("mapsforge-map")) {
@@ -468,7 +491,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				return false;
 			}
 
-			localStorage.deleteContentItem(contentItem);
+			mainLocalStorage.deleteContentItem(contentItem);
 			localItems.remove(contentItem);
 			notifyLocalListReady(localItems);
 		}

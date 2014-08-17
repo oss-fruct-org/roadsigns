@@ -76,7 +76,7 @@ public class DirectoryStorage implements ContentStorage {
 		try {
 			output = new FileOutputStream(outputFile);
 
-			IOUtils.copy(input, output);
+			Utils.copyStream(input, output);
 
 			if (!outputFile.renameTo(targetFile))
 				throw new IOException("Can't replace original file with loaded file");

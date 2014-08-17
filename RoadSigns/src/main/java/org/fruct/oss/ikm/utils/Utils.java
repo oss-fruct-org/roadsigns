@@ -7,6 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Utils {
+	private static final int BUFFER_SIZE = 4096;
 	private static Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private Utils() {
@@ -76,6 +79,18 @@ public class Utils {
 		}
 		return builder.toString();
 	}*/
+
+	public static void copyStream(InputStream input, OutputStream output) throws IOException {
+		byte[] buffer = new byte[BUFFER_SIZE];
+		int r = 0;
+		Thread currentThread = Thread.currentThread();
+
+		while ((r = input.read(buffer)) != -1) {
+			output.write(buffer, 0, r);
+			if (currentThread.isInterrupted())
+				throw new InterruptedIOException();
+		}
+	}
 
 	private static final char[] hexDigits = "0123456789abcdef".toCharArray();
 	public static String toHex(byte[] arr) {
@@ -432,7 +447,7 @@ public class Utils {
 					FileInputStream inputStream = new FileInputStream(file);
 					FileOutputStream outputStream = new FileOutputStream(newFile);
 
-					IOUtils.copy(inputStream, outputStream);
+					copyStream(inputStream, outputStream);
 
 					IOUtils.closeQuietly(inputStream);
 					IOUtils.closeQuietly(outputStream);

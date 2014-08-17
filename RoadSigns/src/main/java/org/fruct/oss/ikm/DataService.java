@@ -214,7 +214,7 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 
 				notifyMigrateFile(newFile.getName(), n + count++, max);
 
-				IOUtils.copy(inputStream, outputStream);
+				Utils.copyStream(inputStream, outputStream);
 
 				IOUtils.closeQuietly(inputStream);
 				IOUtils.closeQuietly(outputStream);

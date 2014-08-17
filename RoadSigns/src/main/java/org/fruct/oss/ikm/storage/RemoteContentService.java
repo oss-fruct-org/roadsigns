@@ -28,11 +28,13 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
@@ -60,6 +62,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 	private RegionsTask regionsTask;
+	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
 
 	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
 	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
@@ -131,12 +134,23 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public void downloadItem(ContentItem contentItem) {
 		final NetworkContentItem remoteItem = (NetworkContentItem) contentItem;
 
-		executor.execute(new Runnable() {
+		Future<?> downloadTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				asyncDownloadItem(remoteItem);
 			}
 		});
+
+		synchronized (downloadTasks) {
+			downloadTasks.add(downloadTask);
+
+			for (Iterator<Future<?>> iterator = downloadTasks.iterator(); iterator.hasNext(); ) {
+				Future<?> task = iterator.next();
+				if (task.isDone()) {
+					iterator.remove();
+				}
+			}
+		}
 	}
 
 	public void addListener(Listener listener) {
@@ -350,7 +364,12 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public void interrupt() {
-		throw new IllegalStateException("Not supported yet");
+		synchronized (downloadTasks) {
+			for (Future<?> task : downloadTasks) {
+				task.cancel(true);
+			}
+			downloadTasks.clear();
+		}
 	}
 
 	@Override

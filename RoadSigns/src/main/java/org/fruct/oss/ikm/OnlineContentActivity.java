@@ -312,7 +312,9 @@ public class OnlineContentActivity extends ActionBarActivity
 			break;
 
 		case R.id.action_stop:
-			remoteContent.interrupt();
+			if (remoteContent != null) {
+				remoteContent.interrupt();
+			}
 			break;
 		}
 

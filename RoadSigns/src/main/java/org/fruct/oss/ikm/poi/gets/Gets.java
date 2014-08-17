@@ -108,7 +108,7 @@ public class Gets implements IGets {
 
 			requestBuilder.append("<latitude>").append(position.getLatitude()).append("</latitude>");
 			requestBuilder.append("<longitude>").append(position.getLongitude()).append("</longitude>");
-			requestBuilder.append("<radius>").append(radius).append("</radius>");
+			requestBuilder.append("<radius>").append(radius / 1000.0).append("</radius>");
 
 			if (category != null) {
 				requestBuilder.append("<category_id>").append(category.getId()).append("</category_id>");

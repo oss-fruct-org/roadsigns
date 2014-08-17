@@ -72,7 +72,7 @@ public class Kml implements IContent {
 		@Element(name="coordinates")
 		@Path("Point")
 		public String getCoordinates() {
-			return latitude + ", " + longitude + ", 0.0";
+			return longitude + ", " + latitude + ", 0.0";
 		}
 
 		public String getName() {

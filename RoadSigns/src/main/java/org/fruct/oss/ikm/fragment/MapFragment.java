@@ -78,9 +78,7 @@ import org.osmdroid.views.overlay.PathOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -1022,7 +1020,7 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	@Override
-	public void filterStateChanged(List<PointDesc> newList, List<PointDesc> added, List<PointDesc> removed) {
+	public void filterStateChanged(List<PointDesc> newList) {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {

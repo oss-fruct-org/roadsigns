@@ -391,8 +391,7 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	@Override
-	public void filterStateChanged(List<PointDesc> newList,
-								   List<PointDesc> added, List<PointDesc> removed) {
+	public void filterStateChanged(List<PointDesc> newList) {
 		if (dirManager != null) {
 			dirManager.calculateForPoints(newList);
 		}

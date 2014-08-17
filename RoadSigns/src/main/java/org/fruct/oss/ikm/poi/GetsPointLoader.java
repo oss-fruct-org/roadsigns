@@ -33,14 +33,16 @@ public class GetsPointLoader extends PointLoader {
 			List<CategoriesList.Category> categories = gets.getCategories();
 
 			for (CategoriesList.Category cat : categories) {
-				log.trace("Category: {}", cat.getDescription());
 				try {
 					points.addAll(gets.getPoints(cat, lastPosition, radius));
 				} catch (IOException ex) {
 
 				}
 			}
-			notifyPointsReady(points);
+
+			if (!points.isEmpty()) {
+				notifyPointsReady(points);
+			}
 		}
 	}
 

@@ -24,11 +24,8 @@ public class PointsManager {
 	private static Logger log = LoggerFactory.getLogger(PointsManager.class);
 
 	public interface PointsListener {
-		void filterStateChanged(List<PointDesc> newList, List<PointDesc> added,
-				List<PointDesc> removed);
+		void filterStateChanged(List<PointDesc> newList);
 	}
-
-	private boolean needUpdate = true;
 
 	private List<PointLoader> loaders = new ArrayList<PointLoader>();
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -36,7 +33,7 @@ public class PointsManager {
 	/**
 	 * All points fetched from loaders
 	 */
-	private List<PointDesc> points = new ArrayList<PointDesc>();
+	private final List<PointDesc> points = new ArrayList<PointDesc>();
 
 	/**
 	 * Points that accepted by at least one filter
@@ -66,27 +63,25 @@ public class PointsManager {
 		});
 	}
 
+	private void removePointLoader(final PointLoader pointLoader) {
+		loaders.remove(pointLoader);
+	}
+
 	private void updatePointLoader(PointLoader pointLoader) {
 		try {
-			// Remove old points
-			List<PointDesc> oldPoints = pointLoader.getPoints();
-			if (oldPoints != null)
-				this.points.removeAll(oldPoints);
+			pointLoader.loadFromStorage(storage);
+			recreatePointList();
+
+			List<PointDesc> currentPoints = pointLoader.getPoints();
 
 			pointLoader.loadPoints();
-			if (pointLoader.getPoints() != null)
+			if (pointLoader.getPoints() != currentPoints) {
 				storage.insertPoints(pointLoader.getPoints(), pointLoader.getName());
-			else
-				pointLoader.loadFromStorage(storage);
+				recreatePointList();
+			}
 		} catch (Exception ex) {
-			log.warn("Can not load points from loader " + pointLoader.getClass().getName() + ". Trying to load from storage", ex);
-			pointLoader.loadFromStorage(storage);
+			log.error("Can't load points from loader " + pointLoader.getClass().getName(), ex);
 		}
-
-		// When previous method returns, points guaranteed to be ready
-		List<PointDesc> newPoints = pointLoader.getPoints();
-		if (newPoints != null)
-			addPoints(newPoints);
 	}
 
 	public void updatePosition(final GeoPoint position) {
@@ -121,11 +116,7 @@ public class PointsManager {
 		if (!pref.getBoolean(SettingsActivity.GETS_ENABLE, true)) {
 			// If GETS_ENABLE is off and and GETS loaded, unload it
 			if (getsPointsLoader != null) {
-				final List<PointDesc> getsPoints = getsPointsLoader.getPoints();
-
-				if (getsPoints != null)
-					removePoints(getsPoints);
-
+				removePointLoader(getsPointsLoader);
 				getsPointsLoader = null;
 			}
 			return;
@@ -143,29 +134,24 @@ public class PointsManager {
 		getsPointsLoader = new GetsPointLoader(getsServer);
 		getsPointsLoader.setRadius(radius);
 
-		//getsPointsLoader = new GetsPointLoader("http://172.20.46.186/gets");
-
 		addPointLoader(getsPointsLoader);
 	}
 
-	private synchronized void removePoints(List<PointDesc> points) {
-		log.trace("Removing points");
-		this.points.removeAll(points);
+	private void recreatePointList() {
+		synchronized (points) {
+			points.clear();
 
-		notifyFiltersUpdated();
+			for (PointLoader pointLoader : loaders) {
+				points.addAll(pointLoader.getPoints());
+			}
+
+        	createFiltersFromPoints();
+        	notifyFiltersUpdated();
+		}
 	}
 
-	private synchronized void addPoints(List<PointDesc> points) {
-        log.trace("Adding new points");
-        this.points.addAll(points);
-        needUpdate = true;
 
-        createFiltersFromPoints(this.points);
-        notifyFiltersUpdated();
-    }
-
-
-	private void createFiltersFromPoints(List<PointDesc> points) {
+	private void createFiltersFromPoints() {
         log.trace("Recreating filters");
 
         Set<String> names = new HashSet<String>();
@@ -189,19 +175,16 @@ public class PointsManager {
 		listeners.remove(listener);
 	}
 
-	public synchronized List<PointDesc> getFilteredPoints() {
-		ensureValid();
-		return filteredPoints;
+	public List<PointDesc> getFilteredPoints() {
+		synchronized (points) {
+			return filteredPoints;
+		}
 	}
 
 	public List<PointDesc> getAllPoints() {
-		return points;
-	}
-
-	public List<PointDesc> filterPoints(List<PointDesc> list) {
-		ArrayList<PointDesc> ret = new ArrayList<PointDesc>();
-		filterPoints(list, ret);
-		return Collections.unmodifiableList(ret);
+		synchronized (points) {
+			return points;
+		}
 	}
 
 	private void filterPoints(List<PointDesc> in, List<PointDesc> out) {
@@ -221,31 +204,14 @@ public class PointsManager {
 		return Collections.unmodifiableList(filters);
 	}
 
-	public synchronized void notifyFiltersUpdated() {
-		List<PointDesc> oldFilteredPoints = filteredPoints;
+	public void notifyFiltersUpdated() {
 		List<PointDesc> filteredPoints = new ArrayList<PointDesc>();
 		filterPoints(points, filteredPoints);
 
-		List<PointDesc> addedPoints = new ArrayList<PointDesc>(filteredPoints);
-		List<PointDesc> removedPoints = new ArrayList<PointDesc>(oldFilteredPoints);
-
-		addedPoints.removeAll(oldFilteredPoints);
-		removedPoints.removeAll(filteredPoints);
-
 		this.filteredPoints = Collections.unmodifiableList(filteredPoints);
-		needUpdate = false;
 
 		for (PointsListener listener : listeners) {
-			listener.filterStateChanged(filteredPoints, addedPoints, removedPoints);
-		}
-	}
-
-	private void ensureValid() {
-		if (needUpdate) {
-			needUpdate = false;
-			ArrayList<PointDesc> newArray = new ArrayList<PointDesc>();
-			filterPoints(points, newArray);
-			filteredPoints = Collections.unmodifiableList(newArray);
+			listener.filterStateChanged(filteredPoints);
 		}
 	}
 

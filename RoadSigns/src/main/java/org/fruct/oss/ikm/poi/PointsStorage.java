@@ -74,12 +74,11 @@ public class PointsStorage {
 	public List<PointDesc> loadAll(String sourcePointLoader) {
 		List<PointDesc> ret = new ArrayList<PointDesc>();
 		Cursor cursor = db.query("points", QUERY_COLUMNS, "source=?", new String[]{ sourcePointLoader }, null, null, null);
-		if (!cursor.moveToFirst())
-			return ret;
 
-		do {
+		while (cursor.moveToNext()) {
 			ret.add(createFromCursor(cursor));
-		} while (cursor.moveToNext());
+		}
+
 		return ret;
 	}
 

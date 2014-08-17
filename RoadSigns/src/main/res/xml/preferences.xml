@@ -45,6 +45,8 @@
     <ListPreference
         android:title="@string/pref_storage_path_title"
         android:key="storage_path"
+        android:entries="@array/stub_array"
+        android:entryValues="@array/stub_array"
         />
 
     <CheckBoxPreference

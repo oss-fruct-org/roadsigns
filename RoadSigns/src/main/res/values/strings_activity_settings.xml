@@ -45,6 +45,10 @@
         <item>-1</item>
     </string-array>
 
+    <string-array name="stub_array">
+        <item>empty</item>
+    </string-array>
+
     <string name="pref_title_system_sync_settings">System sync settings</string>
 
     <!-- Example settings for Notifications -->

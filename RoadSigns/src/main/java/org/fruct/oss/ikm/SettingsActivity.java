@@ -83,7 +83,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
-	
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+
+		updateStoragePath(sharedPreferences, storagePathPref);
+	}
+
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -91,8 +99,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 		updateNearestPoints(sharedPreferences);
 		updateVehicle();
-
-		updateStoragePath(sharedPreferences, storagePathPref);
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 

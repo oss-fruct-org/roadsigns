@@ -296,6 +296,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			updateItemsByName();
 			notifyLocalListReady(localItems);
 			notifyDownloadFinished(item, remoteItem);
+			tryActivateItem(item);
 		} catch (InterruptedIOException ex) {
 			notifyDownloadInterrupted(remoteItem);
 		} catch (IOException e) {
@@ -456,15 +457,26 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public void activateRegionById(String regionId) {
+		pref.edit().putString(SettingsActivity.CURRENT_REGION, regionId).apply();
+		pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
+		pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
+
 		for (ContentItem contentItem : localItems) {
-			if (contentItem.getRegionId().equals(regionId)) {
-				if (contentItem.getType().equals("graphhopper-map")) {
-					pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
-					pref.edit().putString(SettingsActivity.NAVIGATION_DATA, contentItem.getName()).apply();
-				} else if (contentItem.getType().equals("mapsforge-map")) {
-					pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
-					pref.edit().putString(SettingsActivity.OFFLINE_MAP, contentItem.getName()).apply();
-				}
+			tryActivateItem(contentItem);
+		}
+	}
+
+	private void tryActivateItem(ContentItem contentItem) {
+		String regionId = pref.getString(SettingsActivity.CURRENT_REGION, null);
+		if (regionId == null) {
+			return;
+		}
+
+		if (contentItem.getRegionId().equals(regionId)) {
+			if (contentItem.getType().equals("graphhopper-map")) {
+				pref.edit().putString(SettingsActivity.NAVIGATION_DATA, contentItem.getName()).apply();
+			} else if (contentItem.getType().equals("mapsforge-map")) {
+				pref.edit().putString(SettingsActivity.OFFLINE_MAP, contentItem.getName()).apply();
 			}
 		}
 	}

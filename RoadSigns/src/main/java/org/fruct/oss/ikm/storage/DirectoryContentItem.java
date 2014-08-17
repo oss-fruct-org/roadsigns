@@ -1,12 +1,16 @@
 package org.fruct.oss.ikm.storage;
 
 import org.fruct.oss.ikm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class DirectoryContentItem implements ContentItem {
+	private static final Logger log = LoggerFactory.getLogger(DirectoryStorage.class);
+
 	private final KeyValue digestCache;
 	private final DirectoryStorage storage;
 
@@ -60,6 +64,8 @@ public class DirectoryContentItem implements ContentItem {
 		hash = digestCache.get(name);
 
 		if (hash == null) {
+			log.trace("Sha1 of {}", getPath());
+
 			try {
 				FileInputStream input = new FileInputStream(getPath());
 				hash = Utils.hashStream(input, "sha1");

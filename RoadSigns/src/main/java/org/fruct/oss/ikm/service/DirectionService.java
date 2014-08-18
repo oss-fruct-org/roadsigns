@@ -305,6 +305,8 @@ public class DirectionService extends Service implements PointsListener,
 		if (locationReceiver.isStarted()) {
 			if (lastMatchedLocation != null) {
 				notifyLocationChanged(lastMatchedLocation, lastMatchedLocation);
+			} else {
+				notifyLocationChanged(lastLocation, lastLocation);
 			}
 
 			if (lastResultDirections != null)

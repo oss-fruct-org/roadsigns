@@ -1,6 +1,8 @@
 package org.fruct.oss.ikm.storage;
 
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,11 +12,16 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
+import org.fruct.oss.ikm.MainActivity;
+import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.ProgressInputStream;
+import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
@@ -41,6 +48,7 @@ import java.util.zip.GZIPInputStream;
 
 public class RemoteContentService extends Service implements DataService.DataListener {
 	private static final Logger log = LoggerFactory.getLogger(RemoteContentService.class);
+	private static final int NOTIFY_ID = 11;
 
 	public static final String[] REMOTE_CONTENT_URLS = {
 			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
@@ -146,13 +154,26 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		Future<?> downloadTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
-				asyncDownloadItem(remoteItem);
+				try {
+					PendingIntent contentIntent = PendingIntent.getActivity(RemoteContentService.this, 0,
+							new Intent(RemoteContentService.this, MainActivity.class), 0);
+
+					NotificationCompat.Builder builder = new NotificationCompat.Builder(RemoteContentService.this);
+					builder.setSmallIcon(R.drawable.ic_launcher)
+							.setContentTitle("Road Signs")
+							.setContentText("Downloading " + remoteItem.getName())
+							.setContentIntent(contentIntent);
+
+					startForeground(NOTIFY_ID, builder.build());
+					asyncDownloadItem(remoteItem);
+				} finally {
+					stopForeground(true);
+				}
 			}
 		});
 
 		synchronized (downloadTasks) {
 			downloadTasks.add(downloadTask);
-
 			for (Iterator<Future<?>> iterator = downloadTasks.iterator(); iterator.hasNext(); ) {
 				Future<?> task = iterator.next();
 				if (task.isDone()) {

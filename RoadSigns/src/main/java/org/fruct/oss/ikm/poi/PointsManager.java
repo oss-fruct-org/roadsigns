@@ -178,6 +178,13 @@ public class PointsManager {
         log.trace("Recreating filters");
 
         Set<String> names = new HashSet<String>();
+		Set<String> oldDiabledFilters = new HashSet<String>();
+
+		for (Filter filter : filters) {
+			if (!filter.isActive()) {
+				oldDiabledFilters.add(filter.getString());
+			}
+		}
 
         filters.clear();
 		for (PointDesc point : points)
@@ -187,6 +194,9 @@ public class PointsManager {
             log.trace("Filter for category {}", str);
 			CategoryFilter filter = new CategoryFilter(str, str);
 			filters.add(filter);
+			if (oldDiabledFilters.contains(filter.getString())) {
+				filter.setActive(false);
+			}
 		}
 	}
 

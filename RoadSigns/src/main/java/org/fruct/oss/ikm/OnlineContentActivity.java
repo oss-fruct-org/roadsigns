@@ -171,6 +171,13 @@ class ContentAdapter extends BaseAdapter {
 			else
 				views[idx].setTypeface(null, Typeface.NORMAL);
 
+			if (subItem.contentItem == downloadItem) {
+				TextView downloadTextView = tag.item1 == downloadItem ? tag.text2 : tag.text3;
+
+				downloadTextView.setTypeface(null, Typeface.NORMAL);
+				downloadTextView.setText(downloadString);
+			}
+
 			idx++;
 		}
 
@@ -178,35 +185,12 @@ class ContentAdapter extends BaseAdapter {
 	}
 
 	public void updateDownloadString(ContentItem ci, String downloadString) {
-		// This optimization can cause error after list rotation
-		if (ci != lastUpdateItem) {
-			for (ContentListItem cli : items) {
-				for (ContentListSubItem clsi : cli.contentSubItems) {
-					if (ci == clsi.contentItem) {
-						lastUpdateTag = (Holder) clsi.tag;
-						lastUpdateItem = ci;
-						break;
-					}
-				}
-			}
+		if (downloadItem != ci) {
+			this.downloadItem = ci;
 		}
 
-		TextView textView = null;
-
-		if (lastUpdateTag == null) {
-			return;
-		}
-
-		if (lastUpdateTag.item1 == ci) {
-			textView = lastUpdateTag.text2;
-		} else 	if (lastUpdateTag.item2 == ci) {
-			textView = lastUpdateTag.text3;
-		}
-
-		if (textView != null) {
-			textView.setTypeface(null, Typeface.NORMAL);
-			textView.setText(downloadString);
-		}
+		this.downloadString = downloadString;
+		notifyDataSetChanged();
 	}
 
 	class Holder {
@@ -224,8 +208,8 @@ class ContentAdapter extends BaseAdapter {
 	}
 
 	// Optimization of download string update
-	private Holder lastUpdateTag;
-	private ContentItem lastUpdateItem;
+	private ContentItem downloadItem;
+	private String downloadString;
 }
 
 public class OnlineContentActivity extends ActionBarActivity

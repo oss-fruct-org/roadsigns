@@ -93,7 +93,7 @@ public class GetsPointLoader extends PointLoader {
 		currentPosition = Utils.copyGeoPoint(geoPoint);
 
 		if (lastPosition == null
-				|| lastPosition.distanceTo(geoPoint) > POINT_UPDATE_DISTANCE
+				|| lastPosition.distanceTo(geoPoint) > radius / 3
 				|| System.currentTimeMillis() - lastTime > POINT_UPDATE_TIME) {
 			log.trace("Updating position");
 			needUpdate = true;

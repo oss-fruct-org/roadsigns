@@ -177,7 +177,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		storagePathPref.setEntryValues(paths);
 		storagePathPref.setEntries(names);
 
-		if (currentValue != null)
+		if (currentValue != null && currentNameRes != -1)
 			storagePathPref.setSummary(currentNameRes);
 	}
 

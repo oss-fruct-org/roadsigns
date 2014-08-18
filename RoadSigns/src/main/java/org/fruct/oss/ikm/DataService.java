@@ -178,6 +178,10 @@ public class DataService extends Service implements SharedPreferences.OnSharedPr
 		File fromDir = new File(dataPath);
 		File toDir = new File(newDataPath);
 
+		if (!fromDir.isDirectory()) {
+			return true;
+		}
+
 		int max = countDirectory(fromDir);
 
 		try {

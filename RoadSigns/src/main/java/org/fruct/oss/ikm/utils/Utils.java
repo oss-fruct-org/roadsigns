@@ -369,9 +369,23 @@ public class Utils {
 	}
 
 	public static String[] getSecondaryDirs() {
+		List<String> ret = new ArrayList<String>();
 		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
 		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
-			return secondaryStorageString.split(":");
+			String[] dirs = secondaryStorageString.split(":");
+
+			for (String dir : dirs) {
+				File file = new File(dir);
+				if (file.isDirectory() && file.canWrite()) {
+					ret.add(dir);
+				}
+			}
+
+			if (ret.isEmpty())
+				return null;
+			else
+				return ret.toArray(new String[ret.size()]);
+
 		} else {
 			return null;
 		}
@@ -424,83 +438,6 @@ public class Utils {
 			this.nameRes = nameRes;
 			this.path = path;
 		}
-	}
-
-	public static void atomicCopy(String oldPath, String newPath, Utils.MigrationListener listener) throws IOException {
-		if (oldPath.equals(newPath))
-			return;
-
-		File newDir = new File(newPath);
-		if (newDir.exists() && !newDir.isDirectory())
-			throw new IOException("Target directory already exists and actually not an directory");
-
-		// First, enumerate all files in old directory
-		File oldDir = new File(oldPath);
-		File[] oldFiles = oldDir.listFiles();
-
-		boolean canRename = false;
-		// Check that files in directories can be simply renamed
-		File tmpFile = new File(oldDir, ".roadsignstemporary" + System.currentTimeMillis());
-		if (tmpFile.createNewFile()) {
-			File tmpNewFile = new File(newDir, ".roadsignstemporary" + System.currentTimeMillis());
-			canRename = tmpFile.renameTo(tmpNewFile);
-			tmpFile.delete();
-			tmpNewFile.delete();
-		}
-
-		if (!newDir.mkdirs() && !newDir.isDirectory()) {
-			throw new IOException("Cannot create migration target directory " + newDir);
-		}
-
-		List<File> copiedFiles = new ArrayList<File>();
-
-		try {
-			for (int i = 0, oldFilesLength = oldFiles.length; i < oldFilesLength; i++) {
-				File file = oldFiles[i];
-				if (file.isDirectory()) {
-					log.warn("Content directory contains subdirectory {}", file);
-					continue;
-				}
-
-				String name = file.getName();
-				File newFile = new File(newDir, name);
-
-				if (canRename) {
-					if (!file.renameTo(newFile)) {
-						log.warn("Can't rename file but previous test show that renaming is possible. Fallback to copying");
-						canRename = false;
-					}
-				}
-
-				if (!canRename) {
-					listener.fileCopying(name, i, oldFilesLength);
-					FileInputStream inputStream = new FileInputStream(file);
-					FileOutputStream outputStream = new FileOutputStream(newFile);
-
-					copyStream(inputStream, outputStream);
-
-					IOUtils.closeQuietly(inputStream);
-					IOUtils.closeQuietly(outputStream);
-
-					copiedFiles.add(newFile);
-				}
-			}
-		} catch (IOException e) {
-			// Clean up target directory before exit
-			for (File file : copiedFiles) {
-				file.delete();
-			}
-
-			newDir.delete();
-			throw e;
-		}
-
-		// Delete old directory
-		for (File file : oldFiles) {
-			file.delete();
-		}
-
-		oldDir.delete();
 	}
 
 	// http://stackoverflow.com/questions/3301635/change-private-static-final-field-using-java-reflection

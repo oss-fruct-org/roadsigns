@@ -10,6 +10,8 @@ import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -500,6 +502,23 @@ public class Utils {
 
 		oldDir.delete();
 	}
+
+	// http://stackoverflow.com/questions/3301635/change-private-static-final-field-using-java-reflection
+	public static void setFinalStatic(Field field, Object newValue) throws NoSuchFieldException, IllegalAccessException {
+		field.setAccessible(true);
+
+		try {
+			Field modifiersField = Field.class.getDeclaredField("modifiers");
+			modifiersField.setAccessible(true);
+			modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+		} catch (NoSuchFieldException ignore) {
+		} catch (IllegalAccessException ignore) {
+		} catch (IllegalArgumentException ignore) {
+		}
+
+		field.set(null, newValue);
+	}
+
 
 	public static interface MigrationListener {
 		void fileCopying(String name, int n, int max);

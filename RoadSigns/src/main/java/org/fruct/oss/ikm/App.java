@@ -5,11 +5,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.preference.PreferenceManager;
 
+import org.fruct.oss.ikm.utils.Utils;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.osmdroid.tileprovider.BitmapPool;
+import org.osmdroid.tileprovider.constants.OpenStreetMapTileProviderConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -35,8 +38,33 @@ public class App extends Application {
 		App.app = this;
 		PreferenceManager.setDefaultValues(App.context, R.xml.preferences, false);
 		AndroidGraphicFactory.createInstance(this);
+		hackOsmdroidCache();
 	}
-	
+
+	private void hackOsmdroidCache() {
+		// XXX: hack osmdroid cache path. This should must be removed as soon as osmdroid allows customisation
+		File newCacheFile = new File(context.getCacheDir(), "osmdroid");
+		File tilesFile = new File(newCacheFile, "tiles");
+
+		newCacheFile.mkdirs();
+		tilesFile.mkdirs();
+
+		if (newCacheFile.isDirectory() && tilesFile.isDirectory()) {
+			try {
+				Class<?> cls = OpenStreetMapTileProviderConstants.class;
+
+				Utils.setFinalStatic(cls.getField("OSMDROID_PATH"), newCacheFile);
+				Utils.setFinalStatic(cls.getField("TILE_PATH_BASE"), tilesFile);
+
+				//Utils.setFinalStatic(cls.getField("TILE_MAX_CACHE_SIZE_BYTES"), 10 * 1024 * 1024);
+				//Utils.setFinalStatic(cls.getField("TILE_TRIM_CACHE_SIZE_BYTES"), 8 * 1024 * 1024);
+			} catch (Exception ex) {
+				// Let osmdroid write to external storage
+				log.error("Can't hack osmdroid", ex);
+			}
+		}
+	}
+
 	public static Context getContext() {
 		if (context == null)
 			throw new IllegalStateException("Application not initialized yet");

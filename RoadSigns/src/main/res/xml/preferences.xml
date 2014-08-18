@@ -126,7 +126,7 @@
             android:title="GeTS Server"
             android:inputType="textUri"/>
         <EditTextPreference
-            android:defaultValue="20"
+            android:defaultValue="20000"
             android:key="gets_radius"
             android:title="Radius"
             android:inputType="number"/>

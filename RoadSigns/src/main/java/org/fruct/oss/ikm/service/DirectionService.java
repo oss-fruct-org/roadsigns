@@ -340,11 +340,12 @@ public class DirectionService extends Service implements PointsListener,
 				remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
 			return;
 		} else if (mapMatcher != null) {
-			// TODO: can be time consuming
 			mapMatcher.updateLocation(location);
 
 			lastMatchedLocation = mapMatcher.getMatchedLocation();
 			lastMatchedNode = mapMatcher.getMatchedNode();
+		} else {
+			notifyLocationChanged(location, location);
 		}
 
 		if (lastMatchedLocation != null) {

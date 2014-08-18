@@ -90,13 +90,11 @@ public class GetsPointLoader extends PointLoader {
 		super.updatePosition(geoPoint);
 		log.trace("GetsPointLoader.updatePosition {}", geoPoint);
 
-		int dist = lastPosition.distanceTo(geoPoint);
-		long dTime = System.currentTimeMillis() - lastTime;
 		currentPosition = Utils.copyGeoPoint(geoPoint);
 
 		if (lastPosition == null
-				|| dist > POINT_UPDATE_DISTANCE
-				|| dTime > POINT_UPDATE_TIME) {
+				|| lastPosition.distanceTo(geoPoint) > POINT_UPDATE_DISTANCE
+				|| System.currentTimeMillis() - lastTime > POINT_UPDATE_TIME) {
 			log.trace("Updating position");
 			needUpdate = true;
 		} else {

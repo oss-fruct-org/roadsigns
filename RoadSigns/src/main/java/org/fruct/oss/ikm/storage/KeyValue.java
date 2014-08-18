@@ -86,5 +86,6 @@ public class KeyValue implements Closeable {
 			db.execSQL("DROP TABLE " + name);
 			onCreate(db);
 		}
+
 	}
 }

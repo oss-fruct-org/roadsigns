@@ -51,10 +51,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private static final int NOTIFY_ID = 11;
 
 	public static final String[] REMOTE_CONTENT_URLS = {
-			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
-			"http://example.com/non-working-content-url.xml",
-			"http://oss.fruct.org/projects/roadsigns/root.xml",
-			"https://dl.dropboxusercontent.com/sh/x3qzpqcrqd7ftys/8uy2pMvBFW/all-root.xml"};
+			"http://oss.fruct.org/projects/roadsigns/root.xml"};
 	public static final int REPORT_INTERVAL = 100000;
 
 	private Handler handler = new Handler(Looper.getMainLooper());

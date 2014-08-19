@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.view.ActionMode;
 import android.view.LayoutInflater;
@@ -17,9 +18,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -193,7 +196,7 @@ class ContentAdapter extends BaseAdapter {
 }
 
 public class OnlineContentActivity extends ActionBarActivity
-		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener {
+		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener, ActionBar.OnNavigationListener {
 
 	public enum LocalContentState {
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
@@ -210,7 +213,8 @@ public class OnlineContentActivity extends ActionBarActivity
 	// Last selected item
 	private ContentListItem currentItem;
 	private String currentItemName;
-	private int currentItemPosition;
+
+	private LocalContentState filteredState;
 
 	private RemoteContentService remoteContent;
 
@@ -228,6 +232,7 @@ public class OnlineContentActivity extends ActionBarActivity
 			currentItemName = savedInstanceState.getString("current-item-idx");
 
 		setContentView(R.layout.online_content_layout);
+		setupSpinner();
 
 		adapter = new ContentAdapter(this, R.layout.point_list_item, Collections.<ContentListItem>emptyList());
 
@@ -245,6 +250,14 @@ public class OnlineContentActivity extends ActionBarActivity
 
 		downloadFragment = (DownloadProgressFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
 		getSupportFragmentManager().beginTransaction().hide(downloadFragment).commit();
+	}
+
+	private void setupSpinner() {
+		ActionBar actionBar = getSupportActionBar();
+		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+
+		SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(this, R.array.content_spinner, android.R.layout.simple_spinner_dropdown_item);
+		actionBar.setListNavigationCallbacks(spinnerAdapter, this);
 	}
 
 	@Override
@@ -296,81 +309,9 @@ public class OnlineContentActivity extends ActionBarActivity
 				remoteItems = new ArrayList<ContentItem>(remoteContent.getRemoteItems()));
 	}
 
-	private List<ContentListItem> asyncGenerateContentList(List<ContentItem> localItems, List<ContentItem> remoteItems) {
-		HashMap<String, ContentListSubItem> states
-				= new HashMap<String, ContentListSubItem>(localItems.size());
-
-		for (ContentItem item : localItems) {
-			states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
-		}
-
-		for (ContentItem remoteItem : remoteItems) {
-			String name = remoteItem.getName();
-
-			ContentListSubItem subItem = states.get(name);
-			ContentItem localItem = subItem == null ? null : subItem.contentItem;
-
-			LocalContentState newState;
-			ContentItem saveItem = remoteItem;
-
-			if (localItem == null) {
-				newState = LocalContentState.NOT_EXISTS;
-			} else if (!localItem.getHash().equals(remoteItem.getHash())) {
-				newState = LocalContentState.NEEDS_UPDATE;
-			} else {
-				saveItem = localItem;
-				newState = LocalContentState.UP_TO_DATE;
-			}
-
-			states.put(name, new ContentListSubItem(saveItem, newState));
-		}
-
-		HashMap<String, List<ContentListSubItem>> listViewMap
-				= new HashMap<String, List<ContentListSubItem>>();
-
-		for (Map.Entry<String, ContentListSubItem> entry : states.entrySet()) {
-			String rId = entry.getValue().contentItem.getRegionId();
-			List<ContentListSubItem> l = listViewMap.get(rId);
-
-			if (l == null) {
-				l = new ArrayList<ContentListSubItem>();
-				listViewMap.put(rId, l);
-			}
-
-			l.add(entry.getValue());
-		}
-
-		List<ContentListItem> listViewItems = new ArrayList<ContentListItem>();
-		for (Map.Entry<String, List<ContentListSubItem>> entry : listViewMap.entrySet()) {
-			ContentListItem listViewItem = new ContentListItem();
-
-			listViewItem.name = entry.getValue().get(0).contentItem.getDescription();
-			listViewItem.contentSubItems = entry.getValue();
-
-			Collections.sort(listViewItem.contentSubItems);
-			listViewItems.add(listViewItem);
-		}
-
-		Collections.sort(listViewItems);
-
-		return listViewItems;
-	}
 
 	private void setContentList(final List<ContentItem> localItems, final List<ContentItem> remoteItems) {
-		// List building can take significant time due to hash calculation of new files
-		new AsyncTask<Void, Void, List<ContentListItem>>() {
-			@Override
-			protected List<ContentListItem> doInBackground(Void... params) {
-				return asyncGenerateContentList(localItems, remoteItems);
-			}
-
-			@Override
-			protected void onPostExecute(List<ContentListItem> items) {
-				if (items != null && adapter != null) {
-					adapter.setItems(items);
-				}
-			}
-		}.execute();
+		new GenerateContentList(localItems, remoteItems, filteredState).execute();
 	}
 
 	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -470,7 +411,6 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		currentItem = adapter.getItem(position);
-		currentItemPosition = position;
 		startSupportActionMode(this);
 	}
 
@@ -558,4 +498,112 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView.clearChoices();
 		listView.setItemChecked(-1, true);
 	}
+
+	@Override
+	public boolean onNavigationItemSelected(int i, long l) {
+		switch (i) {
+		case 0: // All
+			new GenerateContentList(localItems, remoteItems, filteredState = null).execute();
+			return true;
+
+		case 1: // Local
+			new GenerateContentList(localItems, remoteItems, filteredState = LocalContentState.UP_TO_DATE).execute();
+			return true;
+
+		case 2: // Updates
+			new GenerateContentList(localItems, remoteItems, filteredState = LocalContentState.NEEDS_UPDATE).execute();
+			return true;
+		}
+
+		return false;
+	}
+
+	private class GenerateContentList extends AsyncTask<Void, Void, List<ContentListItem>> {
+		private final LocalContentState filterState;
+		private List<ContentItem> localItems;
+		private List<ContentItem> remoteItems;
+
+		private GenerateContentList(List<ContentItem> localItems, List<ContentItem> remoteItems, LocalContentState filterState) {
+			this.localItems = localItems;
+			this.remoteItems = remoteItems;
+			this.filterState = filterState;
+		}
+
+		@Override
+		protected List<ContentListItem> doInBackground(Void... params) {
+			HashMap<String, ContentListSubItem> states
+					= new HashMap<String, ContentListSubItem>(localItems.size());
+
+			for (ContentItem item : localItems) {
+				states.put(item.getName(), new ContentListSubItem(item, LocalContentState.DELETED_FROM_SERVER));
+			}
+
+			for (ContentItem remoteItem : remoteItems) {
+				String name = remoteItem.getName();
+
+				ContentListSubItem subItem = states.get(name);
+				ContentItem localItem = subItem == null ? null : subItem.contentItem;
+
+				LocalContentState newState;
+				ContentItem saveItem = remoteItem;
+
+				if (localItem == null) {
+					newState = LocalContentState.NOT_EXISTS;
+				} else if (!localItem.getHash().equals(remoteItem.getHash())) {
+					newState = LocalContentState.NEEDS_UPDATE;
+				} else {
+					saveItem = localItem;
+					newState = LocalContentState.UP_TO_DATE;
+				}
+
+				states.put(name, new ContentListSubItem(saveItem, newState));
+			}
+
+			HashMap<String, List<ContentListSubItem>> listViewMap
+					= new HashMap<String, List<ContentListSubItem>>();
+
+			for (Map.Entry<String, ContentListSubItem> entry : states.entrySet()) {
+				String rId = entry.getValue().contentItem.getRegionId();
+
+				if (filterState != null
+						&& filterState != entry.getValue().state
+						&& ((filterState != LocalContentState.UP_TO_DATE
+						|| entry.getValue().state != LocalContentState.NEEDS_UPDATE))) {
+							continue;
+						}
+
+				List<ContentListSubItem> l = listViewMap.get(rId);
+
+				if (l == null) {
+					l = new ArrayList<ContentListSubItem>();
+					listViewMap.put(rId, l);
+				}
+
+				l.add(entry.getValue());
+			}
+
+			List<ContentListItem> listViewItems = new ArrayList<ContentListItem>();
+			for (Map.Entry<String, List<ContentListSubItem>> entry : listViewMap.entrySet()) {
+				ContentListItem listViewItem = new ContentListItem();
+
+				listViewItem.name = entry.getValue().get(0).contentItem.getDescription();
+				listViewItem.contentSubItems = entry.getValue();
+
+				Collections.sort(listViewItem.contentSubItems);
+				listViewItems.add(listViewItem);
+			}
+
+			Collections.sort(listViewItems);
+
+			return listViewItems;
+		}
+
+		@Override
+		protected void onPostExecute(List<ContentListItem> contentListItems) {
+			if (contentListItems != null && adapter != null) {
+				adapter.setItems(contentListItems);
+			}
+		}
+	}
+
 }

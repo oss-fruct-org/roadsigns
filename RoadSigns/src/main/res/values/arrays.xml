@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="content_spinner">
-        <item>Все</item>
-        <item>Локальные</item>
-        <item>Обновления</item>
+        <item>All</item>
+        <item>Local</item>
+        <item>Updates</item>
     </string-array>
 </resources>

@@ -5,4 +5,26 @@
         <item>Local</item>
         <item>Updates</item>
     </string-array>
+
+    <string-array name="radius_strings">
+        <item>100 meters</item>
+        <item>500 meters</item>
+        <item>1 kilometer</item>
+        <item>10 kilometers</item>
+        <item>100 kilometers</item>
+        <item>200 kilometers</item>
+        <item>500 kilometers</item>
+        <item>1000 kilometers</item>
+    </string-array>
+
+    <string-array name="radius_values">
+        <item>100</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>10000</item>
+        <item>100000</item>
+        <item>200000</item>
+        <item>500000</item>
+        <item>1000000</item>
+    </string-array>
 </resources>

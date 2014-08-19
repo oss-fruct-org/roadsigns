@@ -5,4 +5,15 @@
         <item>Локальные</item>
         <item>Обновления</item>
     </string-array>
+
+    <string-array name="radius_strings">
+        <item>100 метров</item>
+        <item>500 метров</item>
+        <item>1 километр</item>
+        <item>10 километров</item>
+        <item>100 километров</item>
+        <item>200 километров</item>
+        <item>500 километров</item>
+        <item>1000 километров</item>
+    </string-array>
 </resources>

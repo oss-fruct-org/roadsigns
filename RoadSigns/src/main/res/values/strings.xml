@@ -59,6 +59,6 @@
     </plurals>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="str_starting_download">Starting download...</string>
+    <string name="str_starting_download">Starting download…</string>
 
 </resources>

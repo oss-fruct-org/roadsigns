@@ -24,6 +24,9 @@
     <string name="pref_warnings">Warnings</string>
     <string name="pref_vehicle_title">Vehicle</string>
 
+    <string name="pref_radius">Radius</string>
+    <string name="pref_radius_sum">Search points in</string>
+
     <string-array name="pref_nearest_points_str">
         <item>@string/pref_all</item>
         <item>1</item>

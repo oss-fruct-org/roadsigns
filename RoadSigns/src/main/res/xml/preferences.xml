@@ -50,7 +50,7 @@
         />
 
     <CheckBoxPreference
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:key="use_offline_map"
         android:title="@string/pref_use_offline_map"
         android:summaryOn="@string/pref_use_offline_map_sumon"
@@ -125,11 +125,13 @@
             android:key="gets_server"
             android:title="GeTS Server"
             android:inputType="textUri"/>
-        <EditTextPreference
-            android:defaultValue="20000"
-            android:key="gets_radius"
-            android:title="Radius"
-            android:inputType="number"/>
+
+        <ListPreference
+            android:defaultValue="200000"
+            android:entries="@array/radius_strings"
+            android:entryValues="@array/radius_values"
+            android:title="@string/pref_radius"
+            android:key="gets_radius"/>
 
     </PreferenceCategory>
 

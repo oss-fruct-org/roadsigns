@@ -1012,7 +1012,7 @@ public class MapFragment extends Fragment implements MapListener,
 		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();
 		} else if (key.equals(SettingsActivity.GETS_RADIUS)) {
-			String value = sharedPreferences.getString(key, "5000");
+			String value = sharedPreferences.getString(key, "200000");
 			int radius = Integer.parseInt(value);
 
 			PointsManager.getInstance().updateRadius(radius * 1);

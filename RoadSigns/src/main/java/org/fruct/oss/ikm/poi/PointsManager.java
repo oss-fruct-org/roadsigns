@@ -151,7 +151,7 @@ public class PointsManager {
 			getsServer = SettingsActivity.GETS_SERVER_DEFAULT;
 		}
 
-		String radiusString = pref.getString(SettingsActivity.GETS_RADIUS, "5000");
+		String radiusString = pref.getString(SettingsActivity.GETS_RADIUS, "200000");
 		int radius = Integer.parseInt(radiusString);
 
 		getsPointsLoader = new GetsPointLoader(getsServer);

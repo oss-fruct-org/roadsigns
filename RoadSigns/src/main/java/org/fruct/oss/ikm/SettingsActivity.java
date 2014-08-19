@@ -18,6 +18,8 @@ import org.fruct.oss.ikm.utils.bind.BindSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
 
 @SuppressWarnings("deprecation")
@@ -58,6 +60,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private EditTextPreference getsServerPref;
 
 	private ListPreference storagePathPref;
+	private ListPreference getsRadius;
 
 	private DataService dataService;
 
@@ -81,6 +84,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		vehiclePref = (ListPreference) findPreference(VEHICLE);
 
 		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
+		getsRadius = (ListPreference) findPreference(GETS_RADIUS);
 
 		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
@@ -98,6 +102,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onResume();
 
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		updateRadius(sharedPreferences);
 		updateNearestPoints(sharedPreferences);
 		updateVehicle();
 
@@ -126,6 +131,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
 		} else if (key.equals(VEHICLE)) {
 			updateVehicle();
+		} else if (key.equals(GETS_RADIUS)) {
+			updateRadius(sharedPreferences);
 		}
 	}
 
@@ -179,6 +186,14 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		if (currentValue != null && currentNameRes != -1)
 			storagePathPref.setSummary(currentNameRes);
+	}
+
+	private void updateRadius(SharedPreferences pref) {
+		String value = pref.getString(GETS_RADIUS, "200000");
+		int index = getsRadius.findIndexOfValue(value);
+		if (index >= 0) {
+			getsRadius.setSummary(getString(R.string.pref_radius) + " " + getsRadius.getEntries()[index]);
+		}
 	}
 
 	private DataService.MigrateListener migrateListener = new DataService.MigrateListener() {

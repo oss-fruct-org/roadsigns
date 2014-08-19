@@ -244,9 +244,15 @@ public class DirectionService extends Service implements PointsListener,
 		ghPath = currentStoragePath + "/graphhopper";
 		navigationDir = pref.getString(PREF_NAVIGATION_DIR, null);
 
-		routing = createRouting();
-		if (routing == null)
+		if (navigationDir != null) {
+			routing = createRouting();
+			if (routing == null) {
+				remoteContent.invalidateCurrentContent(RemoteContentService.GRAPHHOPPER_MAP);
+				return;
+			}
+		} else {
 			return;
+		}
 
 		updateMapMatcher();
 
@@ -335,11 +341,8 @@ public class DirectionService extends Service implements PointsListener,
 	public void asyncNewLocation(Location location) {
 		lastLocation = location;
 
-		boolean autoRegion = pref.getBoolean(SettingsActivity.AUTOREGION, true);
-
 		if (routing != null && !routing.isInner(location.getLatitude(), location.getLongitude())) {
-			if (autoRegion)
-				remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
+			// TODO: location not in current region, invalidate it
 			return;
 		} else if (mapMatcher != null) {
 			mapMatcher.updateLocation(location);
@@ -359,9 +362,6 @@ public class DirectionService extends Service implements PointsListener,
 					dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 				}
 			}
-		} else if (remoteContent != null) {
-			if (autoRegion)
-				remoteContent.activateRegionByLocation(location.getLatitude(), location.getLongitude());
 		}
 	}
 
@@ -400,64 +400,6 @@ public class DirectionService extends Service implements PointsListener,
 		}
 	}
 
-	private String extractArchive(String path) {
-		log.info("Extracting archive {}", path);
-
-		File file = path == null ? null : new File(path);
-		if (file == null || !file.exists() || !file.canRead())
-			return null;
-
-		try {
-			String uuid = UUID.randomUUID().toString();
-			String newPath = ghPath + "/ghdata" + uuid;
-
-			new Unzipper().unzip(path, newPath, false);
-			log.info("Archive file {} successfully extracted", path);
-
-			return "ghdata" + uuid;
-		} catch (IOException e) {
-			log.warn("Can not extract archive file {}", path);
-			return null;
-		}
-	}
-
-	private void handleNavigationDataChange(String archiveName) {
-		if (archiveName == null)
-			return;
-
-		ContentItem contentItem = remoteContent.getContentItem(archiveName);
-		String path = remoteContent.getFilePath(contentItem);
-
-		extractTask = new AsyncTask<String, Void, Void>() {
-			@Override
-			protected Void doInBackground(String... params) {
-				String oldNavigationDir = pref.getString(PREF_NAVIGATION_DIR, null);
-
-				String path = params[0];
-				String newNavigationDir = extractArchive(path);
-
-				if (newNavigationDir == null) {
-					return null;
-				}
-
-				navigationDir = newNavigationDir;
-				pref.edit().putString(PREF_NAVIGATION_DIR, navigationDir).apply();
-
-				synchronized (dirManagerMutex) {
-					asyncUpdateDirectionsManager();
-				}
-
-				if (oldNavigationDir != null) {
-					String oldNavigationPath = ghPath + "/" + oldNavigationDir;
-					Utils.deleteDir(new File(oldNavigationPath));
-				}
-				return null;
-			}
-		};
-
-		extractTask.execute(path);
-	}
-
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
@@ -470,7 +412,7 @@ public class DirectionService extends Service implements PointsListener,
 				}
 			}
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
-			handleNavigationDataChange(this.pref.getString(SettingsActivity.NAVIGATION_DATA, null));
+			updateDirectionsManager();
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (routing != null) {
 				routing.setEncoder(pref.getString(key, "CAR"));

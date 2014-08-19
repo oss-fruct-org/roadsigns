@@ -158,9 +158,9 @@ class ContentAdapter extends BaseAdapter {
 				tag.item2 = sItem;
 
 			String text = "";
-			if (sItem.getType().equals("graphhopper-map")) {
+			if (sItem.getType().equals(RemoteContentService.GRAPHHOPPER_MAP)) {
 				text = context.getString(R.string.navigation_data);
-			} else if (sItem.getType().equals("mapsforge-map")) {
+			} else if (sItem.getType().equals(RemoteContentService.MAPSFORGE_MAP)) {
 				text = context.getString(R.string.offline_map);
 			}
 
@@ -481,9 +481,10 @@ public class OnlineContentActivity extends ActionBarActivity
 	}
 
 	private void useContentItem(ContentListItem currentItem) {
-		if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
-			remoteContent.activateRegionById(currentItem.contentSubItems.get(0).contentItem.getRegionId());
-		}
+		throw new IllegalStateException("Not implemented yet");
+		//if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
+		//	remoteContent.activateRegionById(currentItem.contentSubItems.get(0).contentItem.getRegionId());
+		//}
 	}
 
 	@Override

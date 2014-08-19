@@ -30,10 +30,11 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		/*
 		final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
 		final ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
 
-		/*debugThread = new Thread() {
+		debugThread = new Thread() {
 			@Override
 			public void run() {
 				while (!Thread.interrupted()) {

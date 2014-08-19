@@ -4,8 +4,12 @@ import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -13,6 +17,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.DigestInputStream;
@@ -22,6 +27,9 @@ import org.fruct.oss.ikm.ProgressInputStream;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.fragment.MapFragment;
+import org.fruct.oss.ikm.service.DirectionService;
+import org.fruct.oss.ikm.storage.contenttypes.GraphhopperMapType;
+import org.fruct.oss.ikm.storage.contenttypes.MapsforgeMapType;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
@@ -50,6 +58,9 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private static final Logger log = LoggerFactory.getLogger(RemoteContentService.class);
 	private static final int NOTIFY_ID = 11;
 
+	public static final String GRAPHHOPPER_MAP = "graphhopper-map";
+	public static final String MAPSFORGE_MAP = "mapsforge-map";
+
 	public static final String[] REMOTE_CONTENT_URLS = {
 			"http://oss.fruct.org/projects/roadsigns/root.xml"};
 	public static final int REPORT_INTERVAL = 100000;
@@ -75,9 +86,14 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private volatile List<ContentItem> remoteItems = new ArrayList<ContentItem>();
 	private final Map<String, ContentItem> itemsByName = new HashMap<String, ContentItem>();
 
+	private final Map<String, ContentType> contentTypes = new HashMap<String, ContentType>();
+
 	private DataService dataService;
 
 	private String currentStoragePath;
+	private BroadcastReceiver locationReceiver;
+
+	private Location location;
 
 	public RemoteContentService() {
 	}
@@ -98,7 +114,21 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		log.debug("RemoteContentService created");
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+		LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				location = intent.getParcelableExtra(DirectionService.LOCATION);
+				newLocation(location);
+			}
+		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
+
 		BindHelper.autoBind(this, this);
+	}
+
+	private void setupContentTypes() {
+		contentTypes.put("graphhopper-map", new GraphhopperMapType(this, dataService));
+		contentTypes.put("mapsforge-map", new MapsforgeMapType(this));
 	}
 
 	@BindSetter
@@ -123,6 +153,8 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			localStorages.add(storage);
 		}
 
+		setupContentTypes();
+
 		refresh();
 	}
 
@@ -140,9 +172,11 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			regionsTask = null;
 		}
 
-		log.debug("RemoteContentService destroyed");
+		LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver);
+
 		BindHelper.autoUnbind(this, this);
 		super.onDestroy();
+		log.debug("RemoteContentService destroyed");
 	}
 
 	public void downloadItem(ContentItem contentItem) {
@@ -236,14 +270,25 @@ public class RemoteContentService extends Service implements DataService.DataLis
 						}
 					}
 
+					for (ContentItem localItem : localItems) {
+						ContentType contentType = contentTypes.get(localItem.getType());
+						if (contentType != null) {
+							contentType.addContentItem(localItem);
+						}
+					}
+
 					RemoteContentService.this.localItems = localItems;
+
+					for (ContentType contentType : contentTypes.values()) {
+						contentType.commitContentItems();
+					}
+
 
 					updateItemsByName();
 					notifyLocalListReady(localItems);
 				} catch (IOException e) {
 					notifyErrorInitializing(e);
 				}
-
 
 				try {
 					RemoteContentService.this.remoteItems = Collections.emptyList();
@@ -298,6 +343,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			}
 
 			ContentItem item = mainLocalStorage.storeContentItem(remoteItem, inputStream);
+			ContentType contentType = contentTypes.get(item.getType());
 
 			// Update existing item
 			boolean found = false;
@@ -312,12 +358,14 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 			if (!found) {
 				localItems.add(item);
+				contentType.addContentItem(item);
+			} else {
+				contentType.updateContentItem(item);
 			}
 
 			updateItemsByName();
 			notifyLocalListReady(localItems);
 			notifyDownloadFinished(item, remoteItem);
-			tryActivateItem(item);
 		} catch (InterruptedIOException ex) {
 			notifyDownloadInterrupted(remoteItem);
 		} catch (IOException e) {
@@ -472,50 +520,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		return 0;
 	}
 
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public void activateRegionByLocation(double latitude, double longitude) {
-		RegionsTask regionsTask = new RegionsTask() {
-			@Override
-			protected void onPostExecute(String id) {
-				if (id != null) {
-					activateRegionById(id);
-				}
-			}
-		};
-
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
-			regionsTask.execute(new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
-		} else {
-			regionsTask.executeOnExecutor(executor,
-					new RegionsTask.RegionTasksArg(localItems, latitude, longitude));
-		}
-	}
-
-	public void activateRegionById(String regionId) {
-		pref.edit().putString(SettingsActivity.CURRENT_REGION, regionId).apply();
-		pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
-		pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
-
-		for (ContentItem contentItem : localItems) {
-			tryActivateItem(contentItem);
-		}
-	}
-
-	private void tryActivateItem(ContentItem contentItem) {
-		String regionId = pref.getString(SettingsActivity.CURRENT_REGION, null);
-		if (regionId == null) {
-			return;
-		}
-
-		if (contentItem.getRegionId().equals(regionId)) {
-			if (contentItem.getType().equals("graphhopper-map")) {
-				pref.edit().putString(SettingsActivity.NAVIGATION_DATA, contentItem.getName()).apply();
-			} else if (contentItem.getType().equals("mapsforge-map")) {
-				pref.edit().putString(SettingsActivity.OFFLINE_MAP, contentItem.getName()).apply();
-			}
-		}
-	}
-
 	public boolean deleteContentItem(ContentItem contentItem) {
 		if (!localItems.contains(contentItem)
 				|| !contentItem.getStorage().equals(mainLocalStorage.getStorageName())) {
@@ -523,29 +527,54 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			return true;
 		}
 
-		if (contentItem.getType().equals("graphhopper-map")) {
-			String map = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
-			if (contentItem.getName().equals(map)) {
+		for (ContentType contentType : contentTypes.values()) {
+			if (contentType.acceptsContentItem(contentItem) && contentType.getCurrentItem() == contentItem) {
 				return false;
 			}
-
-			mainLocalStorage.deleteContentItem(contentItem);
-			localItems.remove(contentItem);
-			notifyLocalListReady(localItems);
-		} else if (contentItem.getType().equals("mapsforge-map")) {
-			String map = pref.getString(SettingsActivity.OFFLINE_MAP, null);
-			if (contentItem.getName().equals(map)) {
-				return false;
-			}
-
-			mainLocalStorage.deleteContentItem(contentItem);
-			localItems.remove(contentItem);
-			notifyLocalListReady(localItems);
 		}
+
+		for (ContentType contentType : contentTypes.values()) {
+			contentType.removeContentItem(contentItem);
+		}
+
+		mainLocalStorage.deleteContentItem(contentItem);
+		localItems.remove(contentItem);
+		notifyLocalListReady(localItems);
 
 		return true;
 	}
 
+	private void newLocation(final Location location) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				for (ContentType contentType : contentTypes.values()) {
+					// TODO: check region not always
+					if (contentType.getCurrentItem() == null) {
+						contentType.applyLocation(location);
+					}
+				}
+			}
+		});
+	}
+
+	public ContentItem getCurrentContentItem(String type) {
+		ContentType contentType = contentTypes.get(type);
+		if (contentType != null) {
+			return contentType.getCurrentItem();
+		} else {
+			return null;
+		}
+	}
+
+	public void invalidateCurrentContent(String type) {
+		ContentType contentType = contentTypes.get(type);
+		if (contentType == null) {
+			throw new IllegalArgumentException("No such content type");
+		}
+
+		contentType.invalidateCurrentContent();
+	}
 
 	public interface Listener {
 		void localListReady(List<ContentItem> list);

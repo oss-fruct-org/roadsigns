@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
+import org.fruct.oss.ikm.storage.RemoteContentService;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -65,9 +67,9 @@ public class ContentDialog extends DialogFragment implements DialogInterface.OnC
 			ContentListSubItem sItem = storageItems.get(i);
 
 			String type = sItem.contentItem.getType();
-			if (type.equals("mapsforge-map"))
+			if (type.equals(RemoteContentService.MAPSFORGE_MAP))
 				strings[i] = getString(R.string.offline_map);
-			else if (type.equals("graphhopper-map"))
+			else if (type.equals(RemoteContentService.GRAPHHOPPER_MAP))
 				strings[i] = getString(R.string.navigation_data);
 
 			active[i] = (sItem.state == OnlineContentActivity.LocalContentState.NEEDS_UPDATE

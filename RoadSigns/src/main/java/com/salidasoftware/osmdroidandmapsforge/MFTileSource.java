@@ -17,6 +17,7 @@ import org.mapsforge.map.layer.renderer.RendererJob;
 import org.mapsforge.map.model.DisplayModel;
 import org.mapsforge.map.reader.MapDatabase;
 import org.mapsforge.map.reader.header.FileOpenResult;
+import org.mapsforge.map.reader.header.MapFileInfo;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.ResourceProxy.string;
 import org.osmdroid.tileprovider.LRUMapTileCache;

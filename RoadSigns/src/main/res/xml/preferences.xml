@@ -131,13 +131,6 @@
             android:title="Radius"
             android:inputType="number"/>
 
-<!--
-        <org.fruct.oss.ikm.AccountPreference
-            android:enabled="false"
-
-            android:title="Account setup"
-            />
-            -->
     </PreferenceCategory>
 
 </PreferenceScreen>

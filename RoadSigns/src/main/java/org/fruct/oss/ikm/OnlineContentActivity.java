@@ -210,8 +210,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	// Last selected item
 	private ContentListItem currentItem;
 	private String currentItemName;
-
-	private String currentActiveName;
+	private int currentItemPosition;
 
 	private RemoteContentService remoteContent;
 
@@ -234,6 +233,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 		listView = (ListView) findViewById(R.id.list);
 		listView.setOnItemClickListener(this);
+		listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
 		setUpActionBar();
 
@@ -470,6 +470,7 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 		currentItem = adapter.getItem(position);
+		currentItemPosition = position;
 		startSupportActionMode(this);
 	}
 
@@ -512,15 +513,15 @@ public class OnlineContentActivity extends ActionBarActivity
 			final ContentDialog dialog = new ContentDialog();
 			dialog.setStorageItems(currentItem.contentSubItems);
 			dialog.show(getSupportFragmentManager(), "content-dialog");
-			actionMode.finish();
-			return true;
 		} else if (menuItem.getItemId() == R.id.action_delete) {
 			deleteContentItem(currentItem);
-			actionMode.finish();
 		} else if (menuItem.getItemId() == R.id.action_use) {
 			useContentItem(currentItem);
-			actionMode.finish();
+		} else {
+			return false;
 		}
+
+		actionMode.finish();
 
 		return false;
 	}
@@ -554,5 +555,7 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void onDestroyActionMode(ActionMode actionMode) {
+		listView.clearChoices();
+		listView.setItemChecked(-1, true);
 	}
 }

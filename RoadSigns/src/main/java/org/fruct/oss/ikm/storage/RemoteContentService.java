@@ -59,7 +59,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private final LocalBinder binder = new LocalBinder();
 	private SharedPreferences pref;
 
-	private List<Listener> listeners = new ArrayList<Listener>();
+	private final List<Listener> listeners = new ArrayList<Listener>();
 
 	private NetworkStorage networkStorage;
 	private WritableDirectoryStorage mainLocalStorage;
@@ -181,13 +181,16 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public void addListener(Listener listener) {
-		listeners.add(listener);
+		synchronized (listeners) {
+			listeners.add(listener);
+		}
 	}
 
 	public void removeListener(Listener listener) {
-		listeners.remove(listener);
+		synchronized (listeners) {
+			listeners.remove(listener);
+		}
 	}
-
 
 	public List<ContentItem> getLocalItems() {
 		return localItems;
@@ -341,8 +344,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.remoteListReady(items);
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.remoteListReady(items);
+					}
 				}
 			}
 		});
@@ -352,8 +357,11 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.downloadStateUpdated(item, downloaded, max);
+				synchronized (listeners) {
+
+					for (Listener listener : listeners) {
+						listener.downloadStateUpdated(item, downloaded, max);
+					}
 				}
 			}
 		});
@@ -363,8 +371,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.downloadFinished(localItem, remoteItem);
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.downloadFinished(localItem, remoteItem);
+					}
 				}
 			}
 		});
@@ -374,8 +384,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.downloadInterrupted(remoteItem);
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.downloadInterrupted(remoteItem);
+					}
 				}
 			}
 		});
@@ -385,8 +397,11 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.errorDownloading(remoteItem, ex);
+				synchronized (listeners) {
+
+					for (Listener listener : listeners) {
+						listener.errorDownloading(remoteItem, ex);
+					}
 				}
 			}
 		});
@@ -396,8 +411,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
-				for (Listener listener : listeners) {
-					listener.errorInitializing(ex);
+				synchronized (listeners) {
+					for (Listener listener : listeners) {
+						listener.errorInitializing(ex);
+					}
 				}
 			}
 		});

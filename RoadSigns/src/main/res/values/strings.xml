@@ -34,7 +34,6 @@
     <string name="configure_use_offline_map">Use offline map</string>
     <string name="warn_no_navigation_data">No navigation data</string>
     <string name="configure_navigation_data">Download navigation data</string>
-
     <string name="pref_storage_path_title">Data storage path</string>
     <string name="storage_path_internal">Internal storage</string>
     <string name="storage_path_external">External storage</string>
@@ -42,7 +41,6 @@
     <string name="action_use">Use</string>
     <string name="action_delete">Delete</string>
     <string name="action_download">Download</string>
-
     <string name="pref_use_offline_map">Use offline map</string>
     <string name="pref_use_offline_map_sumon">Enabled</string>
     <string name="pref_use_offline_map_sumoff">Disabled</string>
@@ -59,5 +57,8 @@
         <item quantity="one">Distance: %.1f kilometer</item>
         <item quantity="other">Distance: %.1f kilometers</item>
     </plurals>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="str_starting_download">Starting download...</string>
 
 </resources>

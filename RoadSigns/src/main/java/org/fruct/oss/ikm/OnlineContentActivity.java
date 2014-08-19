@@ -171,26 +171,10 @@ class ContentAdapter extends BaseAdapter {
 			else
 				views[idx].setTypeface(null, Typeface.NORMAL);
 
-			if (subItem.contentItem == downloadItem) {
-				TextView downloadTextView = tag.item1 == downloadItem ? tag.text2 : tag.text3;
-
-				downloadTextView.setTypeface(null, Typeface.NORMAL);
-				downloadTextView.setText(downloadString);
-			}
-
 			idx++;
 		}
 
 		return view;
-	}
-
-	public void updateDownloadString(ContentItem ci, String downloadString) {
-		if (downloadItem != ci) {
-			this.downloadItem = ci;
-		}
-
-		this.downloadString = downloadString;
-		notifyDataSetChanged();
 	}
 
 	class Holder {
@@ -206,14 +190,10 @@ class ContentAdapter extends BaseAdapter {
 		// Item corresponding third text line
 		ContentItem item2;
 	}
-
-	// Optimization of download string update
-	private ContentItem downloadItem;
-	private String downloadString;
 }
 
 public class OnlineContentActivity extends ActionBarActivity
-		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback {
+		implements AdapterView.OnItemClickListener, RemoteContentService.Listener, ContentDialog.Listener, ActionMode.Callback, DownloadProgressFragment.OnFragmentInteractionListener {
 
 	public enum LocalContentState {
 		NOT_EXISTS, NEEDS_UPDATE, UP_TO_DATE, DELETED_FROM_SERVER
@@ -240,6 +220,8 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	private SharedPreferences pref;
 
+	private DownloadProgressFragment downloadFragment;
+
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
@@ -260,6 +242,9 @@ public class OnlineContentActivity extends ActionBarActivity
 		listView.setAdapter(adapter);
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
+
+		downloadFragment = (DownloadProgressFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
+		getSupportFragmentManager().beginTransaction().hide(downloadFragment).commit();
 	}
 
 	@Override
@@ -292,12 +277,6 @@ public class OnlineContentActivity extends ActionBarActivity
 		case R.id.action_refresh:
 			if (remoteContent != null) {
 				remoteContent.refresh();
-			}
-			break;
-
-		case R.id.action_stop:
-			if (remoteContent != null) {
-				remoteContent.interrupt();
 			}
 			break;
 		}
@@ -436,20 +415,29 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@Override
 	public void downloadStateUpdated(ContentItem item, int downloaded, int max) {
-		float mbMax = (float) max / (1024 * 1024);
-		float mbCurrent = (float) downloaded / (1024 * 1024);
-		String downloadString = String.format(Locale.getDefault(), "%.3f/%.3f MB", mbCurrent, mbMax);
-		adapter.updateDownloadString(item, downloadString);
+		downloadFragment.downloadStateUpdated(item, downloaded, max);
 	}
 
 	@Override
 	public void downloadFinished(ContentItem localItem, ContentItem remoteItem) {
 		showToast(getString(R.string.download_finished));
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				downloadFragment.stopDownload();
+			}
+		});
 	}
 
 	@Override
 	public void errorDownloading(ContentItem item, IOException e) {
 		showToast(getString(R.string.error_downloading));
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				downloadFragment.stopDownload();
+			}
+		});
 	}
 
 	@Override
@@ -460,10 +448,10 @@ public class OnlineContentActivity extends ActionBarActivity
 	@Override
 	public void downloadInterrupted(ContentItem sItem) {
 		showToast(getString(R.string.download_interrupted));
-
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				downloadFragment.stopDownload();
 				adapter.notifyDataSetChanged();
 			}
 		});
@@ -474,6 +462,7 @@ public class OnlineContentActivity extends ActionBarActivity
 		if (currentItem == null)
 			return;
 
+		downloadFragment.startDownload();
 		for (ContentListSubItem item : items)
 			remoteContent.downloadItem(item.contentItem);
 	}
@@ -553,6 +542,13 @@ public class OnlineContentActivity extends ActionBarActivity
 	private void useContentItem(ContentListItem currentItem) {
 		if (remoteContent != null && !currentItem.contentSubItems.isEmpty()) {
 			remoteContent.activateRegionById(currentItem.contentSubItems.get(0).contentItem.getRegionId());
+		}
+	}
+
+	@Override
+	public void stopButtonPressed() {
+		if (remoteContent != null) {
+			remoteContent.interrupt();
 		}
 	}
 

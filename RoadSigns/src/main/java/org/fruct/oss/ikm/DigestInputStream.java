@@ -21,8 +21,6 @@ public class DigestInputStream extends FilterInputStream {
 		digest = MessageDigest.getInstance(algorithm);
 	}
 
-
-
 	@Override
 	public int read() throws IOException {
 		final int c = super.read();

@@ -51,6 +51,7 @@
     <string name="pref_mapmatching">Привязка к дороге</string>
     <string name="str_updating_points">Обновляются точки…</string>
     <string name="str_cant_delete_active_content">Нельзя удалить используемые данные</string>
+    <string name="str_starting_download">Starting download...</string>
 
     <plurals  name="distance_meters">
         <item quantity="one">Расстояние: %d метр</item>

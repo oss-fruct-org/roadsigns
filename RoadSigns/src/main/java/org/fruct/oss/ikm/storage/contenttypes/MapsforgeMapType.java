@@ -60,6 +60,8 @@ public class MapsforgeMapType extends ContentType {
 
 	@Override
 	public void invalidateCurrentContent() {
-		pref.edit().remove(SettingsActivity.OFFLINE_MAP).apply();
+		pref.edit().remove(SettingsActivity.OFFLINE_MAP)
+				.remove(configKey)
+				.apply();
 	}
 }

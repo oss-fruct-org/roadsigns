@@ -243,7 +243,7 @@ public class MapFragment extends Fragment implements MapListener,
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				log.debug("MapFragment DIRECTIONS_READY");
+				log.trace("MapFragment DIRECTIONS_READY");
 				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
 				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
 				updateDirectionOverlay(directions);
@@ -880,7 +880,7 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 	
 	private void setState(State newState) {
-		log.info("MapFragment.setState " + newState.toString());
+		log.trace("MapFragment.setState " + newState.toString());
 
 		activeStates.add(newState);
 

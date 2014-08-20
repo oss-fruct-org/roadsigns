@@ -12,6 +12,7 @@ import org.fruct.oss.ikm.storage.ContentType;
 import org.fruct.oss.ikm.storage.DirectoryContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.Region;
+import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,9 +69,12 @@ public class GraphhopperMapType extends ContentType {
 		String regionName = "gh-" + item.getHash();
 		String regionPath = ghPath + "/" + regionName;
 
+		log.info("Extracting graphhopper archive {}", regionPath);
+
 		try {
 			new Unzipper().unzip(dItem.getPath(), regionPath, false);
 			pref.edit().putString(SettingsActivity.NAVIGATION_DATA, regionName).apply();
+			log.info("Graphhopper archive successfully extracted");
 		} catch (IOException e) {
 			log.error("Can't extract archive {}", dItem.getPath());
 			// TODO: handle this error
@@ -84,6 +88,13 @@ public class GraphhopperMapType extends ContentType {
 
 	@Override
 	public void invalidateCurrentContent() {
-		pref.edit().remove(SettingsActivity.NAVIGATION_DATA).apply();
+		String navigationPath = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
+		if (navigationPath != null) {
+			Utils.deleteDir(new File(navigationPath));
+		}
+
+		pref.edit().remove(SettingsActivity.NAVIGATION_DATA)
+				.remove(configKey)
+				.apply();
 	}
 }

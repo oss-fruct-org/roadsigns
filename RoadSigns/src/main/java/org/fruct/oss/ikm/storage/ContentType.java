@@ -38,6 +38,10 @@ public abstract class ContentType {
 		}
 	}
 
+	synchronized void prepare() {
+		contentItems.clear();
+	}
+
 	synchronized boolean addContentItem(ContentItem item) {
 		if (!acceptsContentItem(item)) {
 			return false;

@@ -256,7 +256,8 @@ public class OnlineContentActivity extends ActionBarActivity
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 
-		SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(this, R.array.content_spinner, android.R.layout.simple_spinner_dropdown_item);
+		SpinnerAdapter spinnerAdapter = ArrayAdapter.createFromResource(this, R.array.content_spinner,
+				android.support.v7.appcompat.R.layout.support_simple_spinner_dropdown_item);
 		actionBar.setListNavigationCallbacks(spinnerAdapter, this);
 	}
 

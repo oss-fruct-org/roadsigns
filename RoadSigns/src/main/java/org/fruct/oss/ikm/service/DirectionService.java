@@ -56,8 +56,6 @@ public class DirectionService extends Service implements PointsListener,
 
 	private static final String MOCK_PROVIDER = "mock-provider";
 
-	public static final String PREF_NAVIGATION_DIR = "navigation-dir";
-
 	private RemoteContentService remoteContent;
 
 	private final Object dataServiceMutex = new Object();
@@ -207,6 +205,9 @@ public class DirectionService extends Service implements PointsListener,
 
 			// Apply encoder from preferences
 			routing.setEncoder(pref.getString(SettingsActivity.VEHICLE, "CAR"));
+			if (!routing.ensureInitialized()) {
+				return null;
+			}
 
 			return routing;
 		} else
@@ -242,11 +243,12 @@ public class DirectionService extends Service implements PointsListener,
 
 	private void asyncUpdateDirectionsManager() {
 		ghPath = currentStoragePath + "/graphhopper";
-		navigationDir = pref.getString(PREF_NAVIGATION_DIR, null);
+		navigationDir = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
 
 		if (navigationDir != null) {
 			routing = createRouting();
 			if (routing == null) {
+				log.warn("Current graphhopper region invalid, disabling it");
 				remoteContent.invalidateCurrentContent(RemoteContentService.GRAPHHOPPER_MAP);
 				return;
 			}

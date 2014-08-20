@@ -62,6 +62,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public static final String MAPSFORGE_MAP = "mapsforge-map";
 
 	public static final String[] REMOTE_CONTENT_URLS = {
+			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
 			"http://oss.fruct.org/projects/roadsigns/root.xml"};
 	public static final int REPORT_INTERVAL = 100000;
 
@@ -256,6 +257,10 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			@Override
 			public void run() {
 				try {
+					for (ContentType contentType : contentTypes.values()) {
+						contentType.prepare();
+					}
+
 					List<ContentItem> localItems = new ArrayList<ContentItem>();
 
 					mainLocalStorage.updateContentList();

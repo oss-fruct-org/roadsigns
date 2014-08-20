@@ -6,168 +6,212 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.os.Looper;
 
+import org.fruct.oss.ikm.DataService;
+import org.fruct.oss.ikm.service.DirectionService;
+import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class BindHelper {
 	private static final Logger log = LoggerFactory.getLogger(BindHelper.class);
 
-	private static class ServiceDesc {
-		Field field;
-		Method setter;
-		Method getter;
+	private static Map<Class<?>, Set<String>> states = new HashMap<Class<?>, Set<String>>();
+
+	private static class ServiceDependence {
+		Service serviceLoaded;
+		Class<?> serviceClass;
+		String[] states = {};
 	}
 
-
-	private static class FieldDesc {
-		private FieldDesc(Object obj, Class<?> service) {
-			this.obj = obj;
-			this.service = service;
-		}
-
-		final Object obj;
-		Class<?> service;
-
-		@Override
-		public boolean equals(Object o) {
-			if (this == o) return true;
-			if (o == null || getClass() != o.getClass()) return false;
-
-			FieldDesc fieldDesc = (FieldDesc) o;
-
-			if (!obj.equals(fieldDesc.obj)) return false;
-			if (!service.equals(fieldDesc.service)) return false;
-
-			return true;
-		}
-
-		@Override
-		public int hashCode() {
-			int result = obj.hashCode();
-			result = 31 * result + service.hashCode();
-			return result;
-		}
+	private static class GroupDependence {
+		boolean done;
+		Object object;
+		Method method;
+		List<ServiceDependence> serviceDependencies = new ArrayList<ServiceDependence>();
 	}
 
-	private static final Map<FieldDesc, ServiceConnection> connections
-			= Collections.synchronizedMap(new HashMap<FieldDesc, ServiceConnection>());
+	private static class SubscribedObject {
+		Object object;
+		List<GroupDependence> groupDependencies = new ArrayList<GroupDependence>();
+		List<ServiceConnection> connections = new ArrayList<ServiceConnection>();
+	}
+
+	private static Map<Object, SubscribedObject> subscribedObjects = new HashMap<Object, SubscribedObject>();
 
 	public static void autoBind(Context context, Object obj) {
+		mainOrThrow();
 		Class<?> cls = obj.getClass();
 
-		HashMap<Class<?>, ServiceDesc> serviceMap = new HashMap<Class<?>, ServiceDesc>();
-
-		for (Field field : cls.getDeclaredFields()) {
-			if (field.isAnnotationPresent(Bind.class)) {
-				Class<?> serviceClass = field.getType();
-
-				ServiceDesc desc = serviceMap.get(serviceClass);
-				if (desc == null) {
-					desc = new ServiceDesc();
-					serviceMap.put(serviceClass, desc);
-				}
-				desc.field = field;
-			}
-		}
+		List<GroupDependence> groupDependencies = new ArrayList<GroupDependence>();
+		Set<Class<?>> bindingServices = new HashSet<Class<?>>();
 
 		for (Method method : cls.getDeclaredMethods()) {
-			if (method.isAnnotationPresent(BindGetter.class) || method.isAnnotationPresent(BindSetter.class)) {
+			if (method.isAnnotationPresent(BindSetter.class)) {
+				GroupDependence groupDependence = new GroupDependence();
+
 				Class<?>[] parameterTypes = method.getParameterTypes();
-				if (parameterTypes.length != 1 || Service.class.isAssignableFrom(parameterTypes[0])) {
-					ServiceDesc desc = serviceMap.get(parameterTypes[0]);
-					if (desc == null) {
-						desc = new ServiceDesc();
-						serviceMap.put(parameterTypes[0], desc);
+				Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+				for (int i = 0, parameterTypesLength = parameterTypes.length; i < parameterTypesLength; i++) {
+					Class<?> parameterType = parameterTypes[i];
+					if (!Service.class.isAssignableFrom(parameterType)) {
+						continue;
 					}
 
-					if (method.isAnnotationPresent(BindGetter.class)) {
-						desc.getter = method;
-					} else {
-						desc.setter = method;
+					bindingServices.add(parameterType);
+					Annotation[] annotations = parameterAnnotations[i];
+
+					ServiceDependence dependence = new ServiceDependence();
+					for (Annotation annotation : annotations) {
+						if (annotation instanceof State) {
+							dependence.states = (((State) annotation).value());
+							break;
+						}
 					}
- 				}
+
+					dependence.serviceClass = parameterType;
+					groupDependence.serviceDependencies.add(dependence);
+				}
+				groupDependence.method = method;
+				groupDependence.object = obj;
+
+				groupDependencies.add(groupDependence);
 			}
 		}
 
-		for (Map.Entry<Class<?>, ServiceDesc> entry : serviceMap.entrySet()) {
-			ServiceDesc desc = entry.getValue();
+		SubscribedObject subscribedObject = new SubscribedObject();
+		subscribedObject.groupDependencies = groupDependencies;
+		subscribedObject.object = obj;
 
-			Intent intent = new Intent(context, entry.getKey());
-			ServiceConnection conn = createServiceConnection(obj, desc.field, desc.getter, desc.setter);
+		subscribedObjects.put(obj, subscribedObject);
 
-			connections.put(new FieldDesc(obj, entry.getKey()), conn);
-			context.bindService(intent, conn, Context.BIND_AUTO_CREATE);
+		for (Class<?> service : bindingServices) {
+			ServiceConnection conn = createServiceConnection(service, subscribedObject);
+			subscribedObject.connections.add(conn);
+
+			Intent intent = new Intent(context, service);
+			context.bindService(intent, conn, 0);
 		}
 	}
 
 	public static void autoUnbind(Context context, Object obj) {
-		Set<Class<?>> serviceClasses = new HashSet<Class<?>>();
-
-		Class<?> cls = obj.getClass();
-		for (Field field : cls.getDeclaredFields()) {
-			if (field.getAnnotation(Bind.class) != null) {
-				Class<?> serviceClass = field.getType();
-				serviceClasses.add(serviceClass);
+		mainOrThrow();
+		SubscribedObject subscribedObject = subscribedObjects.get(obj);
+		if (subscribedObject != null) {
+			for (ServiceConnection connection : subscribedObject.connections) {
+				context.unbindService(connection);
 			}
-		}
-
-		for (Method method : cls.getDeclaredMethods()) {
-			if (method.isAnnotationPresent(BindGetter.class) || method.isAnnotationPresent(BindSetter.class)) {
-				Class<?>[] parameterTypes = method.getParameterTypes();
-				if (parameterTypes.length != 1 || Service.class.isAssignableFrom(parameterTypes[0])) {
-					serviceClasses.add(parameterTypes[0]);
-				}
-			}
-		}
-
-		for (Class<?> serviceClass : serviceClasses) {
-			ServiceConnection conn = connections.remove(new FieldDesc(obj, serviceClass));
-			conn.onServiceDisconnected(new ComponentName(context, serviceClass));
-			context.unbindService(conn);
+			subscribedObjects.remove(obj);
 		}
 	}
 
-	private static ServiceConnection createServiceConnection(final Object obj, final Field field, final Method getter, final Method setter) {
+	public static void setServiceState(Service service, String state, boolean active) {
+		mainOrThrow();
+		Class<?> serviceClass = service.getClass();
+		Set<String> serviceStates = states.get(serviceClass);
+		if (serviceStates == null) {
+			serviceStates = new HashSet<String>();
+			states.put(serviceClass, serviceStates);
+		}
+
+		if (active) {
+			serviceStates.add(state);
+
+			for (SubscribedObject object : subscribedObjects.values()) {
+				for (GroupDependence groupDependence : object.groupDependencies) {
+					checkGroupDependence(serviceClass, groupDependence);
+				}
+			}
+		} else {
+			serviceStates.remove(state);
+		}
+	}
+
+	private static void checkGroupDependence(Class<?> service, GroupDependence groupDependence) {
+		mainOrThrow();
+		if (groupDependence.done) {
+			return;
+		}
+
+		Service[] services = new Service[groupDependence.serviceDependencies.size()];
+		int c = 0;
+
+		for (ServiceDependence dependence : groupDependence.serviceDependencies) {
+			if (dependence.serviceLoaded != null) {
+				services[c] = dependence.serviceLoaded;
+
+				Set<String> serviceStates = states.get(dependence.serviceClass);
+				for (String state : dependence.states) {
+					if (serviceStates == null || !serviceStates.contains(state)) {
+						return;
+					}
+				}
+			} else {
+				return;
+			}
+
+			c++;
+		}
+
+		groupDependence.done = true;
+
+		try {
+			groupDependence.method.invoke(groupDependence.object, services);
+		} catch (IllegalAccessException e) {
+			log.error("Can't invoke service receiver method", e);
+		} catch (InvocationTargetException e) {
+			log.error("Can't invoke service receiver method", e);
+		}
+	}
+
+	private static void mainOrThrow() {
+		if (Looper.getMainLooper().getThread() != Thread.currentThread())
+			throw new RuntimeException("");
+	}
+
+	private static ServiceConnection createServiceConnection(final Class<?> serviceClass, final SubscribedObject subscribedObject) {
 		return new ServiceConnection() {
 			@Override
-			public void onServiceConnected(ComponentName name, IBinder service) {
-				BindHelperBinder binder = (BindHelperBinder) service;
-				Service s = binder.getService();
-				try {
-					if (field != null) {
-						field.set(obj, s);
+			public void onServiceConnected(ComponentName name, IBinder binder) {
+				if (serviceClass.equals(RemoteContentService.class)
+						&& subscribedObject.object.getClass().equals(DirectionService.class)) {
+					log.trace("AAA: RemoteContentService connected to DirectionService");
+				}
+
+				if (serviceClass.equals(DataService.class)
+						&& subscribedObject.object.getClass().equals(DirectionService.class)) {
+					log.trace("AAA: DataService connected to DirectionService");
+				}
+
+
+				Service service = ((BindHelperBinder) binder).getService();
+				for (GroupDependence dependence : subscribedObject.groupDependencies) {
+					for (ServiceDependence dep : dependence.serviceDependencies) {
+						if (dep.serviceClass.equals(serviceClass)) {
+							dep.serviceLoaded = service;
+							break;
+						}
 					}
 
-					if (setter != null) {
-						setter.invoke(obj, s);
-					}
-				} catch (Exception e) {
-					log.error("Can't process bind response");
+					checkGroupDependence(serviceClass, dependence);
 				}
 			}
 
 			@Override
 			public void onServiceDisconnected(ComponentName name) {
-				try {
-					if (setter != null) {
-						setter.invoke(obj, new Object[] {null});
-					}
 
-					if (field != null) {
-						field.set(obj, null);
-					}
-				} catch (Exception e) {
-					log.error("Can't process unbind response");
-				}
 			}
 		};
 	}

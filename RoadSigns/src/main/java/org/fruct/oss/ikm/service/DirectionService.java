@@ -15,7 +15,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.graphhopper.util.PointList;
-import com.graphhopper.util.Unzipper;
 
 import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.SettingsActivity;
@@ -23,20 +22,17 @@ import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
 import org.fruct.oss.ikm.service.LocationReceiver.Listener;
-import org.fruct.oss.ikm.storage.ContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
-import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.fruct.oss.ikm.utils.bind.State;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class DirectionService extends Service implements PointsListener,
 		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener, DataService.DataListener {
@@ -87,7 +83,6 @@ public class DirectionService extends Service implements PointsListener,
 	private LocationIndexCache locationIndexCache;
 
 	private SharedPreferences pref;
-	private AsyncTask<String, Void, Void> extractTask;
 	private int radius;
 
 	public class DirectionBinder extends android.os.Binder {
@@ -122,30 +117,15 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	@BindSetter
-	public void setDataService(DataService service) {
+	public void servicesReady(DataService dataService, @State("ready") RemoteContentService remoteContentService) {
+		log.trace("AAA: DirectionService setDataService");
 		synchronized (dataServiceMutex) {
-			if (service != null) {
-				service.addDataListener(this);
-			} else if (dataService != null) {
-				dataService.removeDataListener(this);
-			}
+			this.dataService = dataService;
+			this.remoteContent = remoteContentService;
 
-			dataService = service;
+			dataService.addDataListener(this);
 
-			if (dataService != null && remoteContent != null) {
-				updateDirectionsManager();
-			}
-		}
-	}
-
-	@BindSetter
-	public void setRemoteContentService(RemoteContentService service) {
-		remoteContent = service;
-
-		synchronized (dataServiceMutex) {
-			if (dataService != null && remoteContent != null) {
-				updateDirectionsManager();
-			}
+			updateDirectionsManager();
 		}
 	}
 
@@ -169,10 +149,6 @@ public class DirectionService extends Service implements PointsListener,
 		pref.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
-
-		if (extractTask != null) {
-			extractTask.cancel(true);
-		}
 
 		new AsyncTask<Void, Void, Void>() {
 			@Override
@@ -263,7 +239,9 @@ public class DirectionService extends Service implements PointsListener,
 			dirManager = new DirectionManager(routing);
 			dirManager.setListener(DirectionService.this);
 			dirManager.setRadius(radius);
-			dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+			if (lastLocation != null) {
+				asyncNewLocation(lastLocation);
+			}
 		}
 
 		if (oldDirManager != null) {
@@ -405,7 +383,7 @@ public class DirectionService extends Service implements PointsListener,
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
-		log.debug("DirectionService.onSharedPreferenceChanged");
+		log.trace("DirectionService.onSharedPreferenceChanged {}", key);
 		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			synchronized (dirManagerMutex) {

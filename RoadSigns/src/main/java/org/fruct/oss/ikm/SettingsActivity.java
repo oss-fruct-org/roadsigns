@@ -36,7 +36,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String AUTOZOOM = "autozoom";
 
 	public static final String OFFLINE_MAP = "offline_map";
-	public static final String NAVIGATION_DATA = "navigation_data";
+	public static final String NAVIGATION_DATA = "navigation_data_name";
 	public static final String CURRENT_REGION = "current_region";
 
 	public static final String USE_OFFLINE_MAP = "use_offline_map";
@@ -66,19 +66,15 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	@BindSetter
 	public void remoteContentServiceReady(DataService service) {
-		if (service != null) {
-			dataService = service;
-			dataService.setMigrateListener(migrateListener);
-		} else {
-			dataService.setMigrateListener(null);
-		}
+		dataService = service;
+		dataService.setMigrateListener(migrateListener);
 	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
-		
+
 		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		vehiclePref = (ListPreference) findPreference(VEHICLE);
@@ -115,6 +111,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	protected void onPause() {
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
+		dataService.setMigrateListener(null);
 		BindHelper.autoUnbind(this, this);
 
 		super.onPause();

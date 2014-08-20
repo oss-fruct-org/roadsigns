@@ -10,7 +10,6 @@ import org.fruct.oss.ikm.storage.DirectoryContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
-import org.mapsforge.core.model.Tile;
 import org.mapsforge.map.reader.MapDatabase;
 import org.mapsforge.map.reader.header.FileOpenResult;
 import org.slf4j.Logger;
@@ -56,6 +55,11 @@ public class MapsforgeMapType extends ContentType {
 	@Override
 	protected void deactivateCurrentItem() {
 
+	}
+
+	@Override
+	protected boolean isCurrentItemActive(ContentItem item) {
+		return true;
 	}
 
 	@Override

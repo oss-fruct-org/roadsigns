@@ -607,6 +607,13 @@ public class MapFragment extends Fragment implements MapListener,
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
+		remoteContent.removeListener(remoteContentAdapter);
+		remoteContent = null;
+		localListReady = false;
+
+		dataService.removeDataListener(this);
+		dataService = null;
+
 		super.onDestroy();
 	}
 	
@@ -908,29 +915,15 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	@BindSetter
-	public void remoteContentServiceReady(RemoteContentService service) {
-		if (service == null) {
-			remoteContent.removeListener(remoteContentAdapter);
-			remoteContent = null;
-			localListReady = false;
-		} else {
-			remoteContent = service;
-			localListReady = !remoteContent.getLocalItems().isEmpty();
-			remoteContent.addListener(remoteContentAdapter);
-			setupOfflineMap();
-		}
-	}
+	public void servicesReady(RemoteContentService remoteContentService, DataService dataService) {
+		this.remoteContent = remoteContentService;
+		this.dataService = dataService;
 
-	@BindSetter
-	public void dataServiceReady(DataService service) {
-		if (service == null) {
-			dataService.removeDataListener(this);
-			dataService = null;
-		} else {
-			dataService = service;
-			dataService.addDataListener(this);
-			setupOfflineMap();
-		}
+		localListReady = !remoteContent.getLocalItems().isEmpty();
+		remoteContent.addListener(remoteContentAdapter);
+		dataService.addDataListener(this);
+
+		setupOfflineMap();
 	}
 
 	@Override

@@ -136,10 +136,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public void setDataService(DataService service) {
 		this.dataService = service;
 
-		if (service == null) {
-			return;
-		}
-
 		dataService.addDataListener(this);
 		digestCache = new KeyValue(this, "digestCache");
 
@@ -155,6 +151,9 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 
 		setupContentTypes();
+
+		log.trace("AAA: RemoteContentService ready");
+		BindHelper.setServiceState(this, "ready", true);
 
 		refresh();
 	}
@@ -573,12 +572,16 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public void invalidateCurrentContent(String type) {
+		// FIXME: there was race condition between this service and DirectionService
 		ContentType contentType = contentTypes.get(type);
 		if (contentType == null) {
-			throw new IllegalArgumentException("No such content type");
+			throw new IllegalArgumentException("No such content type: " + type);
 		}
 
 		contentType.invalidateCurrentContent();
+		if (location != null) {
+			contentType.applyLocation(location);
+		}
 	}
 
 	public interface Listener {

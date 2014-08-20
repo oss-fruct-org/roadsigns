@@ -300,9 +300,6 @@ public class OnlineContentActivity extends ActionBarActivity
 
 	@BindSetter
 	public void remoteContentServiceReady(RemoteContentService service) {
-		if (service == null)
-			return;
-
 		remoteContent = service;
 		remoteContent.addListener(this);
 

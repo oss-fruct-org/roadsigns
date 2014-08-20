@@ -5,11 +5,15 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.preference.PreferenceManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public abstract class ContentType {
+	private static final Logger log = LoggerFactory.getLogger(ContentType.class);
+
 	protected final String id;
 	protected final String configKey;
 
@@ -48,7 +52,13 @@ public abstract class ContentType {
 		}
 
 		if (currentItem == null && currentItemHash != null && currentItemHash.equals(item.getHash())) {
-			setCurrentItem(item);
+			if (!isCurrentItemActive(item)) {
+				log.warn("Current active content item don't correspond with stored item");
+				currentItemHash = null;
+				pref.edit().remove(configKey).apply();
+			} else {
+				setCurrentItem(item);
+			}
 		}
 
 		contentItems.add(item);
@@ -84,6 +94,8 @@ public abstract class ContentType {
 
 	protected abstract void activateItem(ContentItem item);
 	protected abstract void deactivateCurrentItem();
+	protected abstract boolean isCurrentItemActive(ContentItem item);
+	public abstract void invalidateCurrentContent();
 
 	boolean acceptsContentItem(ContentItem contentItem) {
 		return id.equals(contentItem.getType());
@@ -99,9 +111,4 @@ public abstract class ContentType {
 		pref.edit().putString(configKey, currentItemHash).apply();
 	}
 
-	public abstract void invalidateCurrentContent();
-
-	interface Listener {
-		void contentItemActivated(ContentItem item, ContentType contentType);
-	}
 }

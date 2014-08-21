@@ -1,15 +1,16 @@
 package org.fruct.oss.ikm.service;
 
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.DijkstraOneToMany;
+import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
-import com.graphhopper.storage.GraphHopperStorage;
-import com.graphhopper.storage.MMapDirectory;
+import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.routing.util.FastestWeighting;
+import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.Location2IDFullIndex;
-import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.QueryResult;
-import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.poi.PointDesc;
@@ -19,25 +20,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public abstract class GHRouting implements Closeable {
+	public static final String ENCODERS_STR = "CAR,FOOT,BIKE";
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
 	protected final LocationIndexCache locationIndexCache;
 
 	private String path;
-	private GeoPoint oldGeoPoint = null;
 	private boolean isInitialized = false;
 	private boolean isInitializationFailed = false;
 	protected GraphHopper hopper;
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
 
-	private Region region;
-	private boolean isClosed;
+
+	protected Region region;
+	protected boolean isClosed;
+	protected EncodingManager encodingManager;
+	protected FlagEncoder encoder;
+	protected EdgeFilter edgeFilter;
+	protected FastestWeighting weightCalc;
+	protected String encodingString = "CAR";
 
 	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
@@ -84,6 +89,9 @@ public abstract class GHRouting implements Closeable {
 			//hopper.setCHShortcuts("shortest");
 			boolean res = hopper.load(path);
 			if (res) {
+				encodingManager = hopper.getEncodingManager();
+				updateEncoders();
+
 				locationIndexArray = createLocationIndexArray();
 				nodeAccess = hopper.getGraph().getNodeAccess();
 
@@ -101,6 +109,14 @@ public abstract class GHRouting implements Closeable {
 			log.error("graphhopper initialization for path" + path + "finished with exception", th);
 			th.printStackTrace();
 			isInitializationFailed = true;
+		}
+	}
+
+	private void updateEncoders() {
+		if (encodingManager != null) {
+			encoder = encodingManager.getEncoder(encodingString);
+			edgeFilter = new DefaultEdgeFilter(encoder, true, true);
+			weightCalc = new FastestWeighting(encoder);
 		}
 	}
 
@@ -130,7 +146,9 @@ public abstract class GHRouting implements Closeable {
 		}
 
 		for (LocationIndex index : locationIndexArray) {
-			int id = index.findID(geoPoint.getLatitude(), geoPoint.getLongitude());
+			QueryResult result = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
+
+			int id = result.getClosestNode();
 			if (id != -1) {
 				if (useCache) {
 					locationIndexCache.put(geoPoint, id);
@@ -147,7 +165,7 @@ public abstract class GHRouting implements Closeable {
 
 	public QueryResult getQueryResult(GeoPoint geoPoint) {
 		for (LocationIndex index : locationIndexArray) {
-			QueryResult id = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), EdgeFilter.ALL_EDGES);
+			QueryResult id = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
 			if (id.isValid()) {
 				log.trace("LocationIndex edge found in {}", id, index.getClass().getName());
 				return id;
@@ -167,7 +185,10 @@ public abstract class GHRouting implements Closeable {
 	public abstract  PointList route(GeoPoint to);
 	public abstract void route(PointDesc[] targetPoints, float radius, RoutingCallback callback);
 
-	public abstract void setEncoder(String encoding);
+	public void setEncoder(String encoding) {
+		this.encodingString = encoding;
+		updateEncoders();
+	}
 
 	public abstract IMapMatcher createMapMatcher();
 
@@ -177,6 +198,11 @@ public abstract class GHRouting implements Closeable {
 		if (isClosed) {
 			throw new IllegalStateException("Routing already closed");
 		}
+	}
+
+	public EncodingManager getEncodingManager() {
+		throwIfClosed();
+		return hopper.getEncodingManager();
 	}
 
 	public interface RoutingCallback {

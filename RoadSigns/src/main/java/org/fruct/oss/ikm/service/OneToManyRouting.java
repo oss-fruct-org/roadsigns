@@ -3,12 +3,15 @@ package org.fruct.oss.ikm.service;
 import android.util.Pair;
 
 import com.graphhopper.coll.IntDoubleBinHeap;
+import com.graphhopper.routing.QueryGraph;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
+import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FastestWeighting;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
+import com.graphhopper.storage.GraphHopperStorage;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
 import com.graphhopper.util.EdgeIteratorState;
@@ -33,8 +36,6 @@ import org.fruct.oss.ikm.utils.Timer;
 public class OneToManyRouting extends GHRouting {
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 
-	private String encoderString = "CAR";
-
 	private static Timer timer = new Timer();
 
 	// Dijkstra routing arrays
@@ -46,7 +47,6 @@ public class OneToManyRouting extends GHRouting {
 	private IntDoubleBinHeap heap;
 
 	private EdgeExplorer outEdgeExplorer;
-	private Weighting weightCalc;
 
 	private transient TIntStack tmpPath;
 	private transient GeoPoint tmpPoint = new GeoPoint(0, 0);
@@ -64,11 +64,8 @@ public class OneToManyRouting extends GHRouting {
 		Graph graph = hopper.getGraph();
 		tmpPath = new TIntArrayStack();
 
-		EncodingManager encodingManager = new EncodingManager(encoderString);
-		FlagEncoder encoder = encodingManager.getEncoder(encoderString);
-		weightCalc = new FastestWeighting(encoder);
-
-		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));
+		EdgeFilter edgeFilter = new DefaultEdgeFilter(encoder, false, true);
+		outEdgeExplorer = graph.createEdgeExplorer(edgeFilter);
 
 		parents = new int[graph.getNodes()];
 		Arrays.fill(parents, -1);
@@ -250,15 +247,10 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	@Override
-	public void setEncoder(String encoding) {
-		encoderString = encoding;
-	}
-
-	@Override
 	public IMapMatcher createMapMatcher() {
 		ensureInitialized();
 
-		return new MapMatcher(hopper.getGraph(), this, encoderString);
+		return new MapMatcher(hopper.getGraph(), this, encodingString);
 	}
 
 	@Override

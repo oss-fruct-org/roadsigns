@@ -65,7 +65,7 @@ public class MapMatcher implements IMapMatcher {
 		this.graph = graph;
 		this.routing = routing;
 
-		EncodingManager encodingManager = new EncodingManager(encoderString);
+		EncodingManager encodingManager = routing.getEncodingManager();
 		FlagEncoder encoder = encodingManager.getEncoder(encoderString);
 
 		outEdgeExplorer = graph.createEdgeExplorer(new DefaultEdgeFilter(encoder, false, true));

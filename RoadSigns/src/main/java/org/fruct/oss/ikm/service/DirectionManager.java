@@ -88,12 +88,16 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		calculationTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
-				activePoints = new ArrayList<PointDesc>(points);
-				doCalculateForPoints();
+				try {
+					activePoints = new ArrayList<PointDesc>(points);
+					doCalculateForPoints();
+				} catch (Exception ex) {
+					log.error("Routing error: ", ex);
+				}
 			}
 		});
 	}
-	
+
 	public void updateLocation(final Location location, final int node) {
 		interrupt();
 

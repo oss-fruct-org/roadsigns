@@ -20,4 +20,9 @@ public final class Timer {
 	public long getAcc() {
 		return accumulated;
 	}
+
+	public void reset() {
+		accumulated = 0;
+		time = -1;
+	}
 }

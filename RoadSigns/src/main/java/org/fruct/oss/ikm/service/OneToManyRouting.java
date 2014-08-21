@@ -27,13 +27,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import gnu.trove.list.TIntList;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.queue.TIntQueue;
 import gnu.trove.stack.TIntStack;
 import gnu.trove.stack.array.TIntArrayStack;
 import org.fruct.oss.ikm.utils.Timer;
 
 public class OneToManyRouting extends GHRouting {
+	private static final int MAX_TARGET_PATH_SEARCH = 10;
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
 
 	private static Timer timer = new Timer();
@@ -51,15 +55,28 @@ public class OneToManyRouting extends GHRouting {
 	private transient TIntStack tmpPath;
 	private transient GeoPoint tmpPoint = new GeoPoint(0, 0);
 
+	private int fromId;
+
+	private int targetNode = -1;
+	private TIntList targetPath = new TIntArrayList();
+	private int targetIndex = -1;
+
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
 		log.debug("OneToManyRouting created");
+
 	}
 
 	@Override
 	public void prepare(int fromId) {
 		if (!ensureInitialized())
 			return;
+
+		if (fromId == this.fromId) {
+			return;
+		}
+
+		this.fromId = fromId;
 
 		Graph graph = hopper.getGraph();
 		tmpPath = new TIntArrayStack();
@@ -85,26 +102,50 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return null;
 
-		int toId = getPointIndex(to, true);
-		int node = toId;
+		// New point. Reset cached path
+		targetNode = getPointIndex(to, true);
 
-		while (!heap.isEmpty() && !closed[toId]) {
+		if (targetNode == -1) {
+			return null;
+		}
+
+		return routeTarget();
+	}
+
+	private PointList routeTarget() {
+		targetPath.clear();
+
+		// Do dijkstra steps until target point found
+		int node = targetNode;
+		while (!heap.isEmpty() && !closed[targetNode]) {
 			node = findNextNode();
 		}
 
 		if (node != -1 && closed[node]) {
-			PointList pointList = new PointList();
+			targetPath.clear();
 
+			// Build new cached path
 			while (node != -1) {
-				GeoPoint nodePoint = getPoint(node, tmpPoint);
-				pointList.add(nodePoint.getLatitude(), nodePoint.getLongitude());
+				targetPath.add(node);
 				node = parents[node];
 			}
 
-			return pointList;
+			return createPointList(targetPath);
 		} else {
 			return null;
 		}
+	}
+
+	private PointList createPointList(TIntList nodes) {
+		PointList pointList = new PointList();
+
+		for (int i = 0, length = nodes.size(); i < length; i++) {
+			int node = nodes.get(i);
+			GeoPoint nodePoint = getPoint(node, tmpPoint);
+			pointList.add(nodePoint.getLatitude(), nodePoint.getLongitude());
+		}
+
+		return pointList;
 	}
 
 	@Override
@@ -115,7 +156,6 @@ public class OneToManyRouting extends GHRouting {
 		// Prepare location index
 		for (PointDesc point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
-			nodeId = getPointIndex(point.toPoint(), true);
 
 			if (nodeId >= 0) {
 				if (closed[nodeId]) {
@@ -149,6 +189,26 @@ public class OneToManyRouting extends GHRouting {
 
 			if (Thread.interrupted()) {
 				return;
+			}
+		}
+
+		// Target path update
+		if (targetNode != -1) {
+			boolean found = false;
+			for (int i = 0; i < MAX_TARGET_PATH_SEARCH && !targetPath.isEmpty(); i++) {
+				if (targetPath.get(targetPath.size() - 1) == fromId) {
+					found = true;
+					break;
+				}
+				targetPath.removeAt(targetPath.size() - 1);
+			}
+
+			if (found) {
+				log.trace("Target path: using cached ");
+				callback.pathUpdated(createPointList(targetPath));
+			} else {
+				log.trace("Target path: recalculated");
+				callback.pathUpdated(routeTarget());
 			}
 		}
 	}

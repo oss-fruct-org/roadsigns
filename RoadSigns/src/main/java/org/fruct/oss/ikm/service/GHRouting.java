@@ -24,6 +24,8 @@ import java.io.Closeable;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 
+import gnu.trove.stack.TIntStack;
+
 public abstract class GHRouting implements Closeable {
 	public static final int MAX_REGION_SEARCH = 100;
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
@@ -187,7 +189,7 @@ public abstract class GHRouting implements Closeable {
 
 	public abstract void prepare(int fromId);
 
-	public abstract  PointList route(GeoPoint to);
+	public abstract PointList route(GeoPoint to);
 	public abstract void route(PointDesc[] targetPoints, float radius, RoutingCallback callback);
 
 	public void setEncoder(String encoding) {
@@ -212,5 +214,6 @@ public abstract class GHRouting implements Closeable {
 
 	public interface RoutingCallback {
 		void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc);
+		void pathUpdated(PointList path);
 	}
 }

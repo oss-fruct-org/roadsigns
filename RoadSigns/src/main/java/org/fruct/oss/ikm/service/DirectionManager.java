@@ -24,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import gnu.trove.stack.TIntStack;
+
 public class DirectionManager implements GHRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
 
@@ -148,6 +150,12 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		if (readyPoints.size() % BATCH_SIZE == 0) {
 			sendResult();
 		}
+	}
+
+	@Override
+	public void pathUpdated(PointList pointList) {
+		if (listener != null)
+			listener.pathReady(pointList);
 	}
 
 	private void sendResult() {

@@ -235,6 +235,7 @@ public class DirectionService extends Service implements PointsListener,
 			routing = createRouting();
 			if (routing == null) {
 				log.warn("Current graphhopper region invalid, disabling it");
+				locationIndexCache.reset();
 				remoteContent.invalidateCurrentContent(lastLocation, RemoteContentService.GRAPHHOPPER_MAP);
 				return;
 			}

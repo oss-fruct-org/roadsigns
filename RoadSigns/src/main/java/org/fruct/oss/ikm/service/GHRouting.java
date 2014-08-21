@@ -10,6 +10,7 @@ import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.Location2IDFullIndex;
 import com.graphhopper.storage.index.LocationIndex;
+import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.PointList;
 
@@ -24,7 +25,7 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 
 public abstract class GHRouting implements Closeable {
-	public static final String ENCODERS_STR = "CAR,FOOT,BIKE";
+	public static final int MAX_REGION_SEARCH = 100;
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
 	protected final LocationIndexCache locationIndexCache;
 
@@ -34,7 +35,6 @@ public abstract class GHRouting implements Closeable {
 	protected GraphHopper hopper;
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
-
 
 	protected Region region;
 	protected boolean isClosed;
@@ -59,7 +59,12 @@ public abstract class GHRouting implements Closeable {
 		ArrayList<LocationIndex> arr = new ArrayList<LocationIndex>();
 
 		// Default index
-		arr.add(hopper.getLocationIndex());
+		LocationIndex defaultIndex = hopper.getLocationIndex();
+		if (defaultIndex instanceof LocationIndexTree) {
+			((LocationIndexTree) defaultIndex).setMaxRegionSearch(MAX_REGION_SEARCH);
+		}
+
+		arr.add(defaultIndex);
 
 		// Quad tree index if available
 		/*String quadTreeFileName = path + "/loc2idIndex";

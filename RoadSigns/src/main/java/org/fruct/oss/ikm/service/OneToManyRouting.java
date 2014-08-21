@@ -115,6 +115,8 @@ public class OneToManyRouting extends GHRouting {
 		// Prepare location index
 		for (PointDesc point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
+			nodeId = getPointIndex(point.toPoint(), true);
+
 			if (nodeId >= 0) {
 				if (closed[nodeId]) {
 					ArrayList<PointDesc> points = new ArrayList<PointDesc>(1);

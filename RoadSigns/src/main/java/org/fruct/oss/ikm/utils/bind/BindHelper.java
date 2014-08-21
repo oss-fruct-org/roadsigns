@@ -168,7 +168,7 @@ public class BindHelper {
 		groupDependence.done = true;
 
 		try {
-			groupDependence.method.invoke(groupDependence.object, services);
+			groupDependence.method.invoke(groupDependence.object, ((Object[]) services));
 		} catch (IllegalAccessException e) {
 			log.error("Can't invoke service receiver method", e);
 		} catch (InvocationTargetException e) {

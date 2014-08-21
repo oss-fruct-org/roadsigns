@@ -18,11 +18,13 @@ import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
-public abstract class GHRouting {
+public abstract class GHRouting implements Closeable {
 	protected static Logger log = LoggerFactory.getLogger(GHRouting.class);
 	protected final LocationIndexCache locationIndexCache;
 
@@ -35,10 +37,17 @@ public abstract class GHRouting {
 	private NodeAccess nodeAccess;
 
 	private Region region;
+	private boolean isClosed;
 
 	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
 		this.locationIndexCache = locationIndexCache;
+	}
+
+	@Override
+	public void close() {
+		isClosed = true;
+		hopper.close();
 	}
 
 	private LocationIndex[] createLocationIndexArray() {
@@ -163,6 +172,12 @@ public abstract class GHRouting {
 	public abstract IMapMatcher createMapMatcher();
 
 	public abstract IMapMatcher createSimpleMapMatcher();
+
+	public void throwIfClosed() {
+		if (isClosed) {
+			throw new IllegalStateException("Routing already closed");
+		}
+	}
 
 	public interface RoutingCallback {
 		void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc);

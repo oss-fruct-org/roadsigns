@@ -155,8 +155,7 @@ public class DirectionService extends Service implements PointsListener,
 			protected Void doInBackground(Void... params) {
 				synchronized (dirManagerMutex) {
 					if (dirManager != null) {
-						dirManager.closeSync();
-						dirManager = null;
+						asyncCloseDirectionManager();
 						locationIndexCache.close();
 					}
 				}
@@ -217,6 +216,17 @@ public class DirectionService extends Service implements PointsListener,
 		}.execute();
 	}
 
+	private void asyncCloseDirectionManager() {
+		synchronized (dirManagerMutex) {
+			if (dirManager != null) {
+				dirManager.closeSync();
+				routing = null;
+				mapMatcher = null;
+				dirManager = null;
+			}
+		}
+	}
+
 	private void asyncUpdateDirectionsManager() {
 		ghPath = currentStoragePath + "/graphhopper";
 		navigationDir = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
@@ -225,10 +235,11 @@ public class DirectionService extends Service implements PointsListener,
 			routing = createRouting();
 			if (routing == null) {
 				log.warn("Current graphhopper region invalid, disabling it");
-				remoteContent.invalidateCurrentContent(RemoteContentService.GRAPHHOPPER_MAP);
+				remoteContent.invalidateCurrentContent(lastLocation, RemoteContentService.GRAPHHOPPER_MAP);
 				return;
 			}
 		} else {
+			asyncCloseDirectionManager();
 			return;
 		}
 
@@ -239,6 +250,7 @@ public class DirectionService extends Service implements PointsListener,
 			dirManager = new DirectionManager(routing);
 			dirManager.setListener(DirectionService.this);
 			dirManager.setRadius(radius);
+
 			if (lastLocation != null) {
 				asyncNewLocation(lastLocation);
 			}
@@ -290,7 +302,7 @@ public class DirectionService extends Service implements PointsListener,
 	public void startTracking() {
 		if (locationReceiver.isStarted()) {
 			if (lastMatchedLocation != null) {
-				notifyLocationChanged(lastMatchedLocation, lastMatchedLocation);
+				notifyLocationChanged(lastLocation, lastMatchedLocation);
 			} else {
 				notifyLocationChanged(lastLocation, lastLocation);
 			}
@@ -322,7 +334,10 @@ public class DirectionService extends Service implements PointsListener,
 		lastLocation = location;
 
 		if (routing != null && !routing.isInner(location.getLatitude(), location.getLongitude())) {
-			// TODO: location not in current region, invalidate it
+			if (remoteContent != null) {
+				asyncCloseDirectionManager();
+				remoteContent.invalidateCurrentContent(location, RemoteContentService.GRAPHHOPPER_MAP);
+			}
 			return;
 		} else if (mapMatcher != null) {
 			mapMatcher.updateLocation(location);
@@ -333,8 +348,9 @@ public class DirectionService extends Service implements PointsListener,
 			notifyLocationChanged(location, location);
 		}
 
+
 		if (lastMatchedLocation != null) {
-			notifyLocationChanged(lastMatchedLocation, lastMatchedLocation);
+			notifyLocationChanged(lastLocation, lastMatchedLocation);
 
 			synchronized (dirManagerMutex) {
 				if (dirManager != null) {

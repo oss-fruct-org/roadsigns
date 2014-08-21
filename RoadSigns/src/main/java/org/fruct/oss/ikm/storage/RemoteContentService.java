@@ -571,8 +571,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 	}
 
-	public void invalidateCurrentContent(String type) {
-		// FIXME: there was race condition between this service and DirectionService
+	public void invalidateCurrentContent(Location location, String type) {
 		ContentType contentType = contentTypes.get(type);
 		if (contentType == null) {
 			throw new IllegalArgumentException("No such content type: " + type);
@@ -580,7 +579,8 @@ public class RemoteContentService extends Service implements DataService.DataLis
 
 		contentType.invalidateCurrentContent();
 		if (location != null) {
-			contentType.applyLocation(location);
+			this.location = location;
+			contentType.applyLocation(this.location);
 		}
 	}
 

@@ -62,6 +62,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		try {
 			executor.shutdown();
 			executor.awaitTermination(10, TimeUnit.SECONDS);
+			routing.close();
 		} catch (InterruptedException ignored) {
 		}
 	}

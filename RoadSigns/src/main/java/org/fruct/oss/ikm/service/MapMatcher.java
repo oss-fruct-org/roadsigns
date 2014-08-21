@@ -77,6 +77,8 @@ public class MapMatcher implements IMapMatcher {
 
 	@Override
 	public boolean updateLocation(Location location) {
+		routing.throwIfClosed();
+
 		if (activeEdges.isEmpty() || (matchedLocation != null && location.distanceTo(matchedLocation) > MAX_DISTANCE)) {
 			activeEdges.clear();
 			if (!setInitialLocation(location)) {
@@ -91,6 +93,8 @@ public class MapMatcher implements IMapMatcher {
 	}
 
 	private boolean setInitialLocation(Location location) {
+		routing.throwIfClosed();
+
 		matchedNode = -1;
 		matchedLocation = null;
 
@@ -125,6 +129,8 @@ public class MapMatcher implements IMapMatcher {
 	}
 
 	private void setLocation(Location location) {
+		routing.throwIfClosed();
+
 		final double rLat = location.getLatitude();
 		final double rLon= location.getLongitude();
 
@@ -149,7 +155,7 @@ public class MapMatcher implements IMapMatcher {
 			}
 
 			assert bestEvalResult != null;
-
+			// TODO: can throw NPE if near road too long
 			EdgeIteratorState edgeProps = graph.getEdgeProps(bestEvalResult.edge.edgeId, bestEvalResult.edge.baseNodeId);
 
 			activeEdges.clear();

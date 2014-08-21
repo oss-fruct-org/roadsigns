@@ -269,8 +269,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 				PointsManager.getInstance().updatePosition(new GeoPoint(location));
 
-				myPositionOverlay.setLocation(myLocation);
-				myPositionOverlay.setMatchedLocation(matchedLocation);
+				myPositionOverlay.setLocation(matchedLocation);
+				//myPositionOverlay.setMatchedLocation(matchedLocation);
 
 				mapView.invalidate();
 

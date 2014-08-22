@@ -40,7 +40,9 @@ public abstract class ContentType {
 				deactivateCurrentItem();
 				setCurrentItem(contentItem);
 				activateItem(contentItem);
+				log.debug("Notifying about contentItemReady");
 				if (listener != null) {
+					log.debug("Notifying about contentItemReady: listener active");
 					listener.contentItemReady(contentItem);
 				}
 				break;

@@ -605,6 +605,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
+		log.debug("MapFragment removeContentStateListener");
+
 		remoteContent.removeContentStateListener(RemoteContentService.MAPSFORGE_MAP);
 		remoteContent.removeListener(remoteContentAdapter);
 		remoteContent = null;
@@ -943,6 +945,7 @@ public class MapFragment extends Fragment implements MapListener,
 		localListReady = !remoteContent.getLocalItems().isEmpty();
 		remoteContent.addListener(remoteContentAdapter);
 		dataService.addDataListener(this);
+		log.debug("MapFragment setContentStateListener");
 		remoteContent.setContentStateListener(RemoteContentService.MAPSFORGE_MAP, this);
 
 		setupOfflineMap();
@@ -979,6 +982,7 @@ public class MapFragment extends Fragment implements MapListener,
 		if (useOfflineMap && offlineMapName != null) {
 			ContentItem contentItem = remoteContent.getContentItem(offlineMapName);
 			String offlineMapPath = remoteContent.getFilePath(contentItem);
+
 			if (offlineMapPath != null) {
 				tileProviderManager.setFile(offlineMapPath);
 				mapView.invalidate();
@@ -1063,10 +1067,12 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void contentItemReady(ContentItem contentItem) {
+		log.debug("MapFragment contentItemReady");
 		final CountDownLatch latch = new CountDownLatch(1);
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+
 				setupOfflineMap();
 				latch.countDown();
 			}
@@ -1080,6 +1086,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void contentItemDeactivated() {
+		log.debug("MapFragment contentItemDeactivated");
 		final CountDownLatch latch = new CountDownLatch(1);
 		getActivity().runOnUiThread(new Runnable() {
 			@Override

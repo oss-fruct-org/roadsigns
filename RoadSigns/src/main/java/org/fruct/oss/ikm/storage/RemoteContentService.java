@@ -374,17 +374,20 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				}
 			}
 
+
 			if (!found) {
 				localItems.add(item);
 				contentType.addContentItem(item);
+				updateItemsByName();
+
 				if (location != null) {
 					contentType.applyLocation(location);
 				}
 			} else {
 				contentType.updateContentItem(item);
+				updateItemsByName();
 			}
 
-			updateItemsByName();
 			notifyLocalListReady(localItems);
 			notifyDownloadFinished(item, remoteItem);
 		} catch (InterruptedIOException ex) {
@@ -402,6 +405,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		handler.post(new Runnable() {
 			@Override
 			public void run() {
+				// FIXME: concurrent array modification!!!
 				for (Listener listener : listeners) {
 					listener.localListReady(items);
 				}

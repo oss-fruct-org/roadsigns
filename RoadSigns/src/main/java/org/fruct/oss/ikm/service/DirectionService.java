@@ -513,6 +513,7 @@ public class DirectionService extends Service implements
 		synchronized (dirManagerMutex) {
 			if (dirManager != null) {
 				dirManager.setRadius(dist);
+				dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 			}
 		}
 	}

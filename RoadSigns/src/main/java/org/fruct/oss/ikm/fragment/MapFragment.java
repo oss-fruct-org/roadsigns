@@ -819,7 +819,9 @@ public class MapFragment extends Fragment implements MapListener,
 
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_searching);
-		
+
+		updateRadius();
+
 		if (activeStates.contains(State.DS_CREATED))
 			directionService.startTracking();
 	}
@@ -834,6 +836,8 @@ public class MapFragment extends Fragment implements MapListener,
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
 		
 		mapView.setMapOrientation(0);
+
+		updateRadius();
 	}
 	
 	@Override
@@ -989,9 +993,17 @@ public class MapFragment extends Fragment implements MapListener,
 	private void updateRadius() {
 		Projection proj = mapView.getProjection();
 
+		int width = mapView.getWidth() - Utils.getDP(10);
+		int height = mapView.getHeight() - Utils.getDP(10);
+
+		if (isTracking) {
+			width -= Utils.getDP(160);
+			height -= Utils.getDP(160);
+		}
+
 		GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
-		IGeoPoint p2 = proj.fromPixels(mapView.getWidth(), 0);
-		IGeoPoint p3 = proj.fromPixels(0, mapView.getHeight());
+		IGeoPoint p2 = proj.fromPixels(width, 0);
+		IGeoPoint p3 = proj.fromPixels(0, height);
 
 		final int dist = Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
 		log.trace("Size {} {}", mapView.getWidth(), mapView.getHeight());
@@ -1000,7 +1012,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		if (dist == 0)
 			return;
-		
+
 		addPendingTask(new Runnable() {
 			@Override
 			public void run() {

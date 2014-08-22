@@ -61,6 +61,7 @@ import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.fruct.oss.ikm.utils.bind.State;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
@@ -450,11 +451,7 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 
 		setState(State.CREATED);
-		
-		checkProvidersEnabled();
-		checkNetworkAvailable();
-		checkNavigationDataAvailable();
-		
+
 		// Start tracking if preference set
 		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
 			addPendingTask(new Runnable() {
@@ -492,7 +489,7 @@ public class MapFragment extends Fragment implements MapListener,
 		SharedPreferences pref = PreferenceManager
 				.getDefaultSharedPreferences(getActivity());
 
-		if (!navigationDataToastShown && pref.getString(SettingsActivity.NAVIGATION_DATA, "").isEmpty()) {
+		if (!navigationDataToastShown && null == remoteContent.getCurrentContentItem(RemoteContentService.GRAPHHOPPER_MAP)) {
 			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
 						R.string.configure_navigation_data,
@@ -925,6 +922,13 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent.setContentStateListener(RemoteContentService.MAPSFORGE_MAP, this);
 
 		setupOfflineMap();
+	}
+
+	@BindSetter
+	public void remoteContentServiceReceivedLocation(@org.fruct.oss.ikm.utils.bind.State("location-received") RemoteContentService service) {
+		checkProvidersEnabled();
+		checkNetworkAvailable();
+		checkNavigationDataAvailable();
 	}
 
 	@Override

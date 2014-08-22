@@ -580,6 +580,13 @@ public class RemoteContentService extends Service implements DataService.DataLis
 						contentType.applyLocation(location);
 					}
 				}
+
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						BindHelper.setServiceState(RemoteContentService.this, "location-received", true);
+					}
+				});
 			}
 		});
 	}
@@ -607,15 +614,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 	}
 
-	@Deprecated
-	public boolean checkContentItemNotInRange(Location location, String type) {
-		ContentType contentType = contentTypes.get(type);
-		if (contentType.getCurrentItem() == null || contentType.checkLocation(location, contentType.getCurrentItem())) {
-			return false;
-		} else {
-			return true;
-		}
-	}
 
 	public interface Listener {
 		void localListReady(List<ContentItem> list);

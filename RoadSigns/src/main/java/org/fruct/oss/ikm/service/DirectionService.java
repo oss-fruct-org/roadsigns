@@ -33,6 +33,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class DirectionService extends Service implements
 		PointsListener,
@@ -53,6 +56,8 @@ public class DirectionService extends Service implements
 	// Broadcasts
 	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
 	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
+	public static final String RAW_LOCATION_CHANGED = "org.fruct.oss.ikm.RAW_LOCATION_CHANGES";
+
 	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 
 	private static final String MOCK_PROVIDER = "mock-provider";
@@ -64,6 +69,13 @@ public class DirectionService extends Service implements
 
 	private final Object dirManagerMutex = new Object();
 	private DirectionManager dirManager;
+
+	private final Object routingMutex = new Object();
+	private GHRouting routing;
+
+	private final AtomicBoolean setupInProgress = new AtomicBoolean(false);
+
+	private IMapMatcher mapMatcher;
 
 	private IBinder binder = new DirectionBinder();
 
@@ -78,8 +90,6 @@ public class DirectionService extends Service implements
 	private Location lastMatchedLocation;
 	private int lastMatchedNode;
 
-	private GHRouting routing;
-	private IMapMatcher mapMatcher;
 
 	private String ghPath;
 	private String navigationDir;
@@ -107,7 +117,6 @@ public class DirectionService extends Service implements
 
 		File internalDir = getFilesDir();
 		assert internalDir != null;
-
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
 		BindHelper.autoBind(this, this);
@@ -227,13 +236,30 @@ public class DirectionService extends Service implements
 	}
 
 	private void asyncCloseDirectionManager() {
+		DirectionManager oldDirManager = null;
+		GHRouting oldRouting = null;
+
 		synchronized (dirManagerMutex) {
 			if (dirManager != null) {
-				dirManager.closeSync();
+				oldDirManager = this.dirManager;
+				this.dirManager = null;
+			}
+		}
+
+		synchronized (routingMutex) {
+			if (routing != null) {
+				oldRouting = routing;
 				routing = null;
 				mapMatcher = null;
-				dirManager = null;
 			}
+		}
+
+		if (oldDirManager != null) {
+			oldDirManager.closeSync();
+		}
+
+		if (oldRouting != null) {
+			oldRouting.close();
 		}
 	}
 
@@ -241,7 +267,13 @@ public class DirectionService extends Service implements
 		ghPath = currentStoragePath + "/graphhopper";
 		navigationDir = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
 
-		if (navigationDir != null) {
+		asyncCloseDirectionManager();
+
+		if (navigationDir == null) {
+			return;
+		}
+
+		synchronized (routingMutex) {
 			routing = createRouting();
 			if (routing == null) {
 				log.warn("Current graphhopper region invalid, disabling it");
@@ -249,26 +281,18 @@ public class DirectionService extends Service implements
 				remoteContent.invalidateCurrentContent(lastLocation, RemoteContentService.GRAPHHOPPER_MAP);
 				return;
 			}
-		} else {
-			asyncCloseDirectionManager();
-			return;
+
+			updateMapMatcher();
 		}
 
-		updateMapMatcher();
-
-		DirectionManager oldDirManager = dirManager;
 		synchronized (dirManagerMutex) {
 			dirManager = new DirectionManager(routing);
 			dirManager.setListener(DirectionService.this);
 			dirManager.setRadius(radius);
-
-			if (lastLocation != null) {
-				asyncNewLocation(lastLocation);
-			}
 		}
 
-		if (oldDirManager != null) {
-			oldDirManager.closeSync();
+		if (lastLocation != null) {
+			asyncNewLocation(lastLocation);
 		}
 	}
 
@@ -313,9 +337,9 @@ public class DirectionService extends Service implements
 	public void startTracking() {
 		if (locationReceiver.isStarted()) {
 			if (lastMatchedLocation != null) {
-				notifyLocationChanged(lastLocation, lastMatchedLocation);
+				notifyLocationChanged(lastMatchedLocation);
 			} else {
-				notifyLocationChanged(lastLocation, lastLocation);
+				notifyLocationChanged(lastLocation);
 			}
 
 			if (lastResultDirections != null)
@@ -332,6 +356,12 @@ public class DirectionService extends Service implements
 
 	@Override
 	public void newLocation(final Location location) {
+		lastLocation = location;
+
+		Intent intent = new Intent(RAW_LOCATION_CHANGED);
+		intent.putExtra(LOCATION, location);
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
@@ -349,21 +379,19 @@ public class DirectionService extends Service implements
 	}
 
 	public void asyncNewLocation(Location location) {
-		lastLocation = location;
-
-		synchronized (dirManagerMutex) {
+		synchronized (routingMutex) {
 			if (mapMatcher != null) {
 				mapMatcher.updateLocation(location);
 
 				lastMatchedLocation = mapMatcher.getMatchedLocation();
 				lastMatchedNode = mapMatcher.getMatchedNode();
 			} else {
-				notifyLocationChanged(location, location);
+				notifyLocationChanged(location);
 			}
 		}
 
 		if (lastMatchedLocation != null) {
-			notifyLocationChanged(lastLocation, lastMatchedLocation);
+			notifyLocationChanged(lastMatchedLocation);
 
 			synchronized (dirManagerMutex) {
 				if (dirManager != null) {
@@ -372,7 +400,7 @@ public class DirectionService extends Service implements
 				}
 			}
 		} else {
-			notifyLocationChanged(location, location);
+			notifyLocationChanged(location);
 		}
 	}
 
@@ -387,12 +415,11 @@ public class DirectionService extends Service implements
 		}
 	}
 
-	private void notifyLocationChanged(Location location, Location matchedLocation) {
-		if (location == null || matchedLocation == null)
+	private void notifyLocationChanged(Location matchedLocation) {
+		if (matchedLocation == null)
 			return;
 
 		Intent intent = new Intent(LOCATION_CHANGED);
-		intent.putExtra(LOCATION, location);
 		intent.putExtra(MATCHED_LOCATION, matchedLocation);
 
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -496,5 +523,6 @@ public class DirectionService extends Service implements
 	public void contentItemDeactivated() {
 		log.debug("DirectionService contentItemDeactivated");
 		asyncCloseDirectionManager();
+		locationIndexCache.reset();
 	}
 }

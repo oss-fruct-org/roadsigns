@@ -146,6 +146,8 @@ public abstract class GHRouting implements Closeable {
 	}
 
 	public int getPointIndex(GeoPoint geoPoint, boolean useCache) {
+		throwIfClosed();
+
 		if (useCache) {
 			int cachedIndex = locationIndexCache.get(geoPoint);
 			if (cachedIndex != -1)
@@ -171,6 +173,8 @@ public abstract class GHRouting implements Closeable {
 	}
 
 	public QueryResult getQueryResult(GeoPoint geoPoint) {
+		throwIfClosed();
+
 		for (LocationIndex index : locationIndexArray) {
 			QueryResult id = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
 			if (id.isValid()) {

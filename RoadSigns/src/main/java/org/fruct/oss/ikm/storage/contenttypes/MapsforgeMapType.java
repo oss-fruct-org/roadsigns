@@ -73,4 +73,12 @@ public class MapsforgeMapType extends ContentType {
 				.remove(configKey)
 				.apply();
 	}
+
+	@Override
+	protected void deactivateCurrentItem() {
+		pref.edit().remove(SettingsActivity.OFFLINE_MAP)
+				.remove(configKey)
+				.apply();
+		super.deactivateCurrentItem();
+	}
 }

@@ -118,8 +118,8 @@ public abstract class ContentType {
 	protected void deactivateCurrentItem() {
 		if (listener != null) {
 			listener.contentItemDeactivated();
-			currentItem = null;
 		}
+		currentItem = null;
 	}
 
 	ContentItem getCurrentItem() {

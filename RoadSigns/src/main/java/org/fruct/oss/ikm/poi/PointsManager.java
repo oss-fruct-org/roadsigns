@@ -169,8 +169,9 @@ public class PointsManager {
 			}
 
         	createFiltersFromPoints();
-        	notifyFiltersUpdated();
 		}
+
+		notifyFiltersUpdated();
 	}
 
 

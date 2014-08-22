@@ -123,7 +123,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 				location = intent.getParcelableExtra(DirectionService.LOCATION);
 				newLocation(location);
 			}
-		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
+		}, new IntentFilter(DirectionService.RAW_LOCATION_CHANGED));
 
 		BindHelper.autoBind(this, this);
 	}

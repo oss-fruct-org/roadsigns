@@ -83,6 +83,8 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -138,7 +140,10 @@ class MapState implements Parcelable {
 
 public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
-		MyPositionOverlay.OnScrollListener, PointsManager.PointsListener, DataService.DataListener {
+		MyPositionOverlay.OnScrollListener,
+		PointsManager.PointsListener,
+		DataService.DataListener,
+		RemoteContentService.ContentStateListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	private DefaultInfoWindow infoWindow;
@@ -256,24 +261,11 @@ public class MapFragment extends Fragment implements MapListener,
 			@Override
 			public void onReceive(Context context, Intent intent) {
 				log.debug("MapFragment LOCATION_CHANGED");
-				Location location = intent.getParcelableExtra(DirectionService.LOCATION);
 				Location matchedLocation = intent.getParcelableExtra(DirectionService.MATCHED_LOCATION);
 
-				assert location != null;
+				myLocation = matchedLocation;
 
-				myLocation = location;
-
-				log.debug("New location provider " + location.getProvider());
-				log.debug("New location accuracy " + location.getAccuracy());
-				log.debug("New location speed " + location.getSpeed());
-
-				PointsManager.getInstance().updatePosition(new GeoPoint(location));
-
-				if (remoteContent != null
-						&& remoteContent.checkContentItemNotInRange(location, RemoteContentService.MAPSFORGE_MAP)) {
-					remoteContent.invalidateCurrentContent(location, RemoteContentService.MAPSFORGE_MAP);
-					log.debug("Location outside current offline map, disabling");
-				}
+				PointsManager.getInstance().updatePosition(new GeoPoint(matchedLocation));
 
 				myPositionOverlay.setLocation(matchedLocation);
 				//myPositionOverlay.setMatchedLocation(matchedLocation);
@@ -285,7 +277,7 @@ public class MapFragment extends Fragment implements MapListener,
 					assert getActivity() != null;
 					// Auto zoom enabled
 					if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
-						speedAverage.insert(location.getSpeed(), location.getTime());
+						speedAverage.insert(matchedLocation.getSpeed(), matchedLocation.getTime());
 						float ave = speedAverage.average();
 
 						int newZoomLevel = getZoomBySpeed(ave);
@@ -296,7 +288,7 @@ public class MapFragment extends Fragment implements MapListener,
 						}
 					}
 					safeAnimateTo(new GeoPoint(myLocation));
-					mapView.setMapOrientation(-location.getBearing());
+					mapView.setMapOrientation(-matchedLocation.getBearing());
 				}
 			}
 		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
@@ -613,12 +605,14 @@ public class MapFragment extends Fragment implements MapListener,
 
 		BindHelper.autoUnbind(this.getActivity(), this);
 
+		remoteContent.removeContentStateListener(RemoteContentService.MAPSFORGE_MAP);
 		remoteContent.removeListener(remoteContentAdapter);
 		remoteContent = null;
 		localListReady = false;
 
 		dataService.removeDataListener(this);
 		dataService = null;
+
 
 		super.onDestroy();
 	}
@@ -928,6 +922,7 @@ public class MapFragment extends Fragment implements MapListener,
 		localListReady = !remoteContent.getLocalItems().isEmpty();
 		remoteContent.addListener(remoteContentAdapter);
 		dataService.addDataListener(this);
+		remoteContent.setContentStateListener(RemoteContentService.MAPSFORGE_MAP, this);
 
 		setupOfflineMap();
 	}
@@ -943,6 +938,7 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void setupOfflineMap() {
+		log.debug("MapFragment setupOfflineMap");
 		if (remoteContent == null || dataService == null || !localListReady)
 			return;
 
@@ -1006,7 +1002,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
-		} else if (key.equals(SettingsActivity.OFFLINE_MAP) || key.equals(SettingsActivity.USE_OFFLINE_MAP)) {
+		} else if (key.equals(SettingsActivity.USE_OFFLINE_MAP)) {
 			setupOfflineMap();
 		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
 			PointsManager.getInstance().ensureGetsState();
@@ -1027,6 +1023,40 @@ public class MapFragment extends Fragment implements MapListener,
 				updatePOIOverlay();
 			}
 		});
+	}
+
+	@Override
+	public void contentItemReady(ContentItem contentItem) {
+		final CountDownLatch latch = new CountDownLatch(1);
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				setupOfflineMap();
+				latch.countDown();
+			}
+		});
+
+		try {
+			latch.await(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+		}
+	}
+
+	@Override
+	public void contentItemDeactivated() {
+		final CountDownLatch latch = new CountDownLatch(1);
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				setupOfflineMap();
+				latch.countDown();
+			}
+		});
+
+		try {
+			latch.await(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+		}
 	}
 
 	private RemoteContentService.Listener remoteContentAdapter = new RemoteContentListenerAdapter() {

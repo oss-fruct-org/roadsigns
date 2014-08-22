@@ -53,6 +53,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
 	
 	public DirectionManager(GHRouting routing) {
+		if (routing == null)
+			throw new IllegalArgumentException("DirectionManager: routing argument can not be null");
 		executor = Executors.newSingleThreadExecutor();
 		this.routing = routing;
 	}
@@ -62,9 +64,11 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		interrupt();
 
 		try {
-			executor.shutdown();
-			executor.awaitTermination(10, TimeUnit.SECONDS);
-			routing.close();
+			executor.shutdownNow();
+			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+				log.error("Shutdown direction manager failed");
+			}
+			routing = null;
 		} catch (InterruptedException ignored) {
 		}
 	}
@@ -187,11 +191,16 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			listener.directionsUpdated(lastResultDirections, userPosition);
 	}
 
-	public void setRadius(int radius) {
-		if (this.radius != radius) {
-			this.radius = radius;
-			sendResult();
-		}
+	public void setRadius(final int radius) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				if (DirectionManager.this.radius != radius) {
+					DirectionManager.this.radius = radius;
+					sendResult();
+				}
+			}
+		});
 	}
 
 	public void findPath(final GeoPoint to) {

@@ -99,4 +99,12 @@ public class GraphhopperMapType extends ContentType {
 				.remove(configKey)
 				.apply();
 	}
+
+	@Override
+	protected void deactivateCurrentItem() {
+		pref.edit().remove(SettingsActivity.NAVIGATION_DATA)
+				.remove(configKey)
+				.apply();
+		super.deactivateCurrentItem();
+	}
 }

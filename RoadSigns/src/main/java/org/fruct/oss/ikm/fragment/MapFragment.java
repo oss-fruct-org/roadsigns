@@ -179,6 +179,7 @@ public class MapFragment extends Fragment implements MapListener,
 				
 	private List<ClickableDirectedLocationOverlay> crossDirections;
 	private PathOverlay pathOverlay;
+	private boolean pathJumped;
 	private MyPositionOverlay myPositionOverlay;
 	
 	private Menu menu;
@@ -299,7 +300,9 @@ public class MapFragment extends Fragment implements MapListener,
 			public void onReceive(Context context, Intent intent) {
 				ArrayList<GeoPoint> pathArray = intent.getParcelableArrayListExtra(DirectionService.PATH);
 				showPath(pathArray);
-				mapView.getController().setCenter(new GeoPoint(myLocation));
+				if (!pathJumped)
+					mapView.getController().setCenter(new GeoPoint(myLocation));
+				pathJumped = true;
 			}
 		}, new IntentFilter(DirectionService.PATH_READY));
 
@@ -624,7 +627,6 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		inflater.inflate(R.menu.main, menu);
 		this.menu = menu;
-		// mapView.getOverlayManager().onCreateOptionsMenu(menu, 4, mapView);
 
 		super.onCreateOptionsMenu(menu, inflater);
 	}
@@ -636,6 +638,9 @@ public class MapFragment extends Fragment implements MapListener,
 		menu.findItem(R.id.action_track).setIcon(
 				isTracking ? R.drawable.ic_action_location_searching
 						: R.drawable.ic_action_location_found);
+
+		menu.findItem(R.id.action_remove_path).setVisible(pathOverlay != null);
+
 		super.onPrepareOptionsMenu(menu);
 	}
 
@@ -682,8 +687,21 @@ public class MapFragment extends Fragment implements MapListener,
 			startActivity(intent);
 			break;
 
+		case R.id.action_remove_path:
+			if (pathOverlay != null) {
+				mapView.getOverlays().remove(pathOverlay);
+				menu.findItem(R.id.action_remove_path).setVisible(false);
+				pathOverlay= null;
+			}
+
+			if (directionService != null) {
+				directionService.findPath(null);
+			}
+
+			mapView.invalidate();
+
+			break;
 		default:
-			//mapView.getOverlayManager().onOptionsItemSelected(item, 4, mapView);
 			return super.onOptionsItemSelected(item);
 		}
 
@@ -848,6 +866,7 @@ public class MapFragment extends Fragment implements MapListener,
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
+				pathJumped = false;
 				log.debug("MapFragment.showPath task start");
 
 				// Find path from current location to target location
@@ -874,6 +893,7 @@ public class MapFragment extends Fragment implements MapListener,
 		mapView.invalidate();
 		
 		mapState.currentPath = path;
+		menu.findItem(R.id.action_remove_path).setVisible(true);
 	}
 	
 	private void addPendingTask(Runnable runnable, State state) {

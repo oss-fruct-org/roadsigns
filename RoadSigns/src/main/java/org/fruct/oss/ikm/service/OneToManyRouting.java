@@ -100,6 +100,11 @@ public class OneToManyRouting extends GHRouting {
 		if (!ensureInitialized())
 			return null;
 
+		if (to == null) {
+			targetNode = -1;
+			return null;
+		}
+
 		// New point. Reset cached path
 		targetNode = getPointIndex(to, true);
 

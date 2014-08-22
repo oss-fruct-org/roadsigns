@@ -40,4 +40,10 @@
         android:id="@+id/action_about"
         yourapp:showAsAction="never"
         android:title="@string/action_about"/>
+    <item
+        android:id="@+id/action_remove_path"
+        yourapp:showAsAction="never"
+        android:visible="false"
+        android:title="@string/close_path"
+        />
 </menu>

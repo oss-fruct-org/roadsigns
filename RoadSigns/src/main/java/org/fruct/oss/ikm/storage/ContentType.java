@@ -24,6 +24,8 @@ public abstract class ContentType {
 
 	protected SharedPreferences pref;
 
+	protected RemoteContentService.ContentStateListener listener;
+
 	protected ContentType(Context context, String id, String configKey) {
 		this.id = id;
 		this.pref = PreferenceManager.getDefaultSharedPreferences(context);
@@ -35,11 +37,19 @@ public abstract class ContentType {
 	synchronized void applyLocation(Location location) {
 		for (ContentItem contentItem : contentItems) {
 			if (checkLocation(location, contentItem)) {
+				deactivateCurrentItem();
 				setCurrentItem(contentItem);
 				activateItem(contentItem);
+				if (listener != null) {
+					listener.contentItemReady(contentItem);
+				}
 				break;
 			}
 		}
+	}
+
+	synchronized void setListener(RemoteContentService.ContentStateListener listener) {
+		this.listener = listener;
 	}
 
 	synchronized void prepare() {
@@ -77,7 +87,12 @@ public abstract class ContentType {
 			ContentItem exItem = contentItems.get(i);
 			if (exItem.getName().equals(item.getName())) {
 				contentItems.set(i, item);
+				deactivateCurrentItem();
 				setCurrentItem(item);
+				activateItem(item);
+				if (listener != null) {
+					listener.contentItemReady(item);
+				}
 				break;
 			}
 		}
@@ -93,12 +108,18 @@ public abstract class ContentType {
 	protected abstract boolean checkLocation(Location location, ContentItem contentItem);
 
 	protected abstract void activateItem(ContentItem item);
-	protected abstract void deactivateCurrentItem();
 	protected abstract boolean isCurrentItemActive(ContentItem item);
-	public abstract void invalidateCurrentContent();
+	protected abstract void invalidateCurrentContent();
 
 	boolean acceptsContentItem(ContentItem contentItem) {
 		return id.equals(contentItem.getType());
+	}
+
+	protected void deactivateCurrentItem() {
+		if (listener != null) {
+			listener.contentItemDeactivated();
+			currentItem = null;
+		}
 	}
 
 	ContentItem getCurrentItem() {
@@ -110,5 +131,4 @@ public abstract class ContentType {
 		currentItemHash = currentItem.getHash();
 		pref.edit().putString(configKey, currentItemHash).apply();
 	}
-
 }

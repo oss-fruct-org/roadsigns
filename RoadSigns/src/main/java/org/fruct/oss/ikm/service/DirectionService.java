@@ -21,7 +21,7 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
-import org.fruct.oss.ikm.service.LocationReceiver.Listener;
+import org.fruct.oss.ikm.storage.ContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindSetter;
@@ -34,8 +34,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DirectionService extends Service implements PointsListener,
-		DirectionManager.Listener, OnSharedPreferenceChangeListener, Listener, DataService.DataListener {
+public class DirectionService extends Service implements
+		PointsListener,
+		DirectionManager.Listener,
+		OnSharedPreferenceChangeListener,
+		LocationReceiver.Listener,
+		DataService.DataListener,
+		RemoteContentService.ContentStateListener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
 	// Extras
@@ -124,6 +129,7 @@ public class DirectionService extends Service implements PointsListener,
 			this.remoteContent = remoteContentService;
 
 			dataService.addDataListener(this);
+			remoteContent.setContentStateListener(RemoteContentService.GRAPHHOPPER_MAP, this);
 
 			updateDirectionsManager();
 		}
@@ -167,6 +173,10 @@ public class DirectionService extends Service implements PointsListener,
 			if (dataService != null) {
 				dataService.removeDataListener(this);
 			}
+		}
+
+		if (remoteContent != null) {
+			remoteContent.removeContentStateListener(RemoteContentService.GRAPHHOPPER_MAP);
 		}
 
 		BindHelper.autoUnbind(this, this);
@@ -325,7 +335,14 @@ public class DirectionService extends Service implements PointsListener,
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
-				asyncNewLocation(location);
+				try {
+					asyncNewLocation(location);
+				} catch (Exception ex) {
+					log.error("Exception during new location processing", ex);
+					if (remoteContent != null) {
+						remoteContent.invalidateCurrentContent(location, RemoteContentService.GRAPHHOPPER_MAP);
+					}
+				}
 				return null;
 			}
 		}.execute();
@@ -334,21 +351,16 @@ public class DirectionService extends Service implements PointsListener,
 	public void asyncNewLocation(Location location) {
 		lastLocation = location;
 
-		if (routing != null && !routing.isInner(location.getLatitude(), location.getLongitude())) {
-			if (remoteContent != null) {
-				asyncCloseDirectionManager();
-				remoteContent.invalidateCurrentContent(location, RemoteContentService.GRAPHHOPPER_MAP);
+		synchronized (dirManagerMutex) {
+			if (mapMatcher != null) {
+				mapMatcher.updateLocation(location);
+
+				lastMatchedLocation = mapMatcher.getMatchedLocation();
+				lastMatchedNode = mapMatcher.getMatchedNode();
+			} else {
+				notifyLocationChanged(location, location);
 			}
-			return;
-		} else if (mapMatcher != null) {
-			mapMatcher.updateLocation(location);
-
-			lastMatchedLocation = mapMatcher.getMatchedLocation();
-			lastMatchedNode = mapMatcher.getMatchedNode();
-		} else {
-			notifyLocationChanged(location, location);
 		}
-
 
 		if (lastMatchedLocation != null) {
 			notifyLocationChanged(lastLocation, lastMatchedLocation);
@@ -359,6 +371,8 @@ public class DirectionService extends Service implements PointsListener,
 					dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 				}
 			}
+		} else {
+			notifyLocationChanged(location, location);
 		}
 	}
 
@@ -385,15 +399,19 @@ public class DirectionService extends Service implements PointsListener,
 	}
 
 	public void findPath(GeoPoint to) {
-		if (dirManager != null) {
-			dirManager.findPath(to);
+		synchronized (dirManagerMutex) {
+			if (dirManager != null) {
+				dirManager.findPath(to);
+			}
 		}
 	}
 
 	@Override
 	public void filterStateChanged(List<PointDesc> newList) {
-		if (dirManager != null) {
-			dirManager.calculateForPoints(newList);
+		synchronized (dirManagerMutex) {
+			if (dirManager != null) {
+				dirManager.calculateForPoints(newList);
+			}
 		}
 	}
 
@@ -409,7 +427,6 @@ public class DirectionService extends Service implements PointsListener,
 				}
 			}
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
-			updateDirectionsManager();
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (routing != null) {
 				routing.setEncoder(pref.getString(key, "CAR"));
@@ -468,5 +485,16 @@ public class DirectionService extends Service implements PointsListener,
 				dirManager.setRadius(dist);
 			}
 		}
+	}
+
+	@Override
+	public void contentItemReady(ContentItem contentItem) {
+		updateDirectionsManager();
+	}
+
+	@Override
+	public void contentItemDeactivated() {
+		log.debug("DirectionService contentItemDeactivated");
+		asyncCloseDirectionManager();
 	}
 }

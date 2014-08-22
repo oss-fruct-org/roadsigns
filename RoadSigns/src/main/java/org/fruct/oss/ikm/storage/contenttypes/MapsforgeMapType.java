@@ -10,7 +10,10 @@ import org.fruct.oss.ikm.storage.DirectoryContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
+import org.mapsforge.core.model.Tile;
+import org.mapsforge.core.util.MercatorProjection;
 import org.mapsforge.map.reader.MapDatabase;
+import org.mapsforge.map.reader.MapReadResult;
 import org.mapsforge.map.reader.header.FileOpenResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +42,12 @@ public class MapsforgeMapType extends ContentType {
 		BoundingBox bbox = mapDatabase.getMapFileInfo().boundingBox;
 		if (bbox.contains(new LatLong(location.getLatitude(), location.getLongitude()))) {
 			// TODO: add precise detection
-			ret = true;
+			final int zoom = 16;
+			Tile tile = new Tile(MercatorProjection.longitudeToTileX(location.getLongitude(), zoom),
+					MercatorProjection.latitudeToTileY(location.getLatitude(), zoom), (byte) zoom);
+			MapReadResult mapReadResult = mapDatabase.readMapData(tile);
+			if (mapReadResult != null)
+				ret = true;
 		}
 
 		mapDatabase.closeFile();
@@ -52,10 +60,6 @@ public class MapsforgeMapType extends ContentType {
 		pref.edit().putString(SettingsActivity.OFFLINE_MAP, item.getName()).apply();
 	}
 
-	@Override
-	protected void deactivateCurrentItem() {
-
-	}
 
 	@Override
 	protected boolean isCurrentItemActive(ContentItem item) {

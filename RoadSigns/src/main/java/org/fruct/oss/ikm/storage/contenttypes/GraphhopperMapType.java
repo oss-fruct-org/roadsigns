@@ -82,11 +82,6 @@ public class GraphhopperMapType extends ContentType {
 	}
 
 	@Override
-	protected void deactivateCurrentItem() {
-
-	}
-
-	@Override
 	protected boolean isCurrentItemActive(ContentItem item) {
 		String regionName = "gh-" + item.getHash();
 		return regionName.equals(pref.getString(SettingsActivity.NAVIGATION_DATA, null));

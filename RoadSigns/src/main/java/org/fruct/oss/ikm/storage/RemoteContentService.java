@@ -72,6 +72,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private SharedPreferences pref;
 
 	private final List<Listener> listeners = new ArrayList<Listener>();
+	private final Map<String, ContentStateListener> stateListeners = new HashMap<String, ContentStateListener>();
 
 	private NetworkStorage networkStorage;
 	private WritableDirectoryStorage mainLocalStorage;
@@ -223,6 +224,21 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public void removeListener(Listener listener) {
 		synchronized (listeners) {
 			listeners.remove(listener);
+		}
+	}
+
+	public void setContentStateListener(String contentTypeId, ContentStateListener listener) {
+		//stateListeners.put(contentType, listener);
+		ContentType contentType = contentTypes.get(contentTypeId);
+		if (contentType != null) {
+			contentType.setListener(listener);
+		}
+	}
+
+	public void removeContentStateListener(String contentTypeId) {
+		ContentType contentType = contentTypes.get(contentTypeId);
+		if (contentType != null) {
+			contentType.setListener(null);
 		}
 	}
 
@@ -553,8 +569,14 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			@Override
 			public void run() {
 				for (ContentType contentType : contentTypes.values()) {
+					if (contentType.getCurrentItem() != null && !contentType.checkLocation(location, contentType.getCurrentItem())) {
+						contentType.deactivateCurrentItem();
+						contentType.invalidateCurrentContent();
+					}
+
 					// TODO: check region not always
 					if (contentType.getCurrentItem() == null) {
+						log.debug("RemoteContentService applyLocation from newLocation");
 						contentType.applyLocation(location);
 					}
 				}
@@ -572,6 +594,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	public void invalidateCurrentContent(Location location, String type) {
+		log.debug("RemoteContentService invalidateCurrentContent");
 		ContentType contentType = contentTypes.get(type);
 		if (contentType == null) {
 			throw new IllegalArgumentException("No such content type: " + type);
@@ -584,6 +607,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 	}
 
+	@Deprecated
 	public boolean checkContentItemNotInRange(Location location, String type) {
 		ContentType contentType = contentTypes.get(type);
 		if (contentType.getCurrentItem() == null || contentType.checkLocation(location, contentType.getCurrentItem())) {
@@ -603,6 +627,11 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		void errorDownloading(ContentItem item, IOException e);
 		void errorInitializing(IOException e);
 		void downloadInterrupted(ContentItem item);
+	}
+
+	public interface ContentStateListener {
+		void contentItemReady(ContentItem contentItem);
+		void contentItemDeactivated();
 	}
 
 	public class LocalBinder extends BindHelperBinder {

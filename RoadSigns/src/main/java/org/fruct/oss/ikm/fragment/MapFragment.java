@@ -269,6 +269,12 @@ public class MapFragment extends Fragment implements MapListener,
 
 				PointsManager.getInstance().updatePosition(new GeoPoint(location));
 
+				if (remoteContent != null
+						&& remoteContent.checkContentItemNotInRange(location, RemoteContentService.MAPSFORGE_MAP)) {
+					remoteContent.invalidateCurrentContent(location, RemoteContentService.MAPSFORGE_MAP);
+					log.debug("Location outside current offline map, disabling");
+				}
+
 				myPositionOverlay.setLocation(matchedLocation);
 				//myPositionOverlay.setMatchedLocation(matchedLocation);
 

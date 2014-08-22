@@ -584,6 +584,15 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 	}
 
+	public boolean checkContentItemNotInRange(Location location, String type) {
+		ContentType contentType = contentTypes.get(type);
+		if (contentType.getCurrentItem() == null || contentType.checkLocation(location, contentType.getCurrentItem())) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 	public interface Listener {
 		void localListReady(List<ContentItem> list);
 		void remoteListReady(List<ContentItem> list);

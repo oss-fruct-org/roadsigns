@@ -99,6 +99,7 @@ public class GraphhopperMapType extends ContentType {
 			Utils.deleteDir(new File(navigationPath));
 		}
 
+		currentItem = null;
 		pref.edit().remove(SettingsActivity.NAVIGATION_DATA)
 				.remove(configKey)
 				.apply();

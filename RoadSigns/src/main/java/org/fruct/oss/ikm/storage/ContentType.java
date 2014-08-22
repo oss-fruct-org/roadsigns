@@ -20,7 +20,7 @@ public abstract class ContentType {
 	private final List<ContentItem> contentItems = new ArrayList<ContentItem>();
 
 	private String currentItemHash;
-	private ContentItem currentItem;
+	protected ContentItem currentItem;
 
 	protected SharedPreferences pref;
 

@@ -1,5 +1,6 @@
 package org.fruct.oss.ikm.service;
 
+import android.support.v4.util.LruCache;
 import android.util.Pair;
 
 import com.graphhopper.coll.IntDoubleBinHeap;
@@ -23,6 +24,7 @@ import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +40,9 @@ import org.fruct.oss.ikm.utils.Timer;
 
 public class OneToManyRouting extends GHRouting {
 	private static final int MAX_TARGET_PATH_SEARCH = 10;
+	private static final int MAX_RADIUS = 10;
 	private static Logger log = LoggerFactory.getLogger(OneToManyRouting.class);
+	private static final boolean ENABLE_CACHING = true;
 
 	private static Timer timer = new Timer();
 
@@ -52,14 +56,15 @@ public class OneToManyRouting extends GHRouting {
 
 	private EdgeExplorer outEdgeExplorer;
 
-	private transient TIntStack tmpPath;
+	private transient TIntList tmpPath;
 	private transient GeoPoint tmpPoint = new GeoPoint(0, 0);
 
 	private int fromId;
 
 	private int targetNode = -1;
 	private TIntList targetPath = new TIntArrayList();
-	private int targetIndex = -1;
+
+	private TargetPointCache targetPointCache = new TargetPointCache(1024 * 1024);
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
@@ -79,7 +84,7 @@ public class OneToManyRouting extends GHRouting {
 		this.fromId = fromId;
 
 		Graph graph = hopper.getGraph();
-		tmpPath = new TIntArrayStack();
+		tmpPath = new TIntArrayList();
 
 		EdgeFilter edgeFilter = new DefaultEdgeFilter(encoder, false, true);
 		outEdgeExplorer = graph.createEdgeExplorer(edgeFilter);
@@ -152,6 +157,7 @@ public class OneToManyRouting extends GHRouting {
 	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
 		// TODO: possibly use more efficient multi-map
 		TIntObjectMap<List<PointDesc>> targetNodes = new TIntObjectHashMap<List<PointDesc>>(targetPoints.length);
+		TIntObjectMap<TargetPoint> nearCachedPoints = new TIntObjectHashMap<TargetPoint>();
 
 		// Prepare location index
 		for (PointDesc point : targetPoints) {
@@ -167,6 +173,19 @@ public class OneToManyRouting extends GHRouting {
 					if (nodePoints == null) {
 						nodePoints = new ArrayList<PointDesc>();
 						targetNodes.put(nodeId, nodePoints);
+					}
+
+					if (ENABLE_CACHING) {
+						// Check if exists any cached path for current point
+						TargetPoint targetPoint = targetPointCache.get(nodeId);
+						if (targetPointCache != null) {
+							// Add first MAX_RADIUS points in cached path to look-up list
+							for (int i = 0, length = Math.min(targetPoint.currentPath.size(), MAX_RADIUS);
+								 i < length; i++) {
+								int lookupNode = targetPoint.currentPath.get(targetPoint.currentPath.size() - 1 - i);
+								nearCachedPoints.put(lookupNode, targetPoint);
+							}
+						}
 					}
 
 					nodePoints.add(point);
@@ -214,11 +233,21 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	private void sendPointDirection(int node, List<PointDesc> targetPoints, float radius, RoutingCallback callback) {
+		TIntList tmp;
+
 		// Build direction for found target point
-		buildPath(node, tmpPath);
+		if (ENABLE_CACHING) {
+			tmp = new TIntArrayList();
+			targetPointCache.put(node, new TargetPoint(node, targetPoints));
+		} else	{
+			tmp = tmpPath;
+		}
+
+		buildPath(node, tmp);
+
 		int dist = distances[node];
 
-		Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
+		Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmp, radius);
 		if (dirPair != null) {
 			for (PointDesc pointDesc : targetPoints) {
 				pointDesc.setDistance(dist);
@@ -258,27 +287,27 @@ public class OneToManyRouting extends GHRouting {
 		return node;
 	}
 
-	private void buildPath(int node, TIntStack outPath) {
+	private void buildPath(int node, TIntList outPath) {
 		outPath.clear();
 
 		while (node != -1) {
-			outPath.push(node);
+			outPath.add(node);
 			node = parents[node];
 		}
 	}
 
-	private Pair<GeoPoint, GeoPoint> findDirection(TIntStack path, final float radius) {
+	private Pair<GeoPoint, GeoPoint> findDirection(TIntList path, final float radius) {
 		// TODO: handle this case specially
 		if (path.size() < 2)
 			return null;
 
 		final GeoPoint current = new GeoPoint(0, 0);
 		GeoPoint point = new GeoPoint(0, 0);
-		getPoint(path.pop(), current);
+		getPoint(path.removeAt(path.size() - 1), current);
 		GeoPoint prev = Utils.copyGeoPoint(current);
 
 		while (path.size() > 0) {
-			int node = path.pop();
+			int node = path.removeAt(path.size() - 1);
 			getPoint(node, point);
 
 			final int dist = current.distanceTo(point);
@@ -320,5 +349,27 @@ public class OneToManyRouting extends GHRouting {
 		ensureInitialized();
 
 		return new SimpleMapMatcher(this);
+	}
+
+	private static class TargetPoint {
+		private TargetPoint(int node, List<PointDesc> points) {
+			this.node = node;
+			this.points = points;
+		}
+
+		int node;
+		TIntList currentPath;
+		List<PointDesc> points;
+	}
+
+	private static class TargetPointCache extends LruCache<Integer, TargetPoint> {
+		public TargetPointCache(int maxSize) {
+			super(maxSize);
+		}
+
+		@Override
+		protected int sizeOf(Integer key, TargetPoint value) {
+			return 4 + 4 + value.currentPath.size() * 4;
+		}
 	}
 }

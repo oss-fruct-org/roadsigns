@@ -190,8 +190,7 @@ public class OneToManyRouting extends GHRouting {
 			}
 		}
 
-
-		// Target path update
+ 		// Target path update
 		if (targetNode != -1) {
 			boolean found = false;
 			for (int i = 0; i < MAX_TARGET_PATH_SEARCH && !targetPath.isEmpty(); i++) {

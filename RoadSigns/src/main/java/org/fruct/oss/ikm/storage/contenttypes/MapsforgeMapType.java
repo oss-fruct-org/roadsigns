@@ -8,6 +8,7 @@ import org.fruct.oss.ikm.storage.ContentItem;
 import org.fruct.oss.ikm.storage.ContentType;
 import org.fruct.oss.ikm.storage.DirectoryContentItem;
 import org.fruct.oss.ikm.storage.RemoteContentService;
+import org.fruct.oss.ikm.utils.Region;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
 import org.mapsforge.core.model.Tile;
@@ -19,17 +20,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Map;
 
 public class MapsforgeMapType extends ContentType {
 	private static final Logger log = LoggerFactory.getLogger(MapsforgeMapType.class);
+	private Map<String, Region> regions;
 
-	public MapsforgeMapType(Context context) {
+	public MapsforgeMapType(Context context, Map<String, Region> regions) {
 		super(context, RemoteContentService.MAPSFORGE_MAP, "mapsforge-map-current-hash");
+		this.regions = regions;
+	}
+
+	@Override
+	protected void onItemAdded(ContentItem item) {
+
 	}
 
 	@Override
 	protected boolean checkLocation(Location location, ContentItem contentItem) {
 		boolean ret = false;
+
+		Region region = regions.get(contentItem.getRegionId());
+		if (region != null) {
+			return region.testHit(location.getLatitude(), location.getLongitude());
+		}
 
 		DirectoryContentItem dItem = (DirectoryContentItem) contentItem;
 		MapDatabase mapDatabase = new MapDatabase();

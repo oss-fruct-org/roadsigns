@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -26,30 +27,32 @@ public class GraphhopperMapType extends ContentType {
 	private static final Logger log = LoggerFactory.getLogger(GraphhopperMapType.class);
 
 	private final DataService dataService;
+	private Map<String, Region> regions;
 
-	private final transient WeakHashMap<ContentItem, Region> regionsCache = new WeakHashMap<ContentItem, Region>();
-
-	public GraphhopperMapType(Context context, DataService dataService) {
+	public GraphhopperMapType(Context context, DataService dataService, Map<String, Region> regions) {
 		super(context, RemoteContentService.GRAPHHOPPER_MAP, "graphhopper-map-current-hash");
 		this.dataService = dataService;
+		this.regions = regions;
+	}
+
+	@Override
+	protected void onItemAdded(ContentItem item) {
+		try {
+			regions.put(item.getRegionId(), createRegion(item));
+		} catch (IOException e) {
+			log.error("Can't create region from content item {}", item.getName());
+		}
 	}
 
 	@Override
 	protected boolean checkLocation(Location location, ContentItem contentItem) {
-		Region region = regionsCache.get(contentItem);
+		Region region = regions.get(contentItem.getRegionId());
 		if (region == null) {
-			try {
-				region = createRegion(contentItem);
-				regionsCache.put(contentItem, region);
-			} catch (IOException e) {
-				log.error("Can't create region from content item {}", contentItem.getName());
-				return false;
-			}
+			return false;
+		} else {
+			return region.testHit(location.getLatitude(), location.getLongitude());
 		}
-
-		return region.testHit(location.getLatitude(), location.getLongitude());
 	}
-
 	private Region createRegion(ContentItem item) throws IOException {
 		File file = new File(((DirectoryContentItem) item).getPath());
 

@@ -30,6 +30,7 @@ import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.fruct.oss.ikm.storage.contenttypes.GraphhopperMapType;
 import org.fruct.oss.ikm.storage.contenttypes.MapsforgeMapType;
+import org.fruct.oss.ikm.utils.Region;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.utils.bind.BindHelper;
 import org.fruct.oss.ikm.utils.bind.BindHelperBinder;
@@ -81,7 +82,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private KeyValue digestCache;
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
-	private RegionsTask regionsTask;
 	private final List<Future<?>> downloadTasks = new ArrayList<Future<?>>();
 
 	private volatile List<ContentItem> localItems = new ArrayList<ContentItem>();
@@ -96,6 +96,8 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	private BroadcastReceiver locationReceiver;
 
 	private Location location;
+
+	private Map<String, Region> regions = new HashMap<String, Region>();
 
 	public RemoteContentService() {
 	}
@@ -129,8 +131,8 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	}
 
 	private void setupContentTypes() {
-		contentTypes.put("graphhopper-map", new GraphhopperMapType(this, dataService));
-		contentTypes.put("mapsforge-map", new MapsforgeMapType(this));
+		contentTypes.put("graphhopper-map", new GraphhopperMapType(this, dataService, regions));
+		contentTypes.put("mapsforge-map", new MapsforgeMapType(this, regions));
 	}
 
 	@BindSetter
@@ -168,10 +170,6 @@ public class RemoteContentService extends Service implements DataService.DataLis
 		}
 
 		executor.shutdownNow();
-		if (regionsTask != null) {
-			regionsTask.cancel(true);
-			regionsTask = null;
-		}
 
 		LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver);
 
@@ -379,6 +377,9 @@ public class RemoteContentService extends Service implements DataService.DataLis
 			if (!found) {
 				localItems.add(item);
 				contentType.addContentItem(item);
+				if (location != null) {
+					contentType.applyLocation(location);
+				}
 			} else {
 				contentType.updateContentItem(item);
 			}
@@ -501,24 +502,16 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public void dataPathChanged(final String newDataPath) {
 		if (mainLocalStorage != null) {
 			executor.shutdownNow();
-			if (regionsTask != null) {
-				regionsTask.cancel(true);
-			}
 
 			new AsyncTask<Void, Void, Void>() {
 				@Override
 				protected Void doInBackground(Void... params) {
 					try {
 						executor.awaitTermination(10, TimeUnit.SECONDS);
-						if (regionsTask != null) {
-							regionsTask.get();
-						}
 					} catch (InterruptedException ignore) {
-					} catch (ExecutionException ignored) {
 					}
 
 					executor = null;
-					regionsTask = null;
 
 					return null;
 				}

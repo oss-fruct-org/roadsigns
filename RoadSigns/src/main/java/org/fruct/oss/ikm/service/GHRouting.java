@@ -38,7 +38,6 @@ public abstract class GHRouting implements Closeable {
 	private LocationIndex[] locationIndexArray;
 	private NodeAccess nodeAccess;
 
-	protected Region region;
 	protected boolean isClosed;
 	protected EncodingManager encodingManager;
 	protected FlagEncoder encoder;
@@ -103,7 +102,6 @@ public abstract class GHRouting implements Closeable {
 				nodeAccess = hopper.getGraph().getNodeAccess();
 
 				FileInputStream polygonFileStream = new FileInputStream(path + "/polygon.poly");
-				region = new Region(polygonFileStream);
 				polygonFileStream.close();
 
 				log.info("graphopper for path {} successfully initialized", path);
@@ -183,12 +181,6 @@ public abstract class GHRouting implements Closeable {
 			}
 		}
 		return null;
-	}
-
-
-	public boolean isInner(double lat, double lon) {
-		ensureInitialized();
-		return region.testHit(lat, lon);
 	}
 
 	public abstract void prepare(int fromId);

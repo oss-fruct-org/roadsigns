@@ -61,6 +61,8 @@ public abstract class ContentType {
 			return false;
 		}
 
+		onItemAdded(item);
+
 		if (currentItem == null && currentItemHash != null && currentItemHash.equals(item.getHash())) {
 			if (!isCurrentItemActive(item)) {
 				log.warn("Current active content item don't correspond with stored item");
@@ -74,6 +76,8 @@ public abstract class ContentType {
 		contentItems.add(item);
 		return true;
 	}
+
+	protected abstract void onItemAdded(ContentItem item);
 
 	synchronized boolean removeContentItem(ContentItem item) {
 		if (item == currentItem)

@@ -90,7 +90,7 @@ public class MapMatcher implements IMapMatcher {
 
 		setLocation(location);
 
-		lastLocation = location;
+		lastLocation = matchedLocation;
 		return true;
 	}
 
@@ -140,13 +140,13 @@ public class MapMatcher implements IMapMatcher {
 		for (int i = 0; i < MAX_RECURSION; i++) {
 			EvalResult bestEvalResult = null;
 			double maxValue = -Double.MAX_VALUE;
-
+/*
 			initLines();
 			for (Edge edge : activeEdges) {
 				addLine(edge);
 			}
 			sendLines();
-
+*/
 			for (Edge edge : activeEdges) {
 				EvalResult evalResult = evalEdge(edge, rLat, rLon);
 				double value = evalResult.value;
@@ -233,6 +233,9 @@ public class MapMatcher implements IMapMatcher {
 
 		location.setLatitude(lat);
 		location.setLongitude(lon);
+		if (lastLocation != null) {
+			lastLocation.bearingTo(location);
+		}
 
 		return location;
 	}

@@ -383,8 +383,8 @@ public class MapFragment extends Fragment implements MapListener,
 		updatePOIOverlay();
 
 		// Test lines overlay
-		//TestLinesOverlay over = new TestLinesOverlay(getActivity(), mapView);
-		//mapView.getOverlays().add(over);
+		TestLinesOverlay over = new TestLinesOverlay(getActivity(), mapView);
+		mapView.getOverlays().add(over);
 	}
     
 	@Override

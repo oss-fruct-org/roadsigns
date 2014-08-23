@@ -47,6 +47,7 @@ public class MapMatcher implements IMapMatcher {
 	private int matchedNode;
 
 	private Set<Edge> activeEdges = new HashSet<Edge>();
+	private int activeEdgeHash = 0;
 
 	private final Graph graph;
 
@@ -81,6 +82,7 @@ public class MapMatcher implements IMapMatcher {
 
 		if (activeEdges.isEmpty() || (matchedLocation != null && location.distanceTo(matchedLocation) > MAX_DISTANCE)) {
 			activeEdges.clear();
+			activeEdgeHash = 0;
 			if (!setInitialLocation(location)) {
 				return false;
 			}
@@ -122,6 +124,7 @@ public class MapMatcher implements IMapMatcher {
 			Edge edge = new Edge(iterator);
 			if (edge.edgeId != exclude) {
 				activeEdges.add(edge);
+				activeEdgeHash = (activeEdgeHash * 31) ^ edge.hashCode();
 				added++;
 			}
 		}
@@ -138,11 +141,11 @@ public class MapMatcher implements IMapMatcher {
 			EvalResult bestEvalResult = null;
 			double maxValue = -Double.MAX_VALUE;
 
-			/*initLines();
+			initLines();
 			for (Edge edge : activeEdges) {
 				addLine(edge);
 			}
-			sendLines();*/
+			sendLines();
 
 			for (Edge edge : activeEdges) {
 				EvalResult evalResult = evalEdge(edge, rLat, rLon);
@@ -158,18 +161,20 @@ public class MapMatcher implements IMapMatcher {
 			// TODO: can throw NPE if near road too long
 			EdgeIteratorState edgeProps = graph.getEdgeProps(bestEvalResult.edge.edgeId, bestEvalResult.edge.baseNodeId);
 
+			int oldActiveEdgeHash = activeEdgeHash;
+			activeEdgeHash = 0;
 			activeEdges.clear();
+
 			int addedBase = activateNodeEdges(edgeProps.getBaseNode(), bestEvalResult.edge.edgeId, outEdgeExplorer);
 			int addedAdj = activateNodeEdges(edgeProps.getAdjNode(), bestEvalResult.edge.edgeId, outEdgeExplorer);
 			activeEdges.add(bestEvalResult.edge);
+			activeEdgeHash = activeEdgeHash * 31 + bestEvalResult.edge.hashCode();
 
 			if (bestEvalResult.node != -1) {
-				if (addedBase > 0 && bestEvalResult.node == edgeProps.getBaseNode()) {
-					continue;
-				} else if (addedAdj > 0 && bestEvalResult.node == edgeProps.getAdjNode()) {
-					continue;
-				} else {
-					// Dead end
+				if (activeEdgeHash == oldActiveEdgeHash
+						|| ((addedBase <= 0 || bestEvalResult.node != edgeProps.getBaseNode())
+						&& (addedAdj <= 0 || bestEvalResult.node != edgeProps.getAdjNode()))) {
+					// Dead end (corner or single-road)
 					matchedLocation = createLocation(location, bestEvalResult.cLat, bestEvalResult.cLon);
 					matchedNode = bestEvalResult.node;
 					return;

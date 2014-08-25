@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchListener {
 	private PointDesc point;
-	
+
 	public POIInfoWindow(int res, MapView mapView) {
 		super(res, mapView);
 
@@ -28,7 +28,7 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 
 		ImageButton button = (ImageButton) getView().findViewById(R.id.bubble_moreinfo);
 		button.setVisibility(Button.VISIBLE);
-		button.setOnClickListener(new Button.OnClickListener() {			
+		button.setOnClickListener(new Button.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				activate(getView().getContext());
@@ -47,7 +47,7 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 	}
 
 	private void activate(Context context) {
-		Pattern pattern = Pattern.compile("(https?://.+)");
+		/*Pattern pattern = Pattern.compile("(https?://.+)");
 
 		if (point.getDescription() == null)
 			return;
@@ -58,14 +58,18 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 			String str = match.group(1);
 			Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
 			context.startActivity(intent);
-		} else {
-			Bundle bundle = new Bundle();
-			bundle.putParcelable("pointdesc", point);
+		} else {*/
+		
+		Bundle bundle = new Bundle();
+		bundle.putParcelable("pointdesc", point);
 
-			Intent intent = new Intent(context, PointsActivity.class);
-			intent.setAction(PointsActivity.SHOW_DETAILS);
-			intent.putExtra(PointsActivity.DETAILS_INDEX, bundle);
-		}
+		Intent intent = new Intent(context, PointsActivity.class);
+		intent.setAction(PointsActivity.SHOW_DETAILS);
+		intent.putExtra(PointsActivity.DETAILS_INDEX, bundle);
+
+		context.startActivity(intent);
+
+		//}
 	}
 
 	@Override

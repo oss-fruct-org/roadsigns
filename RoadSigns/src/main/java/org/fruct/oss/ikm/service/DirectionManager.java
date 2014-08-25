@@ -44,9 +44,10 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private Location location;
 
 	private final ExecutorService executor;
+
 	private Future<?> calculationTask;
 
-		// POI, for that directions ready
+	// POI, for that directions ready
 	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
 	
 	// POI, that pass filters
@@ -55,7 +56,9 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	public DirectionManager(GHRouting routing) {
 		if (routing == null)
 			throw new IllegalArgumentException("DirectionManager: routing argument can not be null");
-		executor = Executors.newSingleThreadExecutor();
+
+		this.executor = Executors.newSingleThreadExecutor();
+
 		this.routing = routing;
 	}
 

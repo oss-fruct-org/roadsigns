@@ -1,7 +1,6 @@
 package org.fruct.oss.ikm.service;
 
 import com.graphhopper.GraphHopper;
-import com.graphhopper.routing.DijkstraOneToMany;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
@@ -15,16 +14,21 @@ import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.utils.Region;
+import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.FileInputStream;
-import java.util.ArrayList;
-
-import gnu.trove.stack.TIntStack;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 public abstract class GHRouting implements Closeable {
 	public static final int MAX_REGION_SEARCH = 100;
@@ -35,7 +39,12 @@ public abstract class GHRouting implements Closeable {
 	private boolean isInitialized = false;
 	private boolean isInitializationFailed = false;
 	protected GraphHopper hopper;
-	private LocationIndex[] locationIndexArray;
+
+	private LocationIndex baseLocationIndex;
+	private LocationIndex fallbackLocationIndex;
+
+	private final Set<GeoPoint> currentIndexTasks = new HashSet<GeoPoint>();
+
 	private NodeAccess nodeAccess;
 
 	protected boolean isClosed;
@@ -44,6 +53,8 @@ public abstract class GHRouting implements Closeable {
 	protected EdgeFilter edgeFilter;
 	protected FastestWeighting weightCalc;
 	protected String encodingString = "CAR";
+
+	private final ExecutorService indexExecutor = Executors.newSingleThreadExecutor();
 
 	public GHRouting(String path, LocationIndexCache locationIndexCache) {
 		this.path = path;
@@ -54,32 +65,25 @@ public abstract class GHRouting implements Closeable {
 	public void close() {
 		isClosed = true;
 		hopper.close();
+
+		synchronized (indexExecutor) {
+			indexExecutor.shutdownNow();
+			try {
+				indexExecutor.awaitTermination(10, TimeUnit.SECONDS);
+				log.debug("Location index executor successfully shutdown");
+			} catch (InterruptedException e) {
+				log.error("Can't shutdown location index executor in 10 seconds", e);
+			}
+		}
 	}
 
-	private LocationIndex[] createLocationIndexArray() {
-		ArrayList<LocationIndex> arr = new ArrayList<LocationIndex>();
-
-		// Default index
-		LocationIndex defaultIndex = hopper.getLocationIndex();
-		if (defaultIndex instanceof LocationIndexTree) {
-			((LocationIndexTree) defaultIndex).setMaxRegionSearch(MAX_REGION_SEARCH);
+	private void createLocationIndex() {
+		baseLocationIndex = hopper.getLocationIndex();
+		if (baseLocationIndex instanceof LocationIndexTree) {
+			((LocationIndexTree) baseLocationIndex).setMaxRegionSearch(MAX_REGION_SEARCH);
 		}
 
-		arr.add(defaultIndex);
-
-		// Quad tree index if available
-		/*String quadTreeFileName = path + "/loc2idIndex";
-		if (new File(quadTreeFileName).exists()) {
-			log.info("Enabling quadtree index as fallback");
-			arr.add(new LocationIndexTree(hopper.getGraph(), new MMapDirectory(path)).prepareIndex());
-		} else {
-			log.info("Quadtree index is unavailable");
-		}*/
-
-		// Slow linear search index
-		arr.add(new Location2IDFullIndex(hopper.getGraph()));
-
-		return arr.toArray(new LocationIndex[1]);
+		fallbackLocationIndex = new Location2IDFullIndex(hopper.getGraph());
 	}
 	
 	public void initialize() {
@@ -98,7 +102,7 @@ public abstract class GHRouting implements Closeable {
 				encodingManager = hopper.getEncodingManager();
 				updateEncoders();
 
-				locationIndexArray = createLocationIndexArray();
+				createLocationIndex();
 				nodeAccess = hopper.getGraph().getNodeAccess();
 
 				FileInputStream polygonFileStream = new FileInputStream(path + "/polygon.poly");
@@ -130,40 +134,73 @@ public abstract class GHRouting implements Closeable {
 		return !isInitializationFailed;
 	}
 
-	public GeoPoint getPoint(int nodeId) {
-		double lat = nodeAccess.getLatitude(nodeId);
-		double lon = nodeAccess.getLongitude(nodeId);
-
-		return new GeoPoint(lat, lon);
-	}
-
 	public GeoPoint getPoint(int nodeId, GeoPoint outPoint) {
 		outPoint.setLatitudeE6((int) (nodeAccess.getLatitude(nodeId) * 1e6));
 		outPoint.setLongitudeE6((int) (nodeAccess.getLongitude(nodeId) * 1e6));
 		return outPoint;
 	}
 
-	public int getPointIndex(GeoPoint geoPoint, boolean useCache) {
-		throwIfClosed();
+	private Future<Integer> enqueueGeoPoint(GeoPoint geoPoint) {
+		final GeoPoint geoPoint2 = Utils.copyGeoPoint(geoPoint);
 
+		FutureTask<Integer> task = new FutureTask<Integer>(new Callable<Integer>() {
+			@Override
+			public Integer call() throws Exception {
+				return findInIndex(geoPoint2, fallbackLocationIndex, true);
+			}
+		});
+
+		synchronized (indexExecutor) {
+			indexExecutor.submit(task);
+		}
+
+		return task;
+	}
+
+	private int findInIndex(GeoPoint geoPoint, LocationIndex index, boolean useCache) {
 		if (useCache) {
 			int cachedIndex = locationIndexCache.get(geoPoint);
 			if (cachedIndex != -1)
 				return cachedIndex;
 		}
 
-		for (LocationIndex index : locationIndexArray) {
-			QueryResult result = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
+		QueryResult result = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
 
-			int id = result.getClosestNode();
-			if (id != -1) {
-				if (useCache) {
-					locationIndexCache.put(geoPoint, id);
+		int id = result.getClosestNode();
+		if (id != -1) {
+			if (useCache) {
+				locationIndexCache.put(geoPoint, id);
+			}
+
+			log.trace("LocationIndex {} found in {} ", id, index.getClass().getName());
+
+			return id;
+		} else {
+			return -1;
+		}
+	}
+
+	public int getPointIndex(GeoPoint geoPoint, boolean useCache) {
+		throwIfClosed();
+
+		// Search in cache
+		if (useCache) {
+			int cachedIndex = locationIndexCache.get(geoPoint);
+			if (cachedIndex != -1)
+				return cachedIndex;
+		}
+
+		int node = findInIndex(geoPoint, baseLocationIndex, useCache);
+
+		if (node >= 0) {
+			return node;
+		} else {
+			synchronized (indexExecutor) {
+				if (!currentIndexTasks.contains(geoPoint)) {
+					enqueueGeoPoint(geoPoint);
+					currentIndexTasks.add(geoPoint);
+					return -1;
 				}
-
-				log.trace("LocationIndex {} found in {}", id, index.getClass().getName());
-
-				return id;
 			}
 		}
 
@@ -173,13 +210,12 @@ public abstract class GHRouting implements Closeable {
 	public QueryResult getQueryResult(GeoPoint geoPoint) {
 		throwIfClosed();
 
-		for (LocationIndex index : locationIndexArray) {
-			QueryResult id = index.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
-			if (id.isValid()) {
-				log.trace("LocationIndex edge found in {}", id, index.getClass().getName());
-				return id;
-			}
+		QueryResult id = baseLocationIndex.findClosest(geoPoint.getLatitude(), geoPoint.getLongitude(), edgeFilter);
+		if (id.isValid()) {
+			log.trace("LocationIndex edge found in {}", id, baseLocationIndex.getClass().getName());
+			return id;
 		}
+
 		return null;
 	}
 

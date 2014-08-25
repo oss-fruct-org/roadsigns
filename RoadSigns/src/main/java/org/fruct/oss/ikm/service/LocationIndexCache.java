@@ -10,29 +10,6 @@ import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class DBHelper extends SQLiteOpenHelper {
-	public DBHelper(Context context) {
-		super(context, "location_index_cache", null, 1);
-	}
-
-	@Override
-	public void onCreate(SQLiteDatabase db) {
-		db.execSQL("create table cache (id integer primary key autoincrement," +
-				"hash integer," +
-				"lat integer, lon integer," +
-				"indx integer," +
-				"timestamp integer);");
-		db.execSQL("create index cache_index on cache(hash);");
-	}
-
-	@Override
-	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-		if (oldVersion == newVersion)
-			return;
-
-		db.execSQL("delete from cache;");
-	}
-}
 
 public class LocationIndexCache {
 	private static Logger log = LoggerFactory.getLogger(LocationIndexCache.class);
@@ -81,5 +58,29 @@ public class LocationIndexCache {
 	public void reset() {
 		log.info("Resetting LocationIndexCache");
 		db.execSQL("delete from cache;");
+	}
+
+	private static class DBHelper extends SQLiteOpenHelper {
+		public DBHelper(Context context) {
+			super(context, "location_index_cache", null, 1);
+		}
+
+		@Override
+		public void onCreate(SQLiteDatabase db) {
+			db.execSQL("create table cache (id integer primary key autoincrement," +
+					"hash integer," +
+					"lat integer, lon integer," +
+					"indx integer," +
+					"timestamp integer);");
+			db.execSQL("create index cache_index on cache(hash);");
+		}
+
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			if (oldVersion == newVersion)
+				return;
+
+			db.execSQL("delete from cache;");
+		}
 	}
 }

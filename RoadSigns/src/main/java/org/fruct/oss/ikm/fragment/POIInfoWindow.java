@@ -59,7 +59,7 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 			Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
 			context.startActivity(intent);
 		} else {*/
-		
+
 		Bundle bundle = new Bundle();
 		bundle.putParcelable("pointdesc", point);
 

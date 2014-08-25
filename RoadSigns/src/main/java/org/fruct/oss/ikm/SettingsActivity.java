@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
@@ -39,8 +40,9 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String NAVIGATION_DATA = "navigation_data_name";
 	public static final String CURRENT_REGION = "current_region";
 
-	public static final String USE_OFFLINE_MAP = "use_offline_map";
-	public static final String AUTOREGION = "autoregion";
+	public static final String USE_OFFLINE_MAP = "use_offline_map2";
+	public static final String AUTOREGION = "autoregion2";
+
 	public static final String MAPMATCHING = "mapmatching";
 
 	//public static final String
@@ -81,6 +83,12 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
 		getsRadius = (ListPreference) findPreference(GETS_RADIUS);
+
+		Preference offlineMapPreference = findPreference(USE_OFFLINE_MAP);
+		Preference autoRegionPreference = findPreference(AUTOREGION);
+
+		getPreferenceScreen().removePreference(offlineMapPreference);
+		getPreferenceScreen().removePreference(autoRegionPreference);
 
 		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}

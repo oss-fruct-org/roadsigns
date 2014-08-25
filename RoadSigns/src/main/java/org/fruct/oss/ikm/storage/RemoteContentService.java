@@ -62,9 +62,7 @@ public class RemoteContentService extends Service implements DataService.DataLis
 	public static final String GRAPHHOPPER_MAP = "graphhopper-map";
 	public static final String MAPSFORGE_MAP = "mapsforge-map";
 
-	public static final String[] REMOTE_CONTENT_URLS = {
-			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
-			"http://oss.fruct.org/projects/roadsigns/root.xml"};
+	public static final String[] REMOTE_CONTENT_URLS = {"http://oss.fruct.org/projects/roadsigns/root.xml"};
 	public static final int REPORT_INTERVAL = 100000;
 
 	private Handler handler = new Handler(Looper.getMainLooper());

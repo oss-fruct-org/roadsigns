@@ -51,7 +51,7 @@
 
     <CheckBoxPreference
         android:defaultValue="true"
-        android:key="use_offline_map"
+        android:key="use_offline_map2"
         android:title="@string/pref_use_offline_map"
         android:summaryOn="@string/pref_use_offline_map_sumon"
         android:summaryOff="@string/pref_use_offline_map_sumoff"
@@ -67,7 +67,7 @@
 
     <CheckBoxPreference
         android:defaultValue="true"
-        android:key="autoregion"
+        android:key="autoregion2"
         android:title="@string/pref_autoregion"
         android:summaryOn="@string/pref_on"
         android:summaryOff="@string/pref_off"

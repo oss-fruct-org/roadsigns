@@ -146,6 +146,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		if (activePoints == null || userPosition == null)
 			return;
 
+		PointDesc.resetAllData();
 		preparePoints();
 		routing.route(activePoints.toArray(new PointDesc[activePoints.size()]), radius, this);
 		sendResult();

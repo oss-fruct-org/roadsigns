@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.fragment;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -98,8 +99,10 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 		} else {
 			tag.imageView.setVisibility(View.GONE);
 		}
-		if (point.getDistance() > 0) {
-			tag.distanceView.setText(Utils.stringMeters(point.getDistance()));
+
+		int distance = point.getDistance();
+		if (distance > 0 && distance != Integer.MAX_VALUE) {
+			tag.distanceView.setText(Utils.stringMeters(distance));
 			tag.distanceView.setVisibility(View.VISIBLE);
 		} else {
 			tag.distanceView.setVisibility(View.GONE);
@@ -192,6 +195,16 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 				getActivity(), 
 				getListItemLayout(),
 				shownList);
+
+		adapter.sort(new Comparator<PointDesc>() {
+			@Override
+			public int compare(PointDesc plhs, PointDesc prhs) {
+				int lhs = plhs.getDistance();
+				int rhs = prhs.getDistance();
+				return lhs < rhs ? -1 : (lhs == rhs ? 0 : 1);
+			}
+		});
+
 		setListAdapter(adapter);
 		
 		if (pointDesc != null)

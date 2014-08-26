@@ -11,22 +11,28 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+
 public class PointDesc implements Serializable, Parcelable {
 	private static final long serialVersionUID = 1L;
-	
+
 	private int latE6, lonE6;
 	private String name;
-	
+
 	private GeoPoint geoPoint;
-	
+
 	private String category;
 	private String desc;
-	
+
+	private static int pointDataVersion = 0;
 	private static int nextId = 0;
+	private static final TIntObjectMap<PointData> pointData = new TIntObjectHashMap<PointData>();
+
 	private int internalId;
 
-	private RelativeDirection dir;
-	private int distance;
+	private int dataVersion = -1;
+	private PointData data = new PointData();
 
 	private transient boolean isDescriptionUrl = false;
 
@@ -34,10 +40,10 @@ public class PointDesc implements Serializable, Parcelable {
 		this.name = name;
 		this.latE6 = latE6;
 		this.lonE6 = lonE6;
-		
+
 		internalId = nextId++;
 	}
-	
+
 	public PointDesc setCategory(String cat) {
 		this.category = cat;
 		return this;
@@ -62,43 +68,75 @@ public class PointDesc implements Serializable, Parcelable {
 
 		return this;
 	}
-	
+
 	public String getName() {
 		return name;
 	}
-	
+
 	public String getDescription() {
 		return desc;
 	}
-	
+
 	public String getCategory() {
 		return category;
 	}
-	
+
 	public GeoPoint toPoint() {
 		return geoPoint == null ? geoPoint = new GeoPoint(latE6, lonE6)
-								: geoPoint;
+				: geoPoint;
 	}
-	
-	
-	
+
+	public static void resetAllData() {
+		synchronized (pointData) {
+			pointDataVersion++;
+			pointData.clear();
+		}
+	}
+
 	public RelativeDirection getRelativeDirection() {
-		return dir;
+		if (dataVersion != pointDataVersion) {
+			updateData();
+		}
+
+		return data.relativeDirection;
 	}
-	
+
 	public void setRelativeDirection(RelativeDirection dir) {
-		this.dir = dir;
+		if (dataVersion != pointDataVersion) {
+			updateData();
+		}
+
+		data.relativeDirection = dir;
 	}
-	
-	
+
 	public int getDistance() {
-		return distance;
+		if (dataVersion != pointDataVersion) {
+			updateData();
+		}
+
+		return data.distance;
 	}
-	
+
 	public void setDistance(int distance) {
-		this.distance = distance;
+		if (dataVersion != pointDataVersion) {
+			updateData();
+		}
+
+		data.distance = distance;
 	}
-	
+
+	private void updateData() {
+		synchronized (pointData) {
+			dataVersion = pointDataVersion;
+			data = pointData.get(internalId);
+
+			if (data == null) {
+				data = new PointData();
+				pointData.put(internalId, data);
+			}
+		}
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -134,7 +172,7 @@ public class PointDesc implements Serializable, Parcelable {
 	public int describeContents() {
 		return 0;
 	}
-	
+
 	@Override
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeInt(latE6);
@@ -143,36 +181,42 @@ public class PointDesc implements Serializable, Parcelable {
 		dest.writeString(desc);
 		dest.writeString(category);
 		dest.writeInt(internalId);
-		
-		dest.writeInt(dir != null ? dir.ordinal() : -1);
-		
-		dest.writeInt(distance);
+
+		//dest.writeInt(dir != null ? dir.ordinal() : -1);
+
+		//dest.writeInt(distance);
 	}
-	
+
 	public static final Parcelable.Creator<PointDesc> CREATOR = new Parcelable.Creator<PointDesc>() {
 		@Override
 		public PointDesc[] newArray(int size) {
 			return new PointDesc[size];
 		}
-	
+
 		@Override
 		public PointDesc createFromParcel(Parcel source) {
 			int lat = source.readInt();
 			int lon = source.readInt();
 			String name = source.readString();
-			
+
 			PointDesc ret = new PointDesc(name, lat, lon)
-				.setDescription(source.readString())
-				.setCategory(source.readString());
-			
+					.setDescription(source.readString())
+					.setCategory(source.readString());
+
 			ret.internalId = source.readInt();
-			
-			int dirOrd = source.readInt();
-			if (dirOrd >= 0)
-				ret.dir = RelativeDirection.values()[dirOrd];
-			
-			ret.distance = source.readInt();
+
+			//int dirOrd = source.readInt();
+			//if (dirOrd >= 0)
+			//	ret.dir = RelativeDirection.values()[dirOrd];
+
+			//ret.distance = source.readInt();
+
 			return ret;
 		}
 	};
+
+	private static class PointData {
+		int distance = Integer.MAX_VALUE;
+		RelativeDirection relativeDirection;
+	}
 }

@@ -17,8 +17,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
+import android.widget.LinearLayout;
 
-public class DirectionsPanel extends GridView implements OnItemClickListener {
+public class DirectionsPanel extends LinearLayout implements OnItemClickListener {
 	private List<Direction> directions;
 	private List<PointDesc> points;
 	

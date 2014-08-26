@@ -24,9 +24,9 @@ public class CategoriesList implements IContent{
 		private final String description;
 		private final String url;
 
-		public Category(@Element(name="url") String url,
+		public Category(@Element(name="url", required = false) String url,
 						@Element(name="name") String name,
-						@Element(name="description") String description,
+						@Element(name="description", required = false) String description,
 						@Element(name="id") int id) {
 			this.url = url;
 			this.name = name;
@@ -44,12 +44,12 @@ public class CategoriesList implements IContent{
 			return name;
 		}
 
-		@Element(name="description")
+		@Element(name="description", required = false)
 		public String getDescription() {
 			return description;
 		}
 
-		@Element(name="url")
+		@Element(name="url", required = false)
 		public String getUrl() {
 			return url;
 		}

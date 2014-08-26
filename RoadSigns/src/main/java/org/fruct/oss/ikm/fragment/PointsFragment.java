@@ -109,7 +109,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	}
 }
 
-public class PointsFragment extends ListFragment implements TextWatcher {
+public class PointsFragment extends ListFragment implements TextWatcher, PointsManager.PointsListener {
 	private static Logger log = LoggerFactory.getLogger(PointsFragment.class);
 
 	private List<PointDesc> poiList;
@@ -121,11 +121,22 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 
 	private PointDesc lastShownPoint;
 
+	private TextView loadingView;
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		setHasOptionsMenu(true);
+
+		PointsManager.getInstance().addListener(this);
+	}
+
+	@Override
+	public void onDestroy() {
+		PointsManager.getInstance().removeListener(this);
+
+		super.onDestroy();
 	}
 
 	@Override
@@ -135,11 +146,14 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		inflater.inflate(R.menu.points_fragment, menu);
 	}
 
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == R.id.action_refresh) {
+			loadingView.setText(getActivity().getString(R.string.str_loading_items));
+			loadingView.setVisibility(View.VISIBLE);
+
 			PointsManager.getInstance().refresh();
-			Toast.makeText(getActivity(), R.string.str_updating_points, Toast.LENGTH_SHORT).show();
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -148,8 +162,9 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		
-		return inflater.inflate(R.layout.point_list_layout, container, true);
+		View view = inflater.inflate(R.layout.point_list_layout, container, true);
+		loadingView = (TextView) view.findViewById(R.id.progress_text);
+		return view;
 	}
 	
 	private void updateList() {
@@ -339,8 +354,10 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	private void setupFilterBar(int selectedBar) {
 		ActionBar actionBar = getActionBar();
 		List<Filter> filters = PointsManager.getInstance().getFilters();
-		
+		actionBar.removeAllTabs();
+
 		setupTab(new AllFilter(), false);
+
 		int c = 1;
 		for (final Filter filter : filters) {
 			if (selectedBar == c) {
@@ -383,5 +400,30 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		log.debug("onTextChanged " + s);
 		searchText = s.toString().toLowerCase(Locale.getDefault());
 		updateList();
+	}
+
+	@Override
+	public void filterStateChanged(List<PointDesc> newList) {
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				poiList = PointsManager.getInstance().getAllPoints();
+				updateList();
+				setupFilterBar(0);
+
+				loadingView.setVisibility(View.GONE);
+			}
+		});
+	}
+
+	@Override
+	public void errorDownloading() {
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast.makeText(getActivity(), R.string.error_downloading, Toast.LENGTH_LONG).show();
+				loadingView.setVisibility(View.GONE);
+			}
+		});
 	}
 }

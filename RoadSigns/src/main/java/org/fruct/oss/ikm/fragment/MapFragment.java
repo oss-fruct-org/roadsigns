@@ -1050,7 +1050,7 @@ public class MapFragment extends Fragment implements MapListener,
 			String value = sharedPreferences.getString(key, "200000");
 			int radius = Integer.parseInt(value);
 
-			PointsManager.getInstance().updateRadius(radius * 1);
+			PointsManager.getInstance().updateRadius(radius);
 		}
 	}
 
@@ -1063,6 +1063,10 @@ public class MapFragment extends Fragment implements MapListener,
 				updatePOIOverlay();
 			}
 		});
+	}
+
+	@Override
+	public void errorDownloading() {
 	}
 
 	@Override

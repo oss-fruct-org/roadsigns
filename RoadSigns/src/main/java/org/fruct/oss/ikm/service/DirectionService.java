@@ -443,6 +443,10 @@ public class DirectionService extends Service implements
 	}
 
 	@Override
+	public void errorDownloading() {
+	}
+
+	@Override
 	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
 		log.trace("DirectionService.onSharedPreferenceChanged {}", key);

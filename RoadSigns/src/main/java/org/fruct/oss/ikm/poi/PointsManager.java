@@ -25,6 +25,7 @@ public class PointsManager {
 
 	public interface PointsListener {
 		void filterStateChanged(List<PointDesc> newList);
+		void errorDownloading();
 	}
 
 	private List<PointLoader> loaders = new ArrayList<PointLoader>();
@@ -67,6 +68,7 @@ public class PointsManager {
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
+				int successCount = 0;
 				for (PointLoader loader : loaders) {
 					try {
 						List<PointDesc> currentPoints = loader.getPoints();
@@ -74,8 +76,15 @@ public class PointsManager {
 						if (loader.getPoints() != currentPoints) {
 							storage.insertPoints(loader.getPoints(), loader.getName());
 						}
+						successCount++;
 					} catch (Exception ex) {
 						log.error("Can't load points from loader " + loader.getClass().getName(), ex);
+					}
+				}
+
+				if (successCount == 0) {
+					for (PointsListener listener : listeners) {
+						listener.errorDownloading();
 					}
 				}
 

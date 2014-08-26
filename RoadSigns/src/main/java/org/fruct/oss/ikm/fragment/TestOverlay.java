@@ -68,7 +68,7 @@ public class TestOverlay extends RelativeLayout  {
 	
 	private void setTopPanelSize(DirectionsPanel panel) {
 		android.view.ViewGroup.LayoutParams params = panel.getLayoutParams();
-		params.width = getWidth() - Utils.getDP(82);
+		params.width = getWidth() - Utils.getDP(70);
 		
 		panel.setLayoutParams(params);
 	}

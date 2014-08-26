@@ -198,7 +198,9 @@ public class DirectionService extends Service implements
 			OneToManyRouting routing = new OneToManyRouting(navigationPath, locationIndexCache);
 
 			// Apply encoder from preferences
-			routing.setEncoder(pref.getString(SettingsActivity.VEHICLE, "CAR"));
+			String vehicle = pref.getString(SettingsActivity.VEHICLE, "CAR");
+			routing.setEncoder(vehicle);
+			locationReceiver.setVehicle(vehicle);
 			if (!routing.ensureInitialized()) {
 				return null;
 			}
@@ -460,8 +462,11 @@ public class DirectionService extends Service implements
 		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (routing != null) {
-				routing.setEncoder(pref.getString(key, "CAR"));
+				String vehicle = pref.getString(key, "CAR");
+				routing.setEncoder(vehicle);
+				locationReceiver.setVehicle(vehicle);
 				updateMapMatcher();
+
 			}
 		} else if (key.equals(SettingsActivity.MAPMATCHING)) {
 			updateMapMatcher();

@@ -83,9 +83,9 @@ public class DirectionsPanel extends RelativeLayout {
 		int dimension = !isVertical ? getWidth() : getHeight();
 		int n = Math.min(dimension / Utils.getDP(isVertical ? 50 : 80), points.size());
 
-		if (isVertical) {
-			n--;
-		}
+		//if (isVertical) {
+		//	n--;
+		//}
 
 		removeAllViews();
 

@@ -8,9 +8,8 @@ android {
         applicationId 'org.fruct.oss.ikm'
         minSdkVersion 10
         targetSdkVersion 20
-        versionCode 16
-        versionName '0.3.3'
-//        installLocation 'auto'
+        versionCode 17
+        versionName '0.3.4'
     }
 
     lintOptions {

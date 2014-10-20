@@ -53,7 +53,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	public static final String STORAGE_PATH = "storage_path";
 
-	public static final String GETS_SERVER_DEFAULT = "http://oss.fruct.org/projects/gets/service";
+	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
 	public static final String VEHICLE = "vehicle";
 
 	private CheckBoxPreference storeLocationsPref;
@@ -90,7 +90,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		getPreferenceScreen().removePreference(offlineMapPreference);
 		getPreferenceScreen().removePreference(autoRegionPreference);
 
-		//getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
+		getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
 	}
 
 	@Override

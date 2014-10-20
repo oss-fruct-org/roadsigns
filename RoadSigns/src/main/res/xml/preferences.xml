@@ -121,7 +121,7 @@
             android:title="Enable GeTS"/>
 
         <EditTextPreference
-            android:defaultValue="http://oss.fruct.org/projects/gets/service"
+            android:defaultValue="http://gets.cs.petrsu.ru/gets/service/"
             android:key="gets_server"
             android:title="GeTS Server"
             android:inputType="textUri"/>

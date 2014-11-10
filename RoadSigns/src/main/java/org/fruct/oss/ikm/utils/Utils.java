@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.SettingsActivity;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.util.GeoPoint;
 
@@ -42,6 +43,7 @@ public class Utils {
 
 	private Utils() {
 	}
+
 
 	public static interface Predicate<T> {
 		public boolean apply(T t);
@@ -366,78 +368,6 @@ public class Utils {
 
 	public static int geoCoordDeg(double coord) {
 		return (int) (Math.abs(coord));
-	}
-
-	public static String[] getSecondaryDirs() {
-		List<String> ret = new ArrayList<String>();
-		String secondaryStorageString = System.getenv("SECONDARY_STORAGE");
-		if (secondaryStorageString != null && !secondaryStorageString.trim().isEmpty()) {
-			String[] dirs = secondaryStorageString.split(":");
-
-			for (String dir : dirs) {
-				File file = new File(dir);
-				if (file.isDirectory() && file.canWrite()) {
-					ret.add(dir);
-				}
-			}
-
-			if (ret.isEmpty())
-				return null;
-			else
-				return ret.toArray(new String[ret.size()]);
-
-		} else {
-			return null;
-		}
-	}
-
-	public static String[] getExternalDirs(Context context) {
-		List<String> paths = new ArrayList<String>();
-		String[] secondaryDirs = getSecondaryDirs();
-		if (secondaryDirs != null) {
-			for (String secondaryDir : secondaryDirs) {
-				paths.add(secondaryDir + "/roadsigns");
-			}
-		}
-
-		File externalStorageDir = Environment.getExternalStorageDirectory();
-		if (externalStorageDir != null && externalStorageDir.isDirectory()) {
-			paths.add(Environment.getExternalStorageDirectory().getPath() + "/roadsigns");
-		}
-
-		return paths.toArray(new String[paths.size()]);
-	}
-
-	public static StorageDirDesc[] getPrivateStorageDirs(Context context) {
-		List<StorageDirDesc> ret = new ArrayList<StorageDirDesc>();
-
-		// Secondary external storage
-		String[] secondaryDirs = getSecondaryDirs();
-		if (secondaryDirs != null) {
-			for (String secondaryStoragePath : secondaryDirs) {
-				ret.add(new StorageDirDesc(R.string.storage_path_sd_card, secondaryStoragePath + "/Android/data/" + context.getPackageName() + "/files"));
-			}
-		}
-
-		// External storage
-		File externalDir = context.getExternalFilesDir(null);
-		if (externalDir != null)
-			ret.add(new StorageDirDesc(R.string.storage_path_external, externalDir.getPath()));
-
-		// Internal storage
-		ret.add(new StorageDirDesc(R.string.storage_path_internal, context.getDir("other", 0).getPath()));
-
-		return ret.toArray(new StorageDirDesc[ret.size()]);
-	}
-
-	public static class StorageDirDesc {
-		public final int nameRes;
-		public final String path;
-
-		public StorageDirDesc(int nameRes, String path) {
-			this.nameRes = nameRes;
-			this.path = path;
-		}
 	}
 
 	// http://stackoverflow.com/questions/3301635/change-private-static-final-field-using-java-reflection

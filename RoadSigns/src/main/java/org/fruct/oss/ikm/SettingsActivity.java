@@ -15,10 +15,9 @@ import android.widget.Toast;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
 
 @SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, DataServiceConnectionListener {
@@ -176,7 +175,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	}
 
 	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
-		StorageDirDesc[] storagePaths = Utils.getPrivateStorageDirs(this);
+		DirUtil.StorageDirDesc[] storagePaths = DirUtil.getPrivateStorageDirs(this);
 
 		String[] names = new String[storagePaths.length];
 		String[] paths = new String[storagePaths.length];

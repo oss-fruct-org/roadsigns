@@ -1,1 +1,1 @@
-include ':RoadSigns'
+include ':RoadSigns', ':mapcontent'

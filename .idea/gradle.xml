@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/RoadSigns" />
+            <option value="$PROJECT_DIR$/mapcontent" />
           </set>
         </option>
       </GradleProjectSettings>

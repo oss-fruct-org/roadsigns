@@ -42,7 +42,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
@@ -51,17 +50,18 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
-import org.fruct.oss.ikm.storage.ContentItem;
-import org.fruct.oss.ikm.storage.RemoteContentListenerAdapter;
-import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
-import org.fruct.oss.ikm.utils.bind.BindHelper;
-import org.fruct.oss.ikm.utils.bind.BindSetter;
-import org.fruct.oss.ikm.utils.bind.State;
+import org.fruct.oss.mapcontent.content.ContentItem;
+import org.fruct.oss.mapcontent.content.DataService;
+import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnectionListener;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
@@ -143,8 +143,10 @@ public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener,
 		PointsManager.PointsListener,
-		DataService.DataListener,
-		RemoteContentService.ContentStateListener {
+		DataServiceConnectionListener,
+		RemoteContentServiceConnectionListener,
+		RemoteContentService.ContentStateListener,
+		DataService.DataListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	private DefaultInfoWindow infoWindow;
@@ -170,8 +172,6 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
-	public static final GeoPoint ICELAND = new GeoPoint(64.133038, -21.898337);
-	public static final GeoPoint KUOPIO = new GeoPoint(62.892500, 27.678333);
 	public static final int DEFAULT_ZOOM = 18;
 	
 	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
@@ -206,7 +206,13 @@ public class MapFragment extends Fragment implements MapListener,
 	private MapState mapState = new MapState();
 
 	private DataService dataService;
-	private RemoteContentService remoteContent;
+	private org.fruct.oss.mapcontent.content.RemoteContentService remoteContent;
+
+	private DataServiceConnection dataServiceConnection
+			= new DataServiceConnection(this);
+	private RemoteContentServiceConnection remoteContentServiceConnection
+			= new RemoteContentServiceConnection(this);
+
 	private boolean localListReady = true;
 	private TileProviderManager tileProviderManager;
 
@@ -308,7 +314,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
-		BindHelper.autoBind(this.getActivity(), this);
+		dataServiceConnection.bindService(getActivity());
+		remoteContentServiceConnection.bindService(getActivity());
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -603,18 +610,23 @@ public class MapFragment extends Fragment implements MapListener,
 
 		PointsManager.getInstance().removeListener(this);
 
-		BindHelper.autoUnbind(this.getActivity(), this);
-
 		log.debug("MapFragment removeContentStateListener");
 
-		remoteContent.removeContentStateListener(RemoteContentService.MAPSFORGE_MAP);
-		remoteContent.removeListener(remoteContentAdapter);
-		remoteContent = null;
+		if (remoteContent != null) {
+			remoteContent.removeContentStateListener(RemoteContentService.MAPSFORGE_MAP);
+			remoteContent.removeListener(remoteContentAdapter);
+			remoteContent = null;
+		}
+
 		localListReady = false;
 
-		dataService.removeDataListener(this);
-		dataService = null;
+		if (dataService != null) {
+			dataService.removeDataListener(this);
+			dataService = null;
+		}
 
+		dataServiceConnection.unbindService(getActivity());
+		remoteContentServiceConnection.unbindService(getActivity());
 
 		super.onDestroy();
 	}
@@ -937,26 +949,43 @@ public class MapFragment extends Fragment implements MapListener,
 			stopTracking();
 	}
 
-	@BindSetter
-	public void servicesReady(RemoteContentService remoteContentService, DataService dataService) {
-		this.remoteContent = remoteContentService;
-		this.dataService = dataService;
-
-		localListReady = !remoteContent.getLocalItems().isEmpty();
-		remoteContent.addListener(remoteContentAdapter);
-		dataService.addDataListener(this);
-		log.debug("MapFragment setContentStateListener");
-		remoteContent.setContentStateListener(RemoteContentService.MAPSFORGE_MAP, this);
-
-		setupOfflineMap();
-	}
-
-	@BindSetter
-	public void remoteContentServiceReceivedLocation(@org.fruct.oss.ikm.utils.bind.State("location-received") RemoteContentService service) {
+	// FIXME: should be called to check network availability
+	public void remoteContentServiceReceivedLocation(RemoteContentService service) {
 		checkProvidersEnabled();
 		checkNetworkAvailable();
 		checkNavigationDataAvailable();
 	}
+
+	@Override
+	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService service) {
+		dataService = service;
+		dataService.addDataListener(this);
+
+		if (remoteContent != null) {
+			setupOfflineMap();
+		}
+	}
+
+	@Override
+	public void onDataServiceDisconnected() {
+	}
+
+	@Override
+	public void onRemoteContentServiceConnected(org.fruct.oss.mapcontent.content.RemoteContentService remoteContentService) {
+		remoteContent = remoteContentService;
+		remoteContent.addListener(remoteContentAdapter);
+		remoteContent.setContentStateListener(org.fruct.oss.mapcontent.content.RemoteContentService.MAPSFORGE_MAP, this);
+		localListReady = !remoteContent.getLocalItems().isEmpty();
+
+		if (dataService != null) {
+			setupOfflineMap();
+		}
+	}
+
+	@Override
+	public void onRemoteContentServiceDisconnected() {
+	}
+
 
 	@Override
 	public void dataPathChanged(String newDataPath) {
@@ -1106,9 +1135,9 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	}
 
-	private RemoteContentService.Listener remoteContentAdapter = new RemoteContentListenerAdapter() {
+	private org.fruct.oss.mapcontent.content.RemoteContentListenerAdapter remoteContentAdapter = new org.fruct.oss.mapcontent.content.RemoteContentListenerAdapter() {
 		@Override
-		public void localListReady(List<ContentItem> list) {
+		public void localListReady(List<org.fruct.oss.mapcontent.content.ContentItem> list) {
 			if (!localListReady) {
 				localListReady = true;
 				setupOfflineMap();

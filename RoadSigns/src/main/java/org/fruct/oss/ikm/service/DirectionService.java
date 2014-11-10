@@ -16,16 +16,17 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.graphhopper.util.PointList;
 
-import org.fruct.oss.ikm.DataService;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
-import org.fruct.oss.ikm.storage.ContentItem;
-import org.fruct.oss.ikm.storage.RemoteContentService;
-import org.fruct.oss.ikm.utils.bind.BindHelper;
-import org.fruct.oss.ikm.utils.bind.BindSetter;
-import org.fruct.oss.ikm.utils.bind.State;
+import org.fruct.oss.mapcontent.content.ContentItem;
+import org.fruct.oss.mapcontent.content.DataService;
+import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnectionListener;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,16 +35,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class DirectionService extends Service implements
 		PointsListener,
 		DirectionManager.Listener,
 		OnSharedPreferenceChangeListener,
 		LocationReceiver.Listener,
-		DataService.DataListener,
-		RemoteContentService.ContentStateListener {
+		RemoteContentServiceConnectionListener,
+		DataServiceConnectionListener, RemoteContentService.ContentStateListener, DataService.DataListener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
 	// Extras
@@ -63,9 +62,11 @@ public class DirectionService extends Service implements
 	private static final String MOCK_PROVIDER = "mock-provider";
 
 	private RemoteContentService remoteContent;
+	private RemoteContentServiceConnection remoteContentServiceConnection = new RemoteContentServiceConnection(this);
 
 	private final Object dataServiceMutex = new Object();
 	private DataService dataService;
+	private DataServiceConnection dataServiceConnection = new DataServiceConnection(this);
 
 	private final Object dirManagerMutex = new Object();
 	private DirectionManager dirManager;
@@ -119,8 +120,6 @@ public class DirectionService extends Service implements
 		assert internalDir != null;
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
-		BindHelper.autoBind(this, this);
-
 		locationReceiver = new LocationReceiver(this);
 		locationIndexCache = new LocationIndexCache(this);
 
@@ -128,20 +127,44 @@ public class DirectionService extends Service implements
 		pref.registerOnSharedPreferenceChangeListener(this);
 
 		log.debug("DirectionService created");
+
+		dataServiceConnection.bindService(this);
+		remoteContentServiceConnection.bindService(this);
 	}
 
-	@BindSetter
-	public void servicesReady(DataService dataService, @State("ready") RemoteContentService remoteContentService) {
-		log.trace("AAA: DirectionService setDataService");
-		synchronized (dataServiceMutex) {
-			this.dataService = dataService;
-			this.remoteContent = remoteContentService;
 
-			dataService.addDataListener(this);
+	@Override
+	public void onRemoteContentServiceConnected(org.fruct.oss.mapcontent.content.RemoteContentService remoteContentService) {
+		synchronized (dataServiceMutex) {
+			remoteContent = remoteContentService;
 			remoteContent.setContentStateListener(RemoteContentService.GRAPHHOPPER_MAP, this);
 
-			updateDirectionsManager();
+			if (dataService != null) {
+				updateDirectionsManager();
+			}
 		}
+	}
+
+	@Override
+	public void onRemoteContentServiceDisconnected() {
+		remoteContent = null;
+	}
+
+	@Override
+	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService service) {
+		synchronized (dataServiceMutex) {
+			dataService = service;
+			dataService.addDataListener(this);
+
+			if (remoteContent != null) {
+				updateDirectionsManager();
+			}
+		}
+	}
+
+	@Override
+	public void onDataServiceDisconnected() {
+		dataService = null;
 	}
 
 	@Override
@@ -188,7 +211,8 @@ public class DirectionService extends Service implements
 			remoteContent.removeContentStateListener(RemoteContentService.GRAPHHOPPER_MAP);
 		}
 
-		BindHelper.autoUnbind(this, this);
+		remoteContentServiceConnection.unbindService(this);
+		dataServiceConnection.unbindService(this);
 	}
 
 	private GHRouting createRouting() {
@@ -280,7 +304,7 @@ public class DirectionService extends Service implements
 			if (routing == null) {
 				log.warn("Current graphhopper region invalid, disabling it");
 				locationIndexCache.reset();
-				remoteContent.invalidateCurrentContent(lastLocation, RemoteContentService.GRAPHHOPPER_MAP);
+				remoteContent.invalidateCurrentContent(RemoteContentService.GRAPHHOPPER_MAP);
 				return;
 			}
 
@@ -372,7 +396,7 @@ public class DirectionService extends Service implements
 				} catch (Exception ex) {
 					log.error("Exception during new location processing", ex);
 					if (remoteContent != null) {
-						remoteContent.invalidateCurrentContent(location, RemoteContentService.GRAPHHOPPER_MAP);
+						remoteContent.invalidateCurrentContent(RemoteContentService.GRAPHHOPPER_MAP);
 					}
 				}
 				return null;

@@ -1,0 +1,3 @@
+[submodule "mapcontent"]
+	path = mapcontent
+	url = git@github.com:ivashov/mapcontent.git

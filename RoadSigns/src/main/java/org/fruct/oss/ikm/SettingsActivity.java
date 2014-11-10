@@ -12,19 +12,16 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.storage.RemoteContentService;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.utils.bind.BindHelper;
-import org.fruct.oss.ikm.utils.bind.BindSetter;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static org.fruct.oss.ikm.utils.Utils.StorageDirDesc;
 
 @SuppressWarnings("deprecation")
-public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
+public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, DataServiceConnectionListener {
 	private static final Logger log = LoggerFactory.getLogger(SettingsActivity.class);
 
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
@@ -64,13 +61,20 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference storagePathPref;
 	private ListPreference getsRadius;
 
-	private DataService dataService;
+	private org.fruct.oss.mapcontent.content.DataService dataService;
+	private DataServiceConnection dataServiceConnection = new DataServiceConnection(this);
 
-	@BindSetter
-	public void remoteContentServiceReady(DataService service) {
-		dataService = service;
-		dataService.setMigrateListener(migrateListener);
+	@Override
+	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService dataService) {
+		this.dataService = dataService;
+		this.dataService.setMigrateListener(migrateListener);
 	}
+
+	@Override
+	public void onDataServiceDisconnected() {
+		dataService = null;
+	}
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -112,15 +116,18 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-		BindHelper.autoBind(this, this);
+		dataServiceConnection.bindService(this);
 	}
 
 	@Override
 	protected void onPause() {
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
-		dataService.setMigrateListener(null);
-		BindHelper.autoUnbind(this, this);
+		if (dataService != null) {
+			dataService.setMigrateListener(null);
+		}
+
+		dataServiceConnection.unbindService(this);
 
 		super.onPause();
 	}

@@ -654,7 +654,6 @@ public class MapFragment extends Fragment implements MapListener,
 						: R.drawable.ic_action_location_found);
 
 		menu.findItem(R.id.action_remove_path).setVisible(pathOverlay != null);
-
 		super.onPrepareOptionsMenu(menu);
 	}
 
@@ -663,6 +662,7 @@ public class MapFragment extends Fragment implements MapListener,
 		switch (item.getItemId()) {
 		case R.id.action_search:			
 			directionService.fakeLocation(Utils.copyGeoPoint(mapView.getMapCenter()));
+			menu.findItem(R.id.action_real_location).setVisible(true);
 			break;
 			
 		case R.id.action_place:
@@ -715,6 +715,14 @@ public class MapFragment extends Fragment implements MapListener,
 			mapView.invalidate();
 
 			break;
+
+		case R.id.action_real_location:
+			if (directionService != null) {
+				directionService.realLocation();
+				menu.findItem(R.id.action_real_location).setVisible(false);
+			}
+			break;
+
 		default:
 			return super.onOptionsItemSelected(item);
 		}

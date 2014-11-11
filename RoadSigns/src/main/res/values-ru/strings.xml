@@ -11,6 +11,7 @@
     <string name="title_activity_details">Детали</string>
     <string name="action_track">Следовать</string>
     <string name="filter">Фильтр</string>
+    <string name="real_location">Реальное местоположение</string>
 
     <string name="warn_no_providers">Не включено ни одного источника местоположения</string>
     <string name="configure_providers">Настроить</string>

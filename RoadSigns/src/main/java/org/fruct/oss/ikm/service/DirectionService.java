@@ -60,7 +60,7 @@ public class DirectionService extends Service implements
 
 	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 
-	private static final String MOCK_PROVIDER = "mock-provider";
+	public static final String MOCK_PROVIDER = "mock-provider";
 
 	private RemoteContentService remoteContent;
 	private RemoteContentServiceConnection remoteContentServiceConnection = new RemoteContentServiceConnection(this);
@@ -323,7 +323,6 @@ public class DirectionService extends Service implements
 		}
 	}
 
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
 	public void fakeLocation(GeoPoint current) {
 		if (current == null)
 			return;
@@ -359,6 +358,10 @@ public class DirectionService extends Service implements
 
 			locationReceiver.mockLocation(location);
 		}
+	}
+
+	public void realLocation() {
+		locationReceiver.sendLastLocation();
 	}
 
 	public void startTracking() {

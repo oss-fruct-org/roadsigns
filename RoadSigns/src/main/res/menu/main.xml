@@ -46,4 +46,10 @@
         android:visible="false"
         android:title="@string/close_path"
         />
+    <item
+        android:id="@+id/action_real_location"
+        yourapp:showAsAction="never"
+        android:visible="false"
+        android:title="@string/real_location"
+        />
 </menu>

@@ -63,5 +63,6 @@
     <string name="str_starting_download">Starting download…</string>
     <string name="close_path">Close path</string>
     <string name="str_loading_items">Loading points</string>
+    <string name="real_location">Show real location</string>
 
 </resources>

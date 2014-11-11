@@ -1006,7 +1006,7 @@ public class MapFragment extends Fragment implements MapListener,
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		boolean useOfflineMap = pref.getBoolean(SettingsActivity.USE_OFFLINE_MAP, false);
-		String offlineMapName = pref.getString(SettingsActivity.OFFLINE_MAP, null);
+		String offlineMapName = pref.getString(org.fruct.oss.mapcontent.content.Settings.OFFLINE_MAP, null);
 
 		if (useOfflineMap && offlineMapName != null) {
 			ContentItem contentItem = remoteContent.getContentItem(offlineMapName);

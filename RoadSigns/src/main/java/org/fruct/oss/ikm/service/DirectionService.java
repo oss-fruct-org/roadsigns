@@ -23,6 +23,7 @@ import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.DataService;
 import org.fruct.oss.mapcontent.content.RemoteContentService;
+import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
@@ -291,7 +292,7 @@ public class DirectionService extends Service implements
 
 	private void asyncUpdateDirectionsManager() {
 		ghPath = currentStoragePath + "/graphhopper";
-		navigationDir = pref.getString(SettingsActivity.NAVIGATION_DATA, null);
+		navigationDir = pref.getString(Settings.NAVIGATION_DATA, null);
 
 		asyncCloseDirectionManager();
 
@@ -388,6 +389,10 @@ public class DirectionService extends Service implements
 		intent.putExtra(LOCATION, location);
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
+		if (remoteContent != null) {
+			remoteContent.setLocation(location);
+		}
+
 		new AsyncTask<Void, Void, Void>() {
 			@Override
 			protected Void doInBackground(Void... params) {
@@ -447,7 +452,6 @@ public class DirectionService extends Service implements
 
 		Intent intent = new Intent(LOCATION_CHANGED);
 		intent.putExtra(MATCHED_LOCATION, matchedLocation);
-
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 	}
 
@@ -483,7 +487,7 @@ public class DirectionService extends Service implements
 					dirManager.calculateForPoints(points);
 				}
 			}
-		} else if (key.equals(SettingsActivity.NAVIGATION_DATA)) {
+		} else if (key.equals(Settings.NAVIGATION_DATA)) {
 		} else if (key.equals(SettingsActivity.VEHICLE)) {
 			if (routing != null) {
 				String vehicle = pref.getString(key, "CAR");

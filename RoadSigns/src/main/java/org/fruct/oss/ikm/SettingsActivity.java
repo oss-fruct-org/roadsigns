@@ -34,7 +34,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	public static final String OFFLINE_MAP = "offline_map";
 	public static final String NAVIGATION_DATA = "navigation_data_name";
-	public static final String CURRENT_REGION = "current_region";
 
 	public static final String USE_OFFLINE_MAP = "use_offline_map2";
 	public static final String AUTOREGION = "autoregion2";

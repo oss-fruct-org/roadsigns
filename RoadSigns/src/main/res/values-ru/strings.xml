@@ -68,4 +68,5 @@
         <item quantity="many">Расстояние: %.1f километров</item>
         <item quantity="other">Расстояние: %.1f километров</item>
     </plurals>
+    <string name="action_place_here">Установить местоположение</string>
 </resources>

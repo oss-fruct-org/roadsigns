@@ -4,6 +4,7 @@
     <string name="app_name">Road Signs</string>
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
+    <string name="action_place_here">Place here</string>
     <string name="action_place">Show places</string>
     <string name="action_download_map">Maps</string>
     <string name="action_download_navigation_data">Download navigation data</string>

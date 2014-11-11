@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pref_store_location">Сохранять местоположение</string>
-    <string name="pref_store_location_sum">Загружать предыдущее местоположение при запуске приложения</string>
+    <string name="pref_store_location">Режим слежения</string>
+    <string name="pref_store_location_sum">Запускать приложение в режиме слежение</string>
     
     <string name="pref_disable_warn_providers">Отключенные источники местоположения</string>
     <string name="pref_disable_warn_providers_sum">Не предупреждать об отключенных источниках местоположения</string>

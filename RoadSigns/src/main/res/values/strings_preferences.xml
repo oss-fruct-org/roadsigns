@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="pref_store_location">Store location</string>
-    <string name="pref_store_location_sum">Store location between application launches</string>
+    <string name="pref_store_location">Auto start tracking</string>
+    <string name="pref_store_location_sum">Auto start tracking mode at app launch</string>
     <string name="pref_disable_warn_providers">Disabled providers</string>
     <string name="pref_disable_warn_providers_sum">Don\'t warn about disabled location providers</string>
     <string name="pref_show_accuracy">Show accuracy</string>

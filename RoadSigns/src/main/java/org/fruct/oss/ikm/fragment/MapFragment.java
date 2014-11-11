@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -731,11 +732,21 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void showAboutDialog() {
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append("Version ");
+		try {
+			stringBuilder.append(getActivity().getPackageManager().getPackageInfo(getActivity().getPackageName(), 0).versionName);
+		} catch (PackageManager.NameNotFoundException ignore) {
+			stringBuilder.append("unknown");
+		}
+		stringBuilder.append("\n\n");
+		stringBuilder.append(getResources().getString(R.string.about_text));
+
 		TextView textView = new TextView(new ContextThemeWrapper(getActivity(), Utils.getDialogTheme()));
 		textView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 		textView.setTextSize(16);
 		textView.setAutoLinkMask(Linkify.WEB_URLS);
-		textView.setText(R.string.about_text);
+		textView.setText(stringBuilder.toString());
 
 		final int paddingDP = Utils.getDP(16);
 		textView.setPadding(paddingDP, paddingDP, paddingDP, paddingDP);

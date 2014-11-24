@@ -13,6 +13,7 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
@@ -46,7 +47,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 
-	public static final String STORAGE_PATH = "storage_path";
+	public static final String STORAGE_PATH = Settings.PREF_STORAGE_PATH;
 
 	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
 	public static final String VEHICLE = "vehicle";
@@ -134,7 +135,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
 		if (key.equals(STORE_LOCATION)) {
-			
 		} else if (key.equals(NEAREST_POINTS)) {
 			updateNearestPoints(sharedPreferences);
 		} else if (key.equals(GETS_SERVER)) {

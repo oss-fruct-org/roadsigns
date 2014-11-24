@@ -12,11 +12,11 @@
     <string name="pref_autozoom">Автоматический масштаб</string>
     <string name="pref_on">Включено</string>
     <string name="pref_off">Выключено</string>
+    <string name="pref_all">Все</string>
 
     <string name="pref_disable_warn_network_sum">Не предупреждать о недоступной сети</string>
     <string name="pref_disable_warn_network">Недоступная сеть</string>
     
-    <string name="pref_all">Все</string>
     <string name="pref_disable_warn_navigation_sum">Не предупреждать о данных навигации</string>
     <string name="pref_disable_warn_navigation">Данные навигации</string>
     <string name="pref_warnings">Предупреждения</string>

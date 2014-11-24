@@ -20,6 +20,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Parcel;
@@ -968,7 +969,6 @@ public class MapFragment extends Fragment implements MapListener,
 			stopTracking();
 	}
 
-	// FIXME: should be called to check network availability
 	public void remoteContentServiceReceivedLocation(RemoteContentService service) {
 		checkProvidersEnabled();
 		checkNetworkAvailable();
@@ -999,10 +999,21 @@ public class MapFragment extends Fragment implements MapListener,
 		if (dataService != null) {
 			setupOfflineMap();
 		}
+
+		Handler checkerHandler = new Handler(Looper.getMainLooper());
+		checkerHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				if (remoteContent != null) {
+					remoteContentServiceReceivedLocation(remoteContent);
+				}
+			}
+		}, 1000);
 	}
 
 	@Override
 	public void onRemoteContentServiceDisconnected() {
+		remoteContent = null;
 	}
 
 

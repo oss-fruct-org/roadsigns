@@ -3,9 +3,11 @@
 
     <string name="pref_store_location">Auto start tracking</string>
     <string name="pref_store_location_sum">Auto start tracking mode at app launch</string>
+    <string name="pref_show_accuracy">Show accuracy</string>
+
+
     <string name="pref_disable_warn_providers">Disabled providers</string>
     <string name="pref_disable_warn_providers_sum">Don\'t warn about disabled location providers</string>
-    <string name="pref_show_accuracy">Show accuracy</string>
 
     <string name="pref_disable_warn_network_sum">Don\'t warn about offline network</string>
     <string name="pref_disable_warn_network">Unavailable network</string>

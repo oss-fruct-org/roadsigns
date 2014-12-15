@@ -495,6 +495,10 @@ public class MapFragment extends Fragment implements MapListener,
 				}
 			}
 		});
+
+		checkProvidersEnabled();
+		checkNetworkAvailable();
+
 	}
 
 	private void checkNavigationDataAvailable() {
@@ -969,12 +973,6 @@ public class MapFragment extends Fragment implements MapListener,
 			stopTracking();
 	}
 
-	public void remoteContentServiceReceivedLocation(RemoteContentService service) {
-		checkProvidersEnabled();
-		checkNetworkAvailable();
-		checkNavigationDataAvailable();
-	}
-
 	@Override
 	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService service) {
 		dataService = service;
@@ -1005,7 +1003,7 @@ public class MapFragment extends Fragment implements MapListener,
 			@Override
 			public void run() {
 				if (remoteContent != null) {
-					remoteContentServiceReceivedLocation(remoteContent);
+					checkNavigationDataAvailable();
 				}
 			}
 		}, 1000);

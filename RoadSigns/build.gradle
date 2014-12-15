@@ -19,12 +19,12 @@ android {
         abortOnError false
     }
 
-    buildTypes {
+    /*buildTypes {
         release {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'roadsigns-rules.pro'
         }
-    }
+    }*/
 }
 
 dependencies {

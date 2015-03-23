@@ -46,6 +46,7 @@ dependencies {
     compile 'org.mapsforge:mapsforge-map-android:0.4.3'
 
     compile project(':mapcontent')
+    compile project(':graphhopper-priority')
 }
 
 

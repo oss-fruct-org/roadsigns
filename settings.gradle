@@ -1,1 +1,1 @@
-include ':RoadSigns', ':mapcontent'
+include ':RoadSigns', ':mapcontent', ':graphhopper-priority'

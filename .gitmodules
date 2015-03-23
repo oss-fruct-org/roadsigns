@@ -1,3 +1,6 @@
 [submodule "mapcontent"]
 	path = mapcontent
 	url = git@github.com:ivashov/mapcontent.git
+[submodule "graphhopper-priority"]
+	path = graphhopper-priority
+	url = git@github.com:ivashov/graphhopper-priority.git

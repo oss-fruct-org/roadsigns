@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns.iml" />
       <module fileurl="file://$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" filepath="$PROJECT_DIR$/RoadSigns/RoadSigns-RoadSigns.iml" />
+      <module fileurl="file://$PROJECT_DIR$/graphhopper-priority/graphhopper-priority.iml" filepath="$PROJECT_DIR$/graphhopper-priority/graphhopper-priority.iml" />
       <module fileurl="file://$PROJECT_DIR$/mapcontent/mapcontent.iml" filepath="$PROJECT_DIR$/mapcontent/mapcontent.iml" />
     </modules>
   </component>

@@ -1,11 +1,14 @@
 package org.fruct.oss.ikm.service;
 
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.util.BikeFlagEncoder;
+import com.graphhopper.routing.util.CarFlagEncoder;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.routing.util.FastestWeighting;
 import com.graphhopper.routing.util.FlagEncoder;
+import com.graphhopper.routing.util.FootFlagEncoder;
 import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.index.Location2IDFullIndex;
 import com.graphhopper.storage.index.LocationIndex;
@@ -13,6 +16,8 @@ import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ghpriority.FootPriorityFlagEncoder;
+import org.fruct.oss.ghpriority.PriorityGraphHopper;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
@@ -21,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -91,8 +97,15 @@ public abstract class GHRouting implements Closeable {
 			return;
 		
 		try {
-			hopper = new GraphHopper().forMobile();
+			hopper = new PriorityGraphHopper().forMobile();
 			hopper.setCHEnable(false);
+			hopper.setEncodingManager(new EncodingManager(new ArrayList<FlagEncoder>(4) {{
+				add(new CarFlagEncoder());
+				add(new BikeFlagEncoder());
+				add(new FootFlagEncoder());
+				add(new FootPriorityFlagEncoder());
+			}}, 8));
+
 			//hopper.setPreciseIndexResolution(0);
 			//hopper.setMemoryMapped();
 

@@ -29,13 +29,14 @@ public class PointsActivity extends ActionBarActivity {
 		return true;
 	}
 	
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
 	private void setUpActionBar() {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+		// TODO: fix other possible crashes with null getActionBar()
+		/*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			getActionBar().setDisplayHomeAsUpEnabled(true);
 		} else {
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		}*/
 	}
 	
 	@Override

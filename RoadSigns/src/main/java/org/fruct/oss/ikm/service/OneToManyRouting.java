@@ -244,7 +244,7 @@ public class OneToManyRouting extends GHRouting {
 				continue;
 
 			int tdist = dist + (int) iter.getDistance();
-			float tcost = (float) (cost + weightCalc.calcWeight(iter, false));
+			float tcost = (float) (cost + weightCalc.calcWeight(iter, false, iter.getEdge()));
 			if (parents[adjNode] == -1) {
 				parents[adjNode] = node;
 				costs[adjNode] = tcost;

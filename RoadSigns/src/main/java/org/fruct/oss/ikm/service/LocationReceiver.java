@@ -1,10 +1,13 @@
 package org.fruct.oss.ikm.service;
 
 import android.content.Context;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Looper;
+import android.os.PowerManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +15,7 @@ import org.slf4j.LoggerFactory;
 public class LocationReceiver implements LocationListener {
 	private static Logger log = LoggerFactory.getLogger(LocationReceiver.class);
 
-	public interface Listener {
-		void newLocation(Location location);
-	}
+	public static final String MOCK_PROVIDER = "org.fruct.oss.socialnavigator.MockProvider";
 
 	private String vehicle = "CAR";
 	private LocationManager locationManager;
@@ -39,25 +40,22 @@ public class LocationReceiver implements LocationListener {
 	}
 
 	public void start() {
-		setupUpdates();
 		isStarted = true;
+
+		setupUpdates();
 	}
 
 	private void setupUpdates() {
 		try {
 			if (!isDisableRealLocation) {
-				try {
-					locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 20, this);
-				} catch (IllegalArgumentException ex) {
-				}
+				Criteria criteria = new Criteria();
+				criteria.setAccuracy(Criteria.ACCURACY_FINE);
 
-				try {
-					locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, getMillsFreq(vehicle), getMeterFreq(vehicle), this);
-				} catch (IllegalArgumentException ex) {
-				}
+				locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, getMillsFreq(vehicle), getMeterFreq(vehicle), this, Looper.getMainLooper());
+				locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, getMillsFreq(vehicle), getMeterFreq(vehicle), this, Looper.getMainLooper());
 			}
-		} catch (SecurityException ex) {
-			ex.printStackTrace();
+		} catch (Exception ex) {
+			log.error("Can't setup location providers", ex);
 		}
 	}
 
@@ -83,13 +81,7 @@ public class LocationReceiver implements LocationListener {
 		}
 	}
 
-	/**
-	 * Retrieves last location from LocationManager and sends it to listener
-	 */
-	public void sendLastLocation() {
-		if (listener == null && isStarted())
-			return;
-
+	public Location getLastKnownLocation() {
 		Location networkLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 		Location gpsLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
@@ -104,6 +96,25 @@ public class LocationReceiver implements LocationListener {
 			locationToSend = gpsLocation;
 		else if (networkLocation != null)
 			locationToSend = networkLocation;
+
+		return locationToSend;
+	}
+
+	public Location getOldLocation() {
+		if (oldLocation == null)
+			return getLastKnownLocation();
+		else
+			return oldLocation;
+	}
+
+	/**
+	 * Retrieves last location from LocationManager and sends it to listener
+	 */
+	public void sendLastLocation() {
+		if (listener == null)
+			return;
+
+		Location locationToSend = getLastKnownLocation();
 
 		if (locationToSend != null) {
 			oldLocation = locationToSend;
@@ -200,5 +211,9 @@ public class LocationReceiver implements LocationListener {
 			locationManager.removeUpdates(this);
 			setupUpdates();
 		}
+	}
+
+	public interface Listener {
+		void newLocation(Location location);
 	}
 }

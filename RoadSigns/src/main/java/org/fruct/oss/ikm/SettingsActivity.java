@@ -13,15 +13,16 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.Settings;
-import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
-import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("deprecation")
-public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, DataServiceConnectionListener {
+public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener, ContentServiceConnectionListener {
 	private static final Logger log = LoggerFactory.getLogger(SettingsActivity.class);
 
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
@@ -32,9 +33,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
     public static final String NEAREST_POINTS = "nearest_points";
 	public static final String SHOW_ACCURACY = "show_accuracy";
 	public static final String AUTOZOOM = "autozoom";
-
-	public static final String OFFLINE_MAP = "offline_map";
-	public static final String NAVIGATION_DATA = "navigation_data_name";
 
 	public static final String USE_OFFLINE_MAP = "use_offline_map2";
 	public static final String AUTOREGION = "autoregion2";
@@ -47,8 +45,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 
-	public static final String STORAGE_PATH = Settings.PREF_STORAGE_PATH;
-
 	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
 	public static final String VEHICLE = "vehicle";
 
@@ -60,20 +56,18 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference storagePathPref;
 	private ListPreference getsRadius;
 
-	private org.fruct.oss.mapcontent.content.DataService dataService;
-	private DataServiceConnection dataServiceConnection = new DataServiceConnection(this);
+	private ContentServiceConnection contentServiceConnection = new ContentServiceConnection(this);
+	private ContentService contentService;
 
 	@Override
-	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService dataService) {
-		this.dataService = dataService;
-		this.dataService.setMigrateListener(migrateListener);
+	public void onContentServiceReady(ContentService contentService) {
+
 	}
 
 	@Override
-	public void onDataServiceDisconnected() {
-		dataService = null;
-	}
+	public void onContentServiceDisconnected() {
 
+	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +78,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		vehiclePref = (ListPreference) findPreference(VEHICLE);
 
-		storagePathPref = (ListPreference) findPreference(STORAGE_PATH);
+		storagePathPref = (ListPreference) findPreference(org.fruct.oss.mapcontent.content.Settings.PREF_STORAGE_PATH);
 		getsRadius = (ListPreference) findPreference(GETS_RADIUS);
 
 		Preference offlineMapPreference = findPreference(USE_OFFLINE_MAP);
@@ -115,18 +109,14 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 		sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-		dataServiceConnection.bindService(this);
+		contentServiceConnection.bindService(this);
 	}
 
 	@Override
 	protected void onPause() {
 		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
 
-		if (dataService != null) {
-			dataService.setMigrateListener(null);
-		}
-
-		dataServiceConnection.unbindService(this);
+		contentServiceConnection.unbindService(this);
 
 		super.onPause();
 	}
@@ -134,15 +124,19 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
 			String key) {
-		if (key.equals(STORE_LOCATION)) {
-		} else if (key.equals(NEAREST_POINTS)) {
+		switch (key) {
+		case NEAREST_POINTS:
 			updateNearestPoints(sharedPreferences);
-		} else if (key.equals(GETS_SERVER)) {
+			break;
+		case GETS_SERVER:
 			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
-		} else if (key.equals(VEHICLE)) {
+			break;
+		case VEHICLE:
 			updateVehicle();
-		} else if (key.equals(GETS_RADIUS)) {
+			break;
+		case GETS_RADIUS:
 			updateRadius(sharedPreferences);
+			break;
 		}
 	}
 
@@ -173,13 +167,13 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		vehiclePref.setSummary(vehiclePref.getEntry());
 	}
 
-	private void updateStoragePath(SharedPreferences sharedPreferences, ListPreference storagePathPref) {
+	private void updateStoragePath(SharedPreferences pref, ListPreference storagePathPref) {
 		DirUtil.StorageDirDesc[] storagePaths = DirUtil.getPrivateStorageDirs(this);
 
 		String[] names = new String[storagePaths.length];
 		String[] paths = new String[storagePaths.length];
 
-		String currentValue = sharedPreferences.getString(STORAGE_PATH, null);
+		String currentValue = pref.getString(org.fruct.oss.mapcontent.content.Settings.PREF_STORAGE_PATH, null);
 		int currentNameRes = -1;
 
 		for (int i = 0; i < storagePaths.length; i++) {
@@ -206,7 +200,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		}
 	}
 
-	private DataService.MigrateListener migrateListener = new DataService.MigrateListener() {
+	/*private DataService.MigrateListener migrateListener = new DataService.MigrateListener() {
 		private ProgressDialog dialog;
 
 		@Override
@@ -242,5 +236,5 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 			Toast.makeText(SettingsActivity.this, "Cannot move local content", Toast.LENGTH_LONG).show();
 		}
-	};
+	};*/
 }

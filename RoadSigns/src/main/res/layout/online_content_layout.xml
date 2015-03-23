@@ -6,7 +6,7 @@
               android:layout_height="match_parent">
     <fragment
         android:id="@+id/fragment"
-        android:name="org.fruct.oss.mapcontent.content.fragments.ContentFragment"
+        android:name="org.fruct.oss.ikm.fragment.ContentFragment"
 
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

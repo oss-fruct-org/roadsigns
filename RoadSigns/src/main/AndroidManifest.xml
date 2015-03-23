@@ -63,6 +63,8 @@
             android:enabled="true"
             android:exported="false" >
         </service>
+
+
         <service
             android:name=".appwidget.UpdateService"
             android:enabled="@bool/is_support_appwidget"
@@ -74,12 +76,6 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" >
         </service>
-        <service
-            android:name=".storage.RemoteContentService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
-
         <receiver
             android:name=".appwidget.RoadSignsWidgetProvider"
             android:enabled="@bool/is_support_appwidget" >
@@ -108,12 +104,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="MainActivity" />
         </activity>
-
-        <service
-            android:name=".DataService"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
     </application>
 
 </manifest>

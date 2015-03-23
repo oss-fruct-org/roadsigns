@@ -92,7 +92,7 @@ public abstract class GHRouting implements Closeable {
 		
 		try {
 			hopper = new GraphHopper().forMobile();
-			hopper.disableCHShortcuts();
+			hopper.setCHEnable(false);
 			//hopper.setPreciseIndexResolution(0);
 			//hopper.setMemoryMapped();
 

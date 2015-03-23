@@ -52,18 +52,17 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
-import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
+import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.mapcontent.content.ContentItem;
-import org.fruct.oss.mapcontent.content.DataService;
-import org.fruct.oss.mapcontent.content.RemoteContentService;
-import org.fruct.oss.mapcontent.content.connections.DataServiceConnection;
-import org.fruct.oss.mapcontent.content.connections.DataServiceConnectionListener;
-import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnection;
-import org.fruct.oss.mapcontent.content.connections.RemoteContentServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.ContentListenerAdapter;
+import org.fruct.oss.mapcontent.content.ContentManagerImpl;
+import org.fruct.oss.mapcontent.content.ContentService;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
@@ -86,8 +85,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -144,11 +141,7 @@ class MapState implements Parcelable {
 public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener,
-		PointsManager.PointsListener,
-		DataServiceConnectionListener,
-		RemoteContentServiceConnectionListener,
-		RemoteContentService.ContentStateListener,
-		DataService.DataListener {
+		PointsManager.PointsListener, ContentServiceConnectionListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	private DefaultInfoWindow infoWindow;
@@ -207,16 +200,12 @@ public class MapFragment extends Fragment implements MapListener,
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
-	private DataService dataService;
-	private org.fruct.oss.mapcontent.content.RemoteContentService remoteContent;
+	private ContentService remoteContent;
 
-	private DataServiceConnection dataServiceConnection
-			= new DataServiceConnection(this);
-	private RemoteContentServiceConnection remoteContentServiceConnection
-			= new RemoteContentServiceConnection(this);
+	private ContentServiceConnection remoteContentServiceConnection = new ContentServiceConnection(this);
 
-	private boolean localListReady = true;
 	private TileProviderManager tileProviderManager;
+	private ContentItem recommendedContentItem;
 
 	public MapFragment() {
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
@@ -316,7 +305,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
-		dataServiceConnection.bindService(getActivity());
 		remoteContentServiceConnection.bindService(getActivity());
 	}
 
@@ -505,7 +493,7 @@ public class MapFragment extends Fragment implements MapListener,
 		SharedPreferences pref = PreferenceManager
 				.getDefaultSharedPreferences(getActivity());
 
-		if (!navigationDataToastShown && null == remoteContent.getCurrentContentItem(RemoteContentService.GRAPHHOPPER_MAP)) {
+		if (!navigationDataToastShown && recommendedContentItem == null) {
 			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
 						R.string.configure_navigation_data,
@@ -619,19 +607,10 @@ public class MapFragment extends Fragment implements MapListener,
 		log.debug("MapFragment removeContentStateListener");
 
 		if (remoteContent != null) {
-			remoteContent.removeContentStateListener(RemoteContentService.MAPSFORGE_MAP);
 			remoteContent.removeListener(remoteContentAdapter);
 			remoteContent = null;
 		}
 
-		localListReady = false;
-
-		if (dataService != null) {
-			dataService.removeDataListener(this);
-			dataService = null;
-		}
-
-		dataServiceConnection.unbindService(getActivity());
 		remoteContentServiceConnection.unbindService(getActivity());
 
 		super.onDestroy();
@@ -825,7 +804,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		List<PointDesc> points = PointsManager.getInstance()
 				.getFilteredPoints();
-		List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
+		/*List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
 					public ExtendedOverlayItem apply(PointDesc point) {
 						ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
 								.getDescription(), point.toPoint());
@@ -845,7 +824,7 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		};
 
-		mapView.getOverlays().add(poiOverlay);
+		mapView.getOverlays().add(poiOverlay);*/
 		log.trace("MapFragment.updatePOIOverlay EXIT");
 	}
 	
@@ -950,7 +929,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		activeStates.add(newState);
 
-		List<Runnable> tasks = new ArrayList<Runnable>(pendingTasks.get(newState));
+		List<Runnable> tasks = new ArrayList<>(pendingTasks.get(newState));
 		pendingTasks.get(newState).clear();
 
 		for (Runnable runnable : tasks)
@@ -974,30 +953,9 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	@Override
-	public void onDataServiceConnected(org.fruct.oss.mapcontent.content.DataService service) {
-		dataService = service;
-		dataService.addDataListener(this);
-
-		if (remoteContent != null) {
-			setupOfflineMap();
-		}
-	}
-
-	@Override
-	public void onDataServiceDisconnected() {
-	}
-
-	@Override
-	public void onRemoteContentServiceConnected(org.fruct.oss.mapcontent.content.RemoteContentService remoteContentService) {
-		remoteContent = remoteContentService;
+	public void onContentServiceReady(ContentService contentService) {
+		remoteContent = contentService;
 		remoteContent.addListener(remoteContentAdapter);
-		remoteContent.setContentStateListener(org.fruct.oss.mapcontent.content.RemoteContentService.MAPSFORGE_MAP, this);
-		localListReady = !remoteContent.getLocalItems().isEmpty();
-
-		if (dataService != null) {
-			setupOfflineMap();
-		}
-
 		Handler checkerHandler = new Handler(Looper.getMainLooper());
 		checkerHandler.postDelayed(new Runnable() {
 			@Override
@@ -1010,35 +968,21 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	@Override
-	public void onRemoteContentServiceDisconnected() {
-		remoteContent = null;
-	}
-
-
-	@Override
-	public void dataPathChanged(String newDataPath) {
-		setupOfflineMap();
-	}
-
-	@Override
-	public int getPriority() {
-		return 2;
+	public void onContentServiceDisconnected() {
 	}
 
 	private void setupOfflineMap() {
 		log.debug("MapFragment setupOfflineMap");
-		if (remoteContent == null || dataService == null || !localListReady)
+		if (remoteContent == null || recommendedContentItem == null)
 			return;
 
-		remoteContent.removeListener(remoteContentAdapter);
+		//remoteContent.removeListener(remoteContentAdapter);
 		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		boolean useOfflineMap = pref.getBoolean(SettingsActivity.USE_OFFLINE_MAP, false);
-		String offlineMapName = pref.getString(org.fruct.oss.mapcontent.content.Settings.OFFLINE_MAP, null);
 
-		if (useOfflineMap && offlineMapName != null) {
-			ContentItem contentItem = remoteContent.getContentItem(offlineMapName);
-			String offlineMapPath = remoteContent.getFilePath(contentItem);
+		if (useOfflineMap) {
+			String offlineMapPath = remoteContent.requestContentItem(recommendedContentItem);
 
 			if (offlineMapPath != null) {
 				tileProviderManager.setFile(offlineMapPath);
@@ -1047,8 +991,6 @@ public class MapFragment extends Fragment implements MapListener,
 		} else {
 			tileProviderManager.setFile(null);
 		}
-
-		dataService.dataListenerReady();
 	}
 
 	private void updateRadius() {
@@ -1095,19 +1037,25 @@ public class MapFragment extends Fragment implements MapListener,
 			String key) {
 		log.trace("MapFragment.onSharedPreferenceChanged");
 
-		if (key.equals(SettingsActivity.SHOW_ACCURACY)) {
+		switch (key) {
+		case SettingsActivity.SHOW_ACCURACY:
 			if (myPositionOverlay != null)
 				myPositionOverlay.setShowAccuracy(sharedPreferences.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 			mapView.invalidate();
-		} else if (key.equals(SettingsActivity.USE_OFFLINE_MAP)) {
+			break;
+		case SettingsActivity.USE_OFFLINE_MAP:
 			setupOfflineMap();
-		} else if (key.equals(SettingsActivity.GETS_ENABLE) || key.equals(SettingsActivity.GETS_SERVER)) {
+			break;
+		case SettingsActivity.GETS_ENABLE:
+		case SettingsActivity.GETS_SERVER:
 			PointsManager.getInstance().ensureGetsState();
-		} else if (key.equals(SettingsActivity.GETS_RADIUS)) {
+			break;
+		case SettingsActivity.GETS_RADIUS:
 			String value = sharedPreferences.getString(key, "200000");
 			int radius = Integer.parseInt(value);
 
 			PointsManager.getInstance().updateRadius(radius);
+			break;
 		}
 	}
 
@@ -1126,48 +1074,24 @@ public class MapFragment extends Fragment implements MapListener,
 	public void errorDownloading() {
 	}
 
-	@Override
-	public void contentItemReady(ContentItem contentItem) {
-		log.debug("MapFragment contentItemReady");
-		final CountDownLatch latch = new CountDownLatch(1);
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-
-				setupOfflineMap();
-				latch.countDown();
-			}
-		});
-
-		try {
-			latch.await(10, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-		}
-	}
-
-	@Override
-	public void contentItemDeactivated() {
-		log.debug("MapFragment contentItemDeactivated");
-		final CountDownLatch latch = new CountDownLatch(1);
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				setupOfflineMap();
-				latch.countDown();
-			}
-		});
-
-		try {
-			latch.await(10, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-		}
-	}
-
-	private org.fruct.oss.mapcontent.content.RemoteContentListenerAdapter remoteContentAdapter = new org.fruct.oss.mapcontent.content.RemoteContentListenerAdapter() {
+	private ContentListenerAdapter remoteContentAdapter = new ContentListenerAdapter() {
 		@Override
-		public void localListReady(List<org.fruct.oss.mapcontent.content.ContentItem> list) {
-			if (!localListReady) {
-				localListReady = true;
+		public void recommendedRegionItemReady(ContentItem contentItem) {
+			if (!contentItem.getType().equals(ContentManagerImpl.MAPSFORGE_MAP)) {
+				return;
+			}
+
+			if (recommendedContentItem == contentItem) {
+				return;
+			}
+
+			recommendedContentItem = contentItem;
+			setupOfflineMap();
+		}
+
+		@Override
+		public void requestContentReload() {
+			if (recommendedContentItem != null) {
 				setupOfflineMap();
 			}
 		}

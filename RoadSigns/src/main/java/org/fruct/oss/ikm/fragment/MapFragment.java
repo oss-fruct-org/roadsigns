@@ -265,6 +265,9 @@ public class MapFragment extends Fragment implements MapListener,
 				myLocation = matchedLocation;
 
 				PointsManager.getInstance().updatePosition(new GeoPoint(matchedLocation));
+				if (remoteContent != null) {
+					remoteContent.setLocation(myLocation);
+				}
 
 				myPositionOverlay.setLocation(matchedLocation);
 				//myPositionOverlay.setMatchedLocation(matchedLocation);
@@ -969,10 +972,11 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void onContentServiceDisconnected() {
+		log.warn("onContentServiceDisconnected");
 	}
 
 	private void setupOfflineMap() {
-		log.debug("MapFragment setupOfflineMap");
+		log.debug("setupOfflineMap");
 		if (remoteContent == null || recommendedContentItem == null)
 			return;
 

@@ -128,7 +128,6 @@ public class DirectionService extends Service implements
 		synchronized (dataServiceMutex) {
 			remoteContent = contentService;
 			remoteContent.addListener(remoteContentListener);
-			remoteContent.setLocation(locationReceiver.getLastKnownLocation());
 			updateDirectionsManager();
 		}
 	}

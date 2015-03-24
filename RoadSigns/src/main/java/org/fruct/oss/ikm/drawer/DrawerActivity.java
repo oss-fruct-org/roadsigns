@@ -1,6 +1,8 @@
 package org.fruct.oss.ikm.drawer;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.PersistableBundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
@@ -9,6 +11,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
+import android.text.util.Linkify;
+import android.view.ContextThemeWrapper;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 import org.fruct.oss.ikm.HelpTabActivity;
 import org.fruct.oss.ikm.R;
@@ -18,6 +24,7 @@ import org.fruct.oss.ikm.fragment.DetailsFragment;
 import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.fragment.PointsFragment;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
@@ -95,6 +102,7 @@ public class DrawerActivity extends ActionBarActivity
 			return;
 
 		case 4:
+			showAboutDialog();
 			return;
 
 		case 5:
@@ -107,6 +115,35 @@ public class DrawerActivity extends ActionBarActivity
 		}
 
 		setRootFragment(fragment);
+	}
+
+	private void showAboutDialog() {
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append("Version ");
+		try {
+			stringBuilder.append(getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+		} catch (PackageManager.NameNotFoundException ignore) {
+			stringBuilder.append("unknown");
+		}
+		stringBuilder.append("\n\n");
+		stringBuilder.append(getResources().getString(R.string.about_text));
+
+		TextView textView = new TextView(new ContextThemeWrapper(this, Utils.getDialogTheme()));
+		textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+		textView.setTextSize(16);
+		textView.setAutoLinkMask(Linkify.WEB_URLS);
+		textView.setText(stringBuilder.toString());
+
+		final int paddingDP = Utils.getDP(16);
+		textView.setPadding(paddingDP, paddingDP, paddingDP, paddingDP);
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(new ContextThemeWrapper(this, Utils.getDialogTheme()));
+		builder.setIcon(R.drawable.ic_launcher);
+		builder.setTitle(R.string.app_name);
+		builder.setView(textView);
+
+		builder.create();
+		builder.show();
 	}
 
 	@Override

@@ -71,7 +71,7 @@ public class GetsTest extends AndroidTestCase {
 			assertEquals("description", doc.getDescription());
 			assertEquals(1, doc.getOpen());
 
-			assertEquals(2, doc.getPlacemarks().size());
+			assertEquals(3, doc.getPlacemarks().size());
 
 			Placemark mark1 = doc.getPlacemarks().get(0);
 			assertEquals("test place 1", mark1.getName());
@@ -84,6 +84,17 @@ public class GetsTest extends AndroidTestCase {
 			assertEquals("test description 2", mark2.getDescription());
 			assertEquals(34.1, mark2.getLongitude(), 0.01);
 			assertEquals(56.0, mark2.getLatitude(), 0.01);
+			assertEquals(0, mark2.getPhotos().size());
+
+			Placemark mark3 = doc.getPlacemarks().get(2);
+			assertEquals("test place 3", mark3.getName());
+			assertEquals("test description 3", mark3.getDescription());
+			assertEquals(34.1, mark3.getLongitude(), 0.01);
+			assertEquals(56.0, mark3.getLatitude(), 0.01);
+			assertEquals(3, mark3.getPhotos().size());
+			assertEquals("http://example.com/1.png", mark3.getPhotos().get(0));
+			assertEquals("http://example.com/2.png", mark3.getPhotos().get(1));
+			assertEquals("http://example.com/3.png", mark3.getPhotos().get(2));
 		} finally {
 			if (stream != null)
 				stream.close();

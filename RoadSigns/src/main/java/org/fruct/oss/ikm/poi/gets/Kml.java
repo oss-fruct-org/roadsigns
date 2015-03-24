@@ -3,9 +3,11 @@ package org.fruct.oss.ikm.poi.gets;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
+import org.simpleframework.xml.Namespace;
 import org.simpleframework.xml.Path;
 import org.simpleframework.xml.Root;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -45,7 +47,7 @@ public class Kml implements IContent {
 		@Element(name = "description", data=true, required = false)
 		private String description;
 
-		@ElementList(inline = true, entry = "Placemark")
+		@ElementList(inline = true, entry = "Placemark", empty = false, required = false)
 		private List<Placemark> placemarks;
 	}
 
@@ -59,6 +61,11 @@ public class Kml implements IContent {
 
 		private double latitude;
 		private double longitude;
+
+		@Path("ExtendedData")
+		@Namespace(reference = "http://gets.cs.petrsu.ru/", prefix = "gets")
+		@ElementList(entry = "point", inline = true, empty = false, required = false)
+		private List<String> photos;
 
 		@Element(name="coordinates")
 		@Path("Point")
@@ -89,6 +96,14 @@ public class Kml implements IContent {
 
 		public double getLongitude() {
 			return longitude;
+		}
+
+		public List<String> getPhotos() {
+			if (photos == null) {
+				return Collections.emptyList();
+			} else {
+				return photos;
+			}
 		}
 
 		public PointDesc toPointDesc() {

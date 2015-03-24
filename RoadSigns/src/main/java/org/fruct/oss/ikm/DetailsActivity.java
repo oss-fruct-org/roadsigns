@@ -12,7 +12,7 @@ import android.view.MenuItem;
 
 public class DetailsActivity extends ActionBarActivity {
 	public static final String POINT_ACTION = "org.fruct.org.ikm.POINT_ACTION";
-	public static final String POINT_ARG = "org.fruct.oss.ikm.POINT_ARG";
+	public static final String POINT_ARG = "org.fruct.oss.ikm.ARG_POINT";
 		
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

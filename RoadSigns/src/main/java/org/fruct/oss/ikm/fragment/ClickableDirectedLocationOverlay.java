@@ -20,6 +20,8 @@ public class ClickableDirectedLocationOverlay extends DirectedLocationOverlay {
 	private Point screenPoint;
 	
 	public ClickableDirectedLocationOverlay(Context ctx, MapView mapView, GeoPoint location, float bearing) {
+		// TODO: NPE at org.osmdroid.DefaultResourceProxyImpl.getDisplayMetricsDensity(DefaultResourceProxyImpl.java:166)
+
 		super(ctx);
 		setLocation(location);
 		setBearing(bearing);

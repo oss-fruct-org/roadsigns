@@ -64,5 +64,11 @@
     <string name="close_path">Close path</string>
     <string name="str_loading_items">Loading points</string>
     <string name="real_location">Show real location</string>
+    <string name="title_activity_drawer">DrawerActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_example">Example action</string>
 
 </resources>

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-public class PointDesc implements Serializable, Parcelable {
+public class PointDesc implements Parcelable, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private int latE6, lonE6;

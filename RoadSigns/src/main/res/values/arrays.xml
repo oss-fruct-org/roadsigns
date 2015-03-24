@@ -27,4 +27,14 @@
         <item>500000</item>
         <item>1000000</item>
     </string-array>
+
+    <string-array name="drawer_sections">
+        <item>@string/app_name</item>
+        <item>@string/title_activity_points</item>
+        <item>@string/action_download_map</item>
+        <item>@string/title_activity_help_tab</item>
+        <item>@string/action_about</item>
+        <item>@string/action_settings</item>
+    </string-array>
+    <string name="title_activity_content">Content</string>
 </resources>

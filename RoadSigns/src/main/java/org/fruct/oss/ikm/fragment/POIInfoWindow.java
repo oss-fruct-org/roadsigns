@@ -2,21 +2,17 @@ package org.fruct.oss.ikm.fragment;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
-import org.fruct.oss.ikm.PointsActivity;
+
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
 import org.osmdroid.views.MapView;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchListener {
 	private PointDesc point;
@@ -60,16 +56,11 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 			context.startActivity(intent);
 		} else {*/
 
-		Bundle bundle = new Bundle();
-		bundle.putParcelable("pointdesc", point);
-
-		Intent intent = new Intent(context, PointsActivity.class);
-		intent.setAction(PointsActivity.SHOW_DETAILS);
-		intent.putExtra(PointsActivity.DETAILS_INDEX, bundle);
+		Intent intent = new Intent(context, DrawerActivity.class);
+		intent.setAction(PointsFragment.ACTION_SHOW_DETAILS);
+		intent.putExtra(DetailsFragment.ARG_POINT, (android.os.Parcelable) point);
 
 		context.startActivity(intent);
-
-		//}
 	}
 
 	@Override

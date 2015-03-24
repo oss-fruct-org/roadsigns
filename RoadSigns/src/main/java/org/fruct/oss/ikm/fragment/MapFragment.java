@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.fragment;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -29,13 +30,13 @@ import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBar;
 import android.text.util.Linkify;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -52,6 +53,7 @@ import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
+import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
@@ -66,8 +68,6 @@ import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionList
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
-import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
-import org.osmdroid.bonuspack.overlays.ItemizedOverlayWithBubble;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -85,6 +85,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -168,10 +169,13 @@ public class MapFragment extends Fragment implements MapListener,
 
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
-	
-	public static final String POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
-	public static final String MAP_CENTER = "org.fruct.oss.ikm.fragment.MAP_CENTER";
-				
+
+	public static final String ACTION_CENTER_MAP = "org.fruct.oss.ikm.ACTION_CENTER_MAP"; // arg MapFragment.ARG_MAP_CENTER
+	public static final String ACTION_SHOW_PATH = "org.fruct.oss.ikm.ACTION_SHOW_PATH";
+
+	public static final String ARG_MAP_CENTER = "org.fruct.oss.ikm.fragment.ARG_MAP_CENTER";
+	public static final String ARG_SHOW_PATH_TARGET = "org.fruct.oss.ikm.ARG_SHOW_PATH_TARGET";
+
 	private List<ClickableDirectedLocationOverlay> crossDirections;
 	private PathOverlay pathOverlay;
 	private boolean pathJumped;
@@ -214,6 +218,24 @@ public class MapFragment extends Fragment implements MapListener,
 		pendingTasks.put(State.DS_RECEIVED, new ArrayList<Runnable>());
 	}
 
+	public static Fragment newInstanceGeoPoint(GeoPoint geoPoint) {
+		MapFragment mapFragment = new MapFragment();
+
+		Bundle args = new Bundle();
+		args.putParcelable(ARG_MAP_CENTER, geoPoint);
+		mapFragment.setArguments(args);
+		return mapFragment;
+	}
+
+	public static Fragment newInstanceForPath(GeoPoint geoPoint) {
+		MapFragment mapFragment = new MapFragment();
+
+		Bundle args = new Bundle();
+		args.putParcelable(ARG_SHOW_PATH_TARGET, geoPoint);
+		mapFragment.setArguments(args);
+		return mapFragment;
+	}
+
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
@@ -232,6 +254,16 @@ public class MapFragment extends Fragment implements MapListener,
 			setState(State.DS_CREATED);
 		}
 	};
+
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+
+		if (activity instanceof DrawerActivity) {
+			((DrawerActivity) activity).onSectionAttached(getString(R.string.app_name),
+					ActionBar.NAVIGATION_MODE_STANDARD);
+		}
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -402,21 +434,21 @@ public class MapFragment extends Fragment implements MapListener,
 
 		setupOverlays();
 
-		// Process MAP_CENTER parameter
-		Intent intent = getActivity().getIntent();
-		GeoPoint center = intent.getParcelableExtra(MAP_CENTER);
-		if (center != null && savedInstanceState == null) {
-			log.debug("MapFragment.onActivityCreated setCenter = " + center);
-			setCenter(center);
+		// Process ARG_MAP_CENTER parameter
+		GeoPoint centerPoint = getArguments() != null
+				? getArguments().<GeoPoint>getParcelable(ARG_MAP_CENTER)
+				: null;
+
+		if (centerPoint != null && savedInstanceState == null) {
+			setCenter(centerPoint);
 		}
 
-		// Process SHOW_PATH action
-		if (MainActivity.SHOW_PATH
-				.equals(getActivity().getIntent().getAction())
-				&& savedInstanceState == null) {
-			log.debug("MapFragment.onActivityCreated SHOW_PATH");
-			GeoPoint target = getActivity().getIntent().getParcelableExtra(MainActivity.SHOW_PATH_TARGET);
-			showPath(target);
+		// Process ACTION_SHOW_PATH action
+		GeoPoint showPathPoint = getArguments() != null
+				? getArguments().<GeoPoint>getParcelable(ARG_SHOW_PATH_TARGET)
+				: null;
+		if (showPathPoint != null && savedInstanceState == null) {
+			showPath(showPathPoint);
 		}
 
 		// Listen for new points in PointManager
@@ -653,16 +685,6 @@ public class MapFragment extends Fragment implements MapListener,
 			menu.findItem(R.id.action_real_location).setVisible(true);
 			break;
 			
-		case R.id.action_place:
-			Intent intent = new Intent(getActivity(), PointsActivity.class);
-			startActivity(intent);
-			break;
-			
-		case R.id.action_settings:
-			intent = new Intent(getActivity(), SettingsActivity.class);
-			startActivity(intent);
-			break;
-			
 		case R.id.action_track:
 			if (!isTracking)
 				startTracking();
@@ -675,20 +697,11 @@ public class MapFragment extends Fragment implements MapListener,
 			showFilterDialog();
 			break;
 
-		case R.id.action_download_map:
-			intent = new Intent(getActivity(), OnlineContentActivity.class);
-			startActivity(intent);
-			break;
-
+/*
 		case R.id.action_about:
 			showAboutDialog();
 			break;
-
-		case R.id.action_help:
-			intent = new Intent(getActivity(), HelpTabActivity.class);
-			startActivity(intent);
-			break;
-
+*/
 		case R.id.action_remove_path:
 			if (pathOverlay != null) {
 				mapView.getOverlays().remove(pathOverlay);
@@ -775,8 +788,9 @@ public class MapFragment extends Fragment implements MapListener,
 			overlay.setListener(new ClickableDirectedLocationOverlay.Listener() {
 				@Override
 				public void onClick() {
-					Intent intent = new Intent(getActivity(), PointsActivity.class);
-					intent.putParcelableArrayListExtra(POINTS, new ArrayList<PointDesc>(points));
+					Intent intent = new Intent(PointsFragment.ACTION_SHOW_POINTS, null,
+							getActivity(), DrawerActivity.class);
+					intent.putParcelableArrayListExtra(PointsFragment.ARG_POINTS, new ArrayList<>(points));
 					startActivity(intent);
 				}
 			});

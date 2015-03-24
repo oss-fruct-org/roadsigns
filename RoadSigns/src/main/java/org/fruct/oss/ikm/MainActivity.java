@@ -17,8 +17,8 @@ public class MainActivity extends ActionBarActivity {
 	private static Logger log = LoggerFactory.getLogger(MainActivity.class);
 
 	// Actions
-	public static final String CENTER_MAP = "org.fruct.oss.ikm.CENTER_MAP"; // arg MapFragment.MAP_CENTER
-	public static final String SHOW_PATH = "org.fruct.oss.ikm.SHOW_PATH";
+	public static final String CENTER_MAP = "org.fruct.oss.ikm.ACTION_CENTER_MAP"; // arg MapFragment.ARG_MAP_CENTER
+	public static final String SHOW_PATH = "org.fruct.oss.ikm.ACTION_SHOW_PATH";
 	
 	public static final String SHOW_PATH_TARGET = "org.fruct.oss.ikm.SHOW_PATH_TARGET";
 
@@ -28,58 +28,6 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		/*
-		final ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
-		final ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-
-		debugThread = new Thread() {
-			@Override
-			public void run() {
-				while (!Thread.interrupted()) {
-					manager.getMemoryInfo(memInfo);
-					log.trace("Available memory: {} kb", memInfo.availMem / 1024);
-
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						return;
-					}
-				}
-			}
-		};*/
-		//debugThread.start();
-
 		startService(new Intent(this, ContentService.class));
-	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		//debugThread.interrupt();
-	}
-
-	@Override
-	protected void onNewIntent(Intent intent) {
-		super.onNewIntent(intent);
-		log("MainActivity.onNewIntent");
-		
-		MapFragment mapFragment = (MapFragment) getSupportFragmentManager().findFragmentById(R.id.map_fragment);
-		
-		GeoPoint newCenter = intent.getParcelableExtra(MapFragment.MAP_CENTER);
-		if (newCenter != null) {
-			mapFragment.setCenter(newCenter);
-		}
-		
-		if (SHOW_PATH.equals(intent.getAction())) {
-			GeoPoint target = (GeoPoint) intent.getParcelableExtra(SHOW_PATH_TARGET);
-			mapFragment.showPath(target);
-		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		//getMenuInflater().inflate(R.menu.main, menu);
-		return super.onCreateOptionsMenu(menu);
 	}
 }

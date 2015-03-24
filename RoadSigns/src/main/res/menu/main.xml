@@ -2,11 +2,6 @@
     xmlns:yourapp="http://schemas.android.com/apk/res-auto" >
 
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        yourapp:showAsAction="never"/>
-    <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_action_make_available_offline"
         android:title="@string/action_place_here"
@@ -17,29 +12,10 @@
         android:title="@string/action_track"
         yourapp:showAsAction="ifRoom"/>
     <item
-        android:id="@+id/action_place"
-        android:icon="@drawable/ic_action_place"
-        android:title="@string/action_place"
-        yourapp:showAsAction="ifRoom"/>
-    <item
         android:id="@+id/action_filter"
         android:icon="@drawable/filter"
         android:title="@string/filter"
         yourapp:showAsAction="ifRoom"/>
-    <item
-        android:id="@+id/action_download_map"
-        android:icon="@drawable/filter"
-        yourapp:showAsAction="never"
-        android:title="@string/action_download_map"/>
-
-    <item
-        android:id="@+id/action_help"
-        yourapp:showAsAction="never"
-        android:title="@string/action_help" />
-    <item
-        android:id="@+id/action_about"
-        yourapp:showAsAction="never"
-        android:title="@string/action_about"/>
     <item
         android:id="@+id/action_remove_path"
         yourapp:showAsAction="never"

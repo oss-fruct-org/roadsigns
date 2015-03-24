@@ -63,8 +63,6 @@
             android:enabled="true"
             android:exported="false" >
         </service>
-
-
         <service
             android:name=".appwidget.UpdateService"
             android:enabled="@bool/is_support_appwidget"
@@ -76,6 +74,7 @@
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" >
         </service>
+
         <receiver
             android:name=".appwidget.RoadSignsWidgetProvider"
             android:enabled="@bool/is_support_appwidget" >
@@ -103,6 +102,15 @@
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="MainActivity" />
+        </activity>
+        <activity
+            android:name=".drawer.DrawerActivity"
+            android:label="@string/title_activity_drawer"
+            android:launchMode="singleTop" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
     </application>
 

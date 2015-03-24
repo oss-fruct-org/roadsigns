@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.utils.Utils;
@@ -135,8 +136,9 @@ public class DirectionsPanel extends RelativeLayout {
 			panelView.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					Intent intent = new Intent(getContext(), PointsActivity.class);
-					intent.putParcelableArrayListExtra(MapFragment.POINTS, new ArrayList<PointDesc>(points));
+					Intent intent = new Intent(PointsFragment.ACTION_SHOW_POINTS, null,
+							getContext(), DrawerActivity.class);
+					intent.putParcelableArrayListExtra(PointsFragment.ARG_POINTS, new ArrayList<PointDesc>(points));
 					getContext().startActivity(intent);
 				}
 			});

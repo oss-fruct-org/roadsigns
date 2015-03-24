@@ -13,7 +13,7 @@ import java.util.List;
  * Allows to store points in local storage
  */
 public class PointsStorage {
-	private static final int VERSION = 1;
+	private static final int VERSION = 2;
 	private static final String[] QUERY_COLUMNS = {
 			"lat", "lon", "name", "category", "desc", "timestamp"
 	};
@@ -89,21 +89,31 @@ public class PointsStorage {
 
 		@Override
 		public void onCreate(SQLiteDatabase db) {
-			db.execSQL("CREATE TABLE points (" +
-					"id INTEGER PRIMARY KEY AUTOINCREMENT," +
-					"lat INTEGER," +
-					"lon INTEGER, " +
-					"name TEXT NOT NULL," +
-					"category TEXT," +
-					"desc TEXT," +
-					"timestamp INTEGER," +
-					"source TEXT);");
+			onUpgrade(db, 0, VERSION);
 		}
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int old, int ne) {
-			if (old == ne)
-				return;
+			switch (old) {
+			case 0:
+				db.execSQL("CREATE TABLE points (" +
+						"id INTEGER PRIMARY KEY AUTOINCREMENT," +
+						"lat INTEGER," +
+						"lon INTEGER, " +
+						"name TEXT NOT NULL," +
+						"category TEXT," +
+						"desc TEXT," +
+						"timestamp INTEGER," +
+						"source TEXT);");
+
+			case 1:
+				db.execSQL("CREATE TABLE photos (" +
+						"id INTEGER PRIMARY KEY AUTOINCREMENT," +
+						"url TEXT NOT NULL," +
+						"pointId INTEGER," +
+						"FOREIGN KEY (pointId) REFERENCES points(id) ON DELETE CASCADE);");
+				break;
+			}
 		}
 	}
 

@@ -1,0 +1,37 @@
+-injars       trove-3.0.3.jar
+-outjars      trove-3.0.3-minified.jar
+-libraryjars  <java.home>/lib/rt.jar
+-printmapping out.map
+-dontobfuscate
+
+-keep public class gnu.trove.iterator.TIntIterator{ *; }
+-keep public class gnu.trove.list.array.TIntArrayList{ *; }
+-keep public class gnu.trove.list.array.TLongArrayList{ *; }
+-keep public class gnu.trove.list.TIntList{ *; }
+-keep public class gnu.trove.list.TLongList{ *; }
+-keep public class gnu.trove.map.hash.TIntIntHashMap{ *; }
+-keep public class gnu.trove.map.hash.TIntLongHashMap{ *; }
+-keep public class gnu.trove.map.hash.TIntObjectHashMap{ *; }
+-keep public class gnu.trove.map.hash.TLongLongHashMap{ *; }
+-keep public class gnu.trove.map.hash.TLongObjectHashMap{ *; }
+-keep public class gnu.trove.map.TIntLongMap { *; }
+-keep public class gnu.trove.map.TIntObjectMap { *; }
+-keep public class gnu.trove.map.TLongLongMap{ *; }
+-keep public class gnu.trove.map.TLongObjectMap{ *; }
+-keep public class gnu.trove.procedure.TIntProcedure{ *; }
+-keep public class gnu.trove.procedure.TObjectProcedure{ *; }
+-keep public class gnu.trove.set.hash.TIntHashSet{ *; }
+-keep public class gnu.trove.set.hash.TLongHashSet{ *; }
+-keep public class gnu.trove.set.TIntSet{ *; }
+-keep public class gnu.trove.set.TLongSet{ *; }
+-keep public class gnu.trove.stack.array.TIntArrayStack{ *; }
+-keep public class gnu.trove.stack.TIntStack{ *; }
+-keep public class gnu.trove.list.array.TDoubleArrayList { *; }
+
+-keep public class gnu.trove.procedure.**
+-keep public class gnu.trove.function.**
+-keep public class gnu.trove.TLongCollection
+-keep public class gnu.trove.TIntCollection
+-keep public class gnu.trove.stack.TIntStack
+-keep public class gnu.trove.map.TIntIntMap
+-keep public class gnu.trove.TDoubleCollection

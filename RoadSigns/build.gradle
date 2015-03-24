@@ -27,11 +27,16 @@ android {
     }*/
 }
 
+configurations {
+    all*.exclude group: 'net.sf.trove4j'
+}
+
 dependencies {
     //compile files('lib/mapsforge-map-0.3.1-SNAPSHOT-jar-with-dependencies.jar')
     //compile files('lib/graphhopper-0.4-SNAPSHOT-android.jar')
 
     compile files('lib/osmbonuspack_v4.8.jar')
+    compile files('lib/trove-3.0.3-minified.jar')
 
     compile('com.graphhopper:graphhopper:0.4.0') {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
@@ -42,7 +47,7 @@ dependencies {
 
     compile 'org.osmdroid:osmdroid-android:4.3@jar'
     compile 'org.simpleframework:simple-xml:2.7.1@jar'
-    compile 'org.slf4j:slf4j-api:1.7.7'
+    compile 'org.slf4j:slf4j-api:1.7.10'
     compile 'org.mapsforge:mapsforge-map-android:0.4.3'
 
     compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.3'

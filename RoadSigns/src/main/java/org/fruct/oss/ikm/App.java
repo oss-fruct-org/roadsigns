@@ -5,6 +5,12 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.preference.PreferenceManager;
 
+import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.download.BaseImageDownloader;
+
 import org.fruct.oss.ikm.utils.Utils;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.osmdroid.tileprovider.BitmapPool;
@@ -27,6 +33,7 @@ public class App extends Application {
 
 	private static Context context;
 	private static App app;
+	private static ImageLoader imageLoader;
 
 	private static WeakHashMap<Clearable, Object> clearables = new WeakHashMap<Clearable, Object>();
 
@@ -65,6 +72,26 @@ public class App extends Application {
 		}
 	}
 
+	private ImageLoader setupImageLoader(File imageCacheDir) {
+		ImageLoader imageLoader = ImageLoader.getInstance();
+
+		DisplayImageOptions defaultOptions = new DisplayImageOptions.Builder()
+				.cacheInMemory(true)
+				.cacheOnDisk(true)
+				.build();
+
+		ImageLoaderConfiguration imageLoaderConfiguration = new ImageLoaderConfiguration.Builder(this)
+				.diskCacheSize(10 * 1024 * 1024)
+				.diskCache(new UnlimitedDiscCache(imageCacheDir))
+				.defaultDisplayImageOptions(defaultOptions)
+				.imageDownloader(new BaseImageDownloader(this))
+				.build();
+
+		imageLoader.init(imageLoaderConfiguration);
+
+		return imageLoader;
+	}
+
 	public static Context getContext() {
 		if (context == null)
 			throw new IllegalStateException("Application not initialized yet");
@@ -90,6 +117,13 @@ public class App extends Application {
 
 	public static void addClearable(Clearable clearable) {
 		clearables.put(clearable, log /* dummy object */);
+	}
+
+	public static ImageLoader getImageLoader() {
+		if (imageLoader == null)
+			throw new IllegalStateException("Application not initialized yet");
+
+		return App.imageLoader;
 	}
 
 	public static void clearBitmapPool() {

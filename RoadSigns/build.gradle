@@ -45,6 +45,8 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'org.mapsforge:mapsforge-map-android:0.4.3'
 
+    compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.3'
+
     compile project(':mapcontent')
     compile project(':graphhopper-priority')
 }

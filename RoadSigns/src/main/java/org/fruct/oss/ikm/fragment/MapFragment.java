@@ -153,19 +153,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 	private Overlay poiOverlay;
 
-	static enum State {
-		NO_CREATED(0), CREATED(1), DS_CREATED(2), DS_RECEIVED(3), SIZE(4);
-		
-		State(int idx) {
-			this.idx = idx;
-		}
-		
-		public int getIdx() {
-			return idx;
-		}
-		
-		private int idx;
-	}
 
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
@@ -197,10 +184,6 @@ public class MapFragment extends Fragment implements MapListener,
 	
 	private DirectionService directionService;
 	
-	private EnumMap<State, List<Runnable>> pendingTasks = new EnumMap<MapFragment.State, List<Runnable>>(
-			State.class);
-	private EnumSet<State> activeStates = EnumSet.of(State.NO_CREATED);
-	
 	// Current map state used to restore map view when rotating screen
 	private MapState mapState = new MapState();
 
@@ -212,13 +195,6 @@ public class MapFragment extends Fragment implements MapListener,
 	private ContentItem recommendedContentItem;
 
 	private SharedPreferences pref;
-
-	public MapFragment() {
-		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
-		pendingTasks.put(State.CREATED, new ArrayList<Runnable>());
-		pendingTasks.put(State.DS_CREATED, new ArrayList<Runnable>());
-		pendingTasks.put(State.DS_RECEIVED, new ArrayList<Runnable>());
-	}
 
 	public static Fragment newInstanceGeoPoint(GeoPoint geoPoint) {
 		MapFragment mapFragment = new MapFragment();
@@ -243,7 +219,6 @@ public class MapFragment extends Fragment implements MapListener,
 		public void onServiceDisconnected(ComponentName name) {
 			log.info("MapFragment.onServiceDisconnected");
 
-			clearState(State.DS_CREATED);
 			directionService = null;
 		}
 		
@@ -252,8 +227,6 @@ public class MapFragment extends Fragment implements MapListener,
 			log.info("MapFragment.onServiceConnected");
 			directionService = ((DirectionService.DirectionBinder) service).getService();
 			assert directionService != null;
-
-			setState(State.DS_CREATED);
 		}
 	};
 
@@ -649,10 +622,6 @@ public class MapFragment extends Fragment implements MapListener,
 
         mapView.getTileProvider().clearTileCache();
 
-		clearState(State.DS_RECEIVED);
-		clearState(State.CREATED);
-		clearState(State.DS_CREATED);
-
 		getActivity().unbindService(serviceConnection);
 		
 		pref.unregisterOnSharedPreferenceChangeListener(this);
@@ -881,22 +850,6 @@ public class MapFragment extends Fragment implements MapListener,
 		
 		mapState.currentPath = path;
 		menu.findItem(R.id.action_remove_path).setVisible(true);
-	}
-
-	private void setState(State newState) {
-		log.trace("MapFragment.setState " + newState.toString());
-
-		activeStates.add(newState);
-
-		List<Runnable> tasks = new ArrayList<>(pendingTasks.get(newState));
-		pendingTasks.get(newState).clear();
-
-		for (Runnable runnable : tasks)
-			runnable.run();
-	}
-
-	private void clearState(State state) {
-		activeStates.remove(state);
 	}
 
 	// Scroll from MapListener

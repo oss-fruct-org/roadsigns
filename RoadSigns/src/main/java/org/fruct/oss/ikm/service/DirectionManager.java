@@ -207,21 +207,22 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	@EventReceiver
 	public void onEventMainThread(ScreenRadiusEvent screenRadiusEvent) {
-		final int radius = screenRadiusEvent.getRadius();
-
-		if (!isTrackingMode) {
-			return;
+		int newRadius = screenRadiusEvent.getRadius();
+		if (this.radius != newRadius) {
+			this.radius = newRadius;
 		}
 
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				if (DirectionManager.this.radius != radius) {
-					DirectionManager.this.radius = radius;
-					sendResult();
+		if (isTrackingMode) {
+			executor.execute(new Runnable() {
+				@Override
+				public void run() {
+					if (DirectionManager.this.radius != radius) {
+						DirectionManager.this.radius = radius;
+						sendResult();
+					}
 				}
-			}
-		});
+			});
+		}
 	}
 
 	@EventReceiver

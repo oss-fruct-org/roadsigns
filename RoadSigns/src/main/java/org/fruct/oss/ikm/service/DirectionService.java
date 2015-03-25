@@ -8,10 +8,8 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 
 import com.graphhopper.util.PointList;
 
@@ -19,6 +17,7 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.PathEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -27,7 +26,6 @@ import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentListenerAdapter;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
 import org.fruct.oss.mapcontent.content.ContentService;
-import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.osmdroid.util.GeoPoint;
@@ -37,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.greenrobot.event.EventBus;
 
@@ -47,12 +44,6 @@ public class DirectionService extends Service implements
 		OnSharedPreferenceChangeListener,
 		LocationReceiver.Listener, ContentServiceConnectionListener {
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
-
-	// Extras
-	public static final String PATH = "org.fruct.oss.ikm.PATH";
-
-	// Broadcasts
-	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 
 	public static final String MOCK_PROVIDER = "mock-provider";
 
@@ -340,19 +331,11 @@ public class DirectionService extends Service implements
 		}
 	}
 
-	public void findPath(GeoPoint to) {
-		synchronized (dirManagerMutex) {
-			if (dirManager != null) {
-				dirManager.findPath(to);
-			}
-		}
-	}
-
 	@Override
 	public void filterStateChanged(List<PointDesc> newList) {
 		synchronized (dirManagerMutex) {
-			if (dirManager != null) {
-				dirManager.calculateForPoints(newList);
+			if (dirManager != null && lastRawLocation != null) {
+				newLocation(lastRawLocation);
 			}
 		}
 	}
@@ -369,8 +352,8 @@ public class DirectionService extends Service implements
 		case SettingsActivity.NEAREST_POINTS:
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			synchronized (dirManagerMutex) {
-				if (dirManager != null) {
-					dirManager.calculateForPoints(points);
+				if (dirManager != null && lastRawLocation != null) {
+					newLocation(lastRawLocation);
 				}
 			}
 			break;
@@ -410,14 +393,12 @@ public class DirectionService extends Service implements
 		if (pointList == null)
 			return;
 
-		ArrayList<GeoPoint> pathArray = new ArrayList<GeoPoint>();
+		ArrayList<GeoPoint> pathArray = new ArrayList<>();
 		for (int i = 0; i < pointList.getSize(); i++)
 			pathArray.add(new GeoPoint(pointList.getLatitude(i), pointList.getLongitude(i)));
 
-		Intent intent = new Intent(PATH_READY);
-		intent.putParcelableArrayListExtra(PATH, pathArray);
-
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		PathEvent pathEvent = new PathEvent(pathArray);
+		EventBus.getDefault().postSticky(pathEvent);
 	}
 
 	private ContentListenerAdapter remoteContentListener = new ContentListenerAdapter() {

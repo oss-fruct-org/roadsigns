@@ -49,7 +49,9 @@ import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.PathEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
+import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -118,10 +120,10 @@ class MapState implements Parcelable {
 			ret.center = source.readParcelable(loader);
 			ret.zoomLevel = source.readInt();
 			
-			ret.currentPath = new ArrayList<GeoPoint>();
+			ret.currentPath = new ArrayList<>();
 			source.readTypedList(ret.currentPath, GeoPoint.CREATOR);
 			
-			ret.directions = new ArrayList<Direction>();
+			ret.directions = new ArrayList<>();
 			source.readTypedList(ret.directions, Direction.CREATOR);
 			
 			ret.isTracking = (Boolean) source.readValue(loader);
@@ -182,9 +184,6 @@ public class MapFragment extends Fragment implements MapListener,
 	private Menu menu;
 	private MapView mapView;
 	private TestOverlay panelOverlay;
-
-	private BroadcastReceiver directionsReceiver;
-	private BroadcastReceiver pathReceiver;
 
 	// Zoom and map center that should be set after map ready ("on global layout")
 	private GeoPoint initialMapPosition;
@@ -282,17 +281,6 @@ public class MapFragment extends Fragment implements MapListener,
 		Intent intent = new Intent(getActivity(), DirectionService.class);
 		getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(pathReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				ArrayList<GeoPoint> pathArray = intent.getParcelableArrayListExtra(DirectionService.PATH);
-				showPath(pathArray);
-				if (!pathJumped)
-					mapView.getController().setCenter(new GeoPoint(myLocation));
-				pathJumped = true;
-			}
-		}, new IntentFilter(DirectionService.PATH_READY));
-
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		remoteContentServiceConnection.bindService(getActivity());
@@ -317,6 +305,17 @@ public class MapFragment extends Fragment implements MapListener,
 				.putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		super.onStop();
+	}
+
+	@EventReceiver
+	public void onEventMainThread(PathEvent pathEvent) {
+		ArrayList<GeoPoint> path = pathEvent.getPathArray();
+		showPath(path);
+
+		if (!pathJumped)
+			mapView.getController().setCenter(new GeoPoint(myLocation));
+
+		pathJumped = true;
 	}
 
 	@EventReceiver
@@ -431,14 +430,12 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void processFragmentArguments() {
-
 		// Process ACTION_SHOW_PATH action
-		GeoPoint showPathPoint = getArguments() != null
+		GeoPoint targetPoint = getArguments() != null
 				? getArguments().<GeoPoint>getParcelable(ARG_SHOW_PATH_TARGET)
 				: null;
-		if (showPathPoint != null) {
-			showPath(showPathPoint);
-		}
+
+		EventBus.getDefault().postSticky(new TargetPointEvent(targetPoint));
 	}
 
 	private void loadInitialPositionFromArguments() {
@@ -656,9 +653,6 @@ public class MapFragment extends Fragment implements MapListener,
 		clearState(State.CREATED);
 		clearState(State.DS_CREATED);
 
-		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
-		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(pathReceiver);
-
 		getActivity().unbindService(serviceConnection);
 		
 		pref.unregisterOnSharedPreferenceChangeListener(this);
@@ -725,9 +719,7 @@ public class MapFragment extends Fragment implements MapListener,
 				pathOverlay= null;
 			}
 
-			if (directionService != null) {
-				directionService.findPath(null);
-			}
+			EventBus.getDefault().postSticky(new TargetPointEvent(null));
 
 			mapView.invalidate();
 
@@ -872,28 +864,6 @@ public class MapFragment extends Fragment implements MapListener,
 			stopTracking();
 	}
 
-	/**
-	 * Animate to point without stopping track mode
-	 * @param geoPoint Target point
-	 */
-	public void safeAnimateTo(IGeoPoint geoPoint) {
-	}
-	
-	public void showPath(final GeoPoint target) {
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				pathJumped = false;
-				log.debug("MapFragment.showPath task start");
-
-				// Find path from current location to target location
-				directionService.findPath(target);
-			}
-		};
-		
-		addPendingTask(task, State.DS_RECEIVED);
-	}
-	
 	private void showPath(List<GeoPoint> path) {
 		// Remove existing path overlay
 		if (pathOverlay != null) {
@@ -912,14 +882,7 @@ public class MapFragment extends Fragment implements MapListener,
 		mapState.currentPath = path;
 		menu.findItem(R.id.action_remove_path).setVisible(true);
 	}
-	
-	private void addPendingTask(Runnable runnable, State state) {
-		if (activeStates.contains(state))
-			runnable.run();
-		else
-			pendingTasks.get(state).add(runnable);
-	}
-	
+
 	private void setState(State newState) {
 		log.trace("MapFragment.setState " + newState.toString());
 
@@ -952,6 +915,7 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onContentServiceReady(ContentService contentService) {
 		remoteContent = contentService;
 		remoteContent.addListener(remoteContentAdapter);
+
 		Handler checkerHandler = new Handler(Looper.getMainLooper());
 		checkerHandler.postDelayed(new Runnable() {
 			@Override

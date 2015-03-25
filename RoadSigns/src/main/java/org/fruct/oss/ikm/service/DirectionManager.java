@@ -11,6 +11,7 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
+import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
@@ -45,12 +46,14 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private int radius = 45;
 	private GHRouting routing;
 
+	private GeoPoint targetPoint;
 	private GeoPoint userPosition;
 	private Location location;
 
 	private final ExecutorService executor;
 
 	private Future<?> calculationTask;
+	private Future<?> updatePathTask;
 
 	private boolean isTrackingMode = false;
 
@@ -100,8 +103,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 	};
 
-	public void calculateForPoints(final List<PointDesc> points) {
-		interrupt();
+	private void calculateForPoints(final List<PointDesc> points) {
 
 		// This task will no start earlier than previous task interrupted
 		calculationTask = executor.submit(new Runnable() {
@@ -112,6 +114,19 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 					doCalculateForPoints();
 				} catch (Exception ex) {
 					log.error("Routing error: ", ex);
+				}
+			}
+		});
+	}
+
+	public void updatePath(final GeoPoint targetPoint) {
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					routing.route(targetPoint, DirectionManager.this);
+				} catch (Exception ex) {
+					log.error("Path routing error: ", ex);
 				}
 			}
 		});
@@ -230,8 +245,14 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		if (locationEvent.getMatchedNode() < 0)
 			return;
 
+		updateLocation(locationEvent.getLocation(), locationEvent.getMatchedNode());
+
+		if (targetPoint != null) {
+			updatePath(targetPoint);
+		}
+
 		if (isTrackingMode) {
-			updateLocation(locationEvent.getLocation(), locationEvent.getMatchedNode());
+			interrupt();
 			calculateForPoints(PointsManager.getInstance().getFilteredPoints());
 		}
 	}
@@ -241,24 +262,10 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		isTrackingMode = trackingModeEvent.isInTrackingMode();
 	}
 
-	public void findPath(final GeoPoint to) {
-		executor.execute(new Runnable() {
-			@Override
-			public void run() {
-				doFindPath(to);
-			}
-		});
-	}
-
-	public void doFindPath(GeoPoint to) {
-		try {
-			PointList pointList = routing.route(to);
-
-			if (listener != null)
-				listener.pathReady(pointList);
-		} catch (Exception ex) {
-			log.error("findPath throw exception", ex);
-		}
+	@EventReceiver
+	public void onEventMainThread(TargetPointEvent targetPointEvent) {
+		targetPoint = targetPointEvent.getGeoPoint();
+		updatePath(targetPoint);
 	}
 
 	private void interrupt() {

@@ -54,14 +54,13 @@ public class OneToManyRouting extends GHRouting {
 
 	private int fromId;
 
+	private GeoPoint targetGeoPoint;
 	private int targetNode = -1;
 	private TIntList targetPath = new TIntArrayList();
-	private int targetIndex = -1;
 
 	public OneToManyRouting(String filePath, LocationIndexCache li) {
 		super(filePath, li);
 		log.debug("OneToManyRouting created");
-
 	}
 
 	@Override
@@ -92,26 +91,6 @@ public class OneToManyRouting extends GHRouting {
 
 		costs[fromId] = 0;
 		heap.insert(0f, fromId);
-	}
-
-	@Override
-	public synchronized PointList route(GeoPoint to) {
-		if (!ensureInitialized())
-			return null;
-
-		if (to == null) {
-			targetNode = -1;
-			return null;
-		}
-
-		// New point. Reset cached path
-		targetNode = getPointIndex(to, true);
-
-		if (targetNode == -1) {
-			return null;
-		}
-
-		return routeTarget();
 	}
 
 	private PointList routeTarget() {
@@ -161,13 +140,13 @@ public class OneToManyRouting extends GHRouting {
 
 			if (nodeId >= 0) {
 				if (closed[nodeId]) {
-					ArrayList<PointDesc> points = new ArrayList<PointDesc>(1);
+					ArrayList<PointDesc> points = new ArrayList<>(1);
 					points.add(point);
 					sendPointDirection(nodeId, points, radius, callback);
 				} else {
 					List<PointDesc> nodePoints = targetNodes.get(nodeId);
 					if (nodePoints == null) {
-						nodePoints = new ArrayList<PointDesc>();
+						nodePoints = new ArrayList<>();
 						targetNodes.put(nodeId, nodePoints);
 					}
 
@@ -194,7 +173,25 @@ public class OneToManyRouting extends GHRouting {
 			}
 		}
 
- 		// Target path update
+	}
+
+	public void route(GeoPoint to, RoutingCallback callback) {
+		if (!ensureInitialized())
+			return;
+
+		if (to == null) {
+			targetNode = -1;
+			return;
+		}
+
+		if (!to.equals(targetGeoPoint)) {
+			targetNode = getPointIndex(to, true);
+
+			if (targetNode == -1) {
+				return;
+			}
+		}
+
 		if (targetNode != -1) {
 			boolean found = false;
 			for (int i = 0; i < MAX_TARGET_PATH_SEARCH && !targetPath.isEmpty(); i++) {

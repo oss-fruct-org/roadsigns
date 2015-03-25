@@ -234,8 +234,8 @@ public abstract class GHRouting implements Closeable {
 
 	public abstract void prepare(int fromId);
 
-	public abstract PointList route(GeoPoint to);
 	public abstract void route(PointDesc[] targetPoints, float radius, RoutingCallback callback);
+	public abstract void route(GeoPoint to, RoutingCallback callback);
 
 	public void setEncoder(String encoding) {
 		this.encodingString = encoding;

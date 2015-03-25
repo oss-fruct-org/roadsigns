@@ -158,13 +158,9 @@ public class DirectionsPanel extends RelativeLayout {
 
 	public void onItemClick(int pos) {
 		PointDesc point = points.get(pos);
-		
-		Bundle bundle = new Bundle();
-		bundle.putParcelable("pointdesc", point);
-		
-		Intent intent = new Intent(getContext(), PointsActivity.class);
-		intent.setAction(PointsActivity.SHOW_DETAILS);
-		intent.putExtra(PointsActivity.DETAILS_INDEX, bundle);
+
+		Intent intent = new Intent(PointsFragment.ACTION_SHOW_DETAILS, null, getContext(), DrawerActivity.class);
+		intent.putExtra(DetailsFragment.ARG_POINT, (android.os.Parcelable) point);
 		
 		getContext().startActivity(intent);
 	}

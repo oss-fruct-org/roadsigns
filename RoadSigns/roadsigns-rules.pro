@@ -2,6 +2,7 @@
 -libraryjars <java.home>/lib/rt.jar(java/**,javax/**)
 
 -verbose
+-dontobfuscate
 # (3)Not remove unused code
 # -dontshrink
 
@@ -44,3 +45,9 @@
 
 -keep public class * extends com.graphhopper.routing.util.AbstractFlagEncoder
 -keep public class * extends com.graphhopper.storage.GraphStorage
+
+# Some other errors
+-dontwarn org.apache.commons.logging.LogFactory
+-dontwarn com.caverock.androidsvg.R
+-dontwarn com.google.gson.**
+-dontwarn org.apache.commons.lang3.StringEscapeUtils

@@ -63,6 +63,7 @@ dependencies {
     compile 'org.mapsforge:mapsforge-map-android:0.5.0'
 
     compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.3'
+    compile 'de.greenrobot:eventbus:2.4.0'
 
     compile project(':mapcontent')
     compile project(':graphhopper-priority')

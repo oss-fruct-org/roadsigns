@@ -1,6 +1,5 @@
 package org.fruct.oss.ikm.service;
 
-import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +16,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import de.greenrobot.event.EventBus;
+
 public class DirectionService extends Service implements
 		PointsListener,
 		DirectionManager.Listener,
@@ -47,13 +49,10 @@ public class DirectionService extends Service implements
 	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
 	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
 	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
-	public static final String MATCHED_LOCATION = "org.fruct.oss.ikm.MATCHED_LOCATION";
 	public static final String PATH = "org.fruct.oss.ikm.PATH";
 
 	// Broadcasts
 	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
-	public static final String LOCATION_CHANGED = "org.fruct.oss.ikm.LOCATION_CHANGED";
-	public static final String RAW_LOCATION_CHANGED = "org.fruct.oss.ikm.RAW_LOCATION_CHANGES";
 
 	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 
@@ -83,7 +82,7 @@ public class DirectionService extends Service implements
 	private GeoPoint lastResultCenter;
 	private Location lastResultLocation;
 
-	private Location lastLocation;
+	private Location lastRawLocation;
 	private Location lastMatchedLocation;
 	private int lastMatchedNode;
 
@@ -254,8 +253,8 @@ public class DirectionService extends Service implements
 			dirManager.setRadius(radius);
 		}
 
-		if (lastLocation != null) {
-			asyncNewLocation(lastLocation);
+		if (lastRawLocation != null) {
+			asyncNewLocation(lastRawLocation);
 		}
 	}
 
@@ -267,11 +266,11 @@ public class DirectionService extends Service implements
 			float bearing;
 			float speed;
 
-			if (lastLocation != null) {
-				GeoPoint last = new GeoPoint(lastLocation);
+			if (lastRawLocation != null) {
+				GeoPoint last = new GeoPoint(lastRawLocation);
 				bearing = (float) last.bearingTo(current);
 
-				speed = (float) last.distanceTo(current) / ((System.currentTimeMillis() - lastLocation.getTime()) / 1000);
+				speed = (float) last.distanceTo(current) / ((System.currentTimeMillis() - lastRawLocation.getTime()) / 1000);
 
 				log.debug("fakeLocation last = " + last + ", current = " + current + ", bearing = " + bearing);
 			} else {
@@ -302,11 +301,11 @@ public class DirectionService extends Service implements
 
 	public void startTracking() {
 		if (locationReceiver.isStarted()) {
-			if (lastMatchedLocation != null) {
+			/*if (lastMatchedLocation != null) {
 				notifyLocationChanged(lastMatchedLocation);
 			} else {
-				notifyLocationChanged(lastLocation);
-			}
+				notifyLocationChanged(lastRawLocation);
+			}*/
 
 			if (lastResultDirections != null)
 				sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
@@ -322,11 +321,7 @@ public class DirectionService extends Service implements
 
 	@Override
 	public void newLocation(final Location location) {
-		lastLocation = location;
-
-		Intent intent = new Intent(RAW_LOCATION_CHANGED);
-		intent.putExtra(LOCATION, location);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		lastRawLocation = location;
 
 		new AsyncTask<Void, Void, Void>() {
 			@Override
@@ -382,9 +377,7 @@ public class DirectionService extends Service implements
 		if (matchedLocation == null)
 			return;
 
-		Intent intent = new Intent(LOCATION_CHANGED);
-		intent.putExtra(MATCHED_LOCATION, matchedLocation);
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+		EventBus.getDefault().postSticky(new LocationEvent(matchedLocation));
 	}
 
 	public void findPath(GeoPoint to) {
@@ -448,9 +441,9 @@ public class DirectionService extends Service implements
 	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
 		this.lastResultDirections = new ArrayList<Direction>(directions);
 		this.lastResultCenter = center;
-		this.lastResultLocation = lastLocation;
+		this.lastResultLocation = lastRawLocation;
 
-		sendResult(lastResultDirections, lastResultCenter, lastLocation);
+		sendResult(lastResultDirections, lastResultCenter, lastRawLocation);
 	}
 
 	@Override

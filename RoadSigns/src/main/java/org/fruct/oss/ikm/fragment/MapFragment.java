@@ -2,7 +2,6 @@ package org.fruct.oss.ikm.fragment;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,7 +10,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -31,8 +29,6 @@ import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
-import android.text.util.Linkify;
-import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -42,18 +38,16 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import org.fruct.oss.ikm.HelpTabActivity;
-import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
-import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
+import org.fruct.oss.ikm.events.EventReceiver;
+import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
@@ -85,7 +79,8 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
+
+import de.greenrobot.event.EventBus;
 
 class MapState implements Parcelable {
 	GeoPoint center;
@@ -186,8 +181,11 @@ public class MapFragment extends Fragment implements MapListener,
 	private TestOverlay panelOverlay;
 
 	private BroadcastReceiver directionsReceiver;
-	private BroadcastReceiver locationReceiver;
 	private BroadcastReceiver pathReceiver;
+
+	// Zoom and map center that should be set after map ready ("on global layout")
+	private GeoPoint initialMapPosition;
+	private int initialZoom;
 
 	private Location myLocation;
 	private Smoother speedAverage = new Smoother(10000);
@@ -210,6 +208,8 @@ public class MapFragment extends Fragment implements MapListener,
 
 	private TileProviderManager tileProviderManager;
 	private ContentItem recommendedContentItem;
+
+	private SharedPreferences pref;
 
 	public MapFragment() {
 		pendingTasks.put(State.NO_CREATED, new ArrayList<Runnable>());
@@ -270,6 +270,9 @@ public class MapFragment extends Fragment implements MapListener,
 		log.debug("MapFragment.onCreate");
 
 		super.onCreate(savedInstanceState);
+
+		pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
 		setHasOptionsMenu(true);
 		
 		// Bind DirectionService
@@ -288,44 +291,6 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
 		
-		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(locationReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				log.debug("MapFragment LOCATION_CHANGED");
-				Location matchedLocation = intent.getParcelableExtra(DirectionService.MATCHED_LOCATION);
-
-				myLocation = matchedLocation;
-
-				PointsManager.getInstance().updatePosition(new GeoPoint(matchedLocation));
-				if (remoteContent != null) {
-					remoteContent.setLocation(myLocation);
-				}
-
-				myPositionOverlay.setLocation(matchedLocation);
-				//myPositionOverlay.setMatchedLocation(matchedLocation);
-
-				mapView.invalidate();
-
-				// Auto-zoom and animate to new location if tracking mode enabled
-				if (isTracking) {
-					assert getActivity() != null;
-					// Auto zoom enabled
-					if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
-						speedAverage.insert(matchedLocation.getSpeed(), matchedLocation.getTime());
-						float ave = speedAverage.average();
-
-						int newZoomLevel = getZoomBySpeed(ave);
-						log.debug("Speed average = " + ave + " zoom = " + newZoomLevel);
-
-						if (newZoomLevel != mapView.getZoomLevel()) {
-							mapView.getController().setZoom(newZoomLevel);
-						}
-					}
-					safeAnimateTo(new GeoPoint(myLocation));
-					mapView.setMapOrientation(-matchedLocation.getBearing());
-				}
-			}
-		}, new IntentFilter(DirectionService.LOCATION_CHANGED));
 
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(pathReceiver = new BroadcastReceiver() {
 			@Override
@@ -341,6 +306,61 @@ public class MapFragment extends Fragment implements MapListener,
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		remoteContentServiceConnection.bindService(getActivity());
+	}
+
+	@Override
+	public void onStart() {
+		super.onStart();
+
+		EventBus.getDefault().registerSticky(this);
+		PointsManager.getInstance().addListener(this);
+
+		checkProvidersEnabled();
+		checkNetworkAvailable();
+	}
+
+	@Override
+	public void onStop() {
+		EventBus.getDefault().unregister(this);
+		pref.edit()
+				.putInt("last-pos-lat", mapView.getMapCenter().getLatitudeE6())
+				.putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
+
+		super.onStop();
+	}
+
+	@EventReceiver
+	public void onEventMainThread(LocationEvent locationEvent) {
+		Location location = locationEvent.getLocation();
+		myLocation = location;
+
+		PointsManager.getInstance().updatePosition(new GeoPoint(location));
+		if (remoteContent != null) {
+			remoteContent.setLocation(myLocation);
+		}
+
+		myPositionOverlay.setLocation(location);
+
+		// Auto-zoom and animate to new location if tracking mode enabled
+		if (isTracking) {
+			// If auto zoom enabled
+			if (PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean(SettingsActivity.AUTOZOOM, false)) {
+				speedAverage.insert(location.getSpeed(), location.getTime());
+				float ave = speedAverage.average();
+
+				int newZoomLevel = getZoomBySpeed(ave);
+				log.debug("Speed average = " + ave + " zoom = " + newZoomLevel);
+
+				if (newZoomLevel != mapView.getZoomLevel()) {
+					mapView.getController().setZoom(newZoomLevel);
+				}
+			}
+
+			safeAnimateTo(new GeoPoint(myLocation));
+			mapView.setMapOrientation(-location.getBearing());
+		}
+
+		mapView.invalidate();
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -373,16 +393,16 @@ public class MapFragment extends Fragment implements MapListener,
 
 		log.info("Created MapView using {} tiles", tileProviderManager.isOnline() ? "online" : "offline");
 
-		//mapView.setBuiltInZoomControls(true);
 		mapView.setMultiTouchControls(true);
 		mapView.setMapListener(this);
+
 		layout.addView(mapView);		
 		
 		setHardwareAccelerationOff();
     }
 
-	private void setupOverlays() {
-		// Setup device position overlay
+	private void setupMapCenterOverlay() {
+		// Setup map center overlay
 		Overlay overlay = new Overlay(getActivity()) {
 			final Point point = new Point();
 			Paint paint = new Paint();
@@ -404,86 +424,133 @@ public class MapFragment extends Fragment implements MapListener,
 			}
 		};
 
+		mapView.getOverlays().add(overlay);
+	}
+
+	private void setupMyPositionOverlay() {
 		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
-		mapView.getOverlays().add(myPositionOverlay);
 
 		// Apply SHOW_ACCURACY preference
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
 
-		mapView.getOverlays().add(overlay);
-		updatePOIOverlay();
-
-		// Test lines overlay
-		//TestLinesOverlay over = new TestLinesOverlay(getActivity(), mapView);
-		//mapView.getOverlays().add(over);
+		mapView.getOverlays().add(myPositionOverlay);
 	}
-    
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-		log.debug("MapFragment.onActivityCreated instanceState {}", savedInstanceState == null ? "null" : "not null");
 
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
-		// Initialize map
-		createMapView(getView());
-		
-		panelOverlay = (TestOverlay) getView().findViewById(R.id.directions_panel);
-		panelOverlay.initialize(mapView);
-
-		setupOverlays();
-
-		// Process ARG_MAP_CENTER parameter
-		GeoPoint centerPoint = getArguments() != null
-				? getArguments().<GeoPoint>getParcelable(ARG_MAP_CENTER)
-				: null;
-
-		if (centerPoint != null && savedInstanceState == null) {
-			setCenter(centerPoint);
-		}
+	private void processFragmentArguments() {
 
 		// Process ACTION_SHOW_PATH action
 		GeoPoint showPathPoint = getArguments() != null
 				? getArguments().<GeoPoint>getParcelable(ARG_SHOW_PATH_TARGET)
 				: null;
-		if (showPathPoint != null && savedInstanceState == null) {
+		if (showPathPoint != null) {
 			showPath(showPathPoint);
 		}
+	}
+
+	private void loadInitialPositionFromArguments() {
+		// Process ARG_MAP_CENTER parameter
+		GeoPoint centerPoint = getArguments() != null
+				? getArguments().<GeoPoint>getParcelable(ARG_MAP_CENTER)
+				: null;
+
+		if (centerPoint != null) {
+			initialZoom = DEFAULT_ZOOM;
+			initialMapPosition = centerPoint;
+		}
+	}
+
+	private void loadInitialPositionFromSavedState(Bundle savedInstanceState) {
+		MapState mapState = savedInstanceState.getParcelable("pref_map_state");
+
+		initialZoom = mapState.zoomLevel;
+		initialMapPosition = mapState.center;
+	}
+
+	private void processSavedState(Bundle savedInstanceState) {
+		MapState mapState = savedInstanceState.getParcelable("pref_map_state");
+
+		providersToastShown = networkToastShown = navigationDataToastShown = mapState.warningShown;
+
+		if (!mapState.directions.isEmpty())
+			updateDirectionOverlay(mapState.directions);
+
+		if (!mapState.currentPath.isEmpty())
+			showPath(mapState.currentPath);
+
+		if (mapState.isTracking)
+			startTracking();
+	}
+
+	private void loadInitialPositionFromPref() {
+		int lat = pref.getInt("last-pos-lat", PTZ.getLatitudeE6());
+		int lon = pref.getInt("last-pos-lon", PTZ.getLongitudeE6());
+
+		initialMapPosition = new GeoPoint(lat, lon);
+		initialZoom = DEFAULT_ZOOM;
+	}
+
+	private void scheduleGlobalLayoutListener() {
+		ViewTreeObserver vto = mapView.getViewTreeObserver();
+		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+			@SuppressWarnings("deprecation")
+			@Override
+			public void onGlobalLayout() {
+				mapView.getController().setZoom(initialZoom);
+				mapView.getController().setCenter(initialMapPosition);
+				updateRadius();
+
+				ViewTreeObserver obs = mapView.getViewTreeObserver();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+					obs.removeOnGlobalLayoutListener(this);
+				} else {
+					obs.removeGlobalOnLayoutListener(this);
+				}
+			}
+		});
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+							 Bundle savedInstanceState) {
+		View view = inflater.inflate(R.layout.map_fragment, container, false);
+
+		// Initialize map
+		createMapView(view);
+
+		// Setup directions panel overlay
+		panelOverlay = (TestOverlay) view.findViewById(R.id.directions_panel);
+		panelOverlay.initialize(mapView);
+
+		setupMapCenterOverlay();
+		setupMyPositionOverlay();
+
+		updatePOIOverlay();
+
+		if (savedInstanceState != null) {
+			processSavedState(savedInstanceState);
+			loadInitialPositionFromSavedState(savedInstanceState);
+		} else {
+			processFragmentArguments();
+			loadInitialPositionFromArguments();
+
+			// No arguments so try load position from saved state
+			if (initialMapPosition == null) {
+				loadInitialPositionFromPref();
+			}
+		}
+
+		scheduleGlobalLayoutListener();
+
+		return view;
+	}
+/*
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
 		// Listen for new points in PointManager
-		PointsManager.getInstance().addListener(this);
-
-		final GeoPoint initialPosition;
-		final int initialZoom;
-
-		// Restore saved instance state
-		if (savedInstanceState == null) {
-
-            SharedPreferences localPref = getActivity().getSharedPreferences("MapFragment", Context.MODE_PRIVATE);
-            int lat = localPref.getInt("last-pos-lat", PTZ.getLatitudeE6());
-            int lon = localPref.getInt("last-pos-lon", PTZ.getLongitudeE6());
-
-			initialPosition = new GeoPoint(lat, lon);
-			initialZoom = DEFAULT_ZOOM;
-		} else {
-			log.debug("Restore mapCenter = " + mapState.center);
-			
-			MapState mapState = savedInstanceState.getParcelable("map-state");
-			assert mapState != null;
-			initialZoom = mapState.zoomLevel;
-			initialPosition = mapState.center;
-			providersToastShown = networkToastShown = navigationDataToastShown = mapState.warningShown;
-
-			if (!mapState.directions.isEmpty())
-				updateDirectionOverlay(mapState.directions);
-			
-			if (!mapState.currentPath.isEmpty())
-				showPath(mapState.currentPath);
-			
-			if (mapState.isTracking)
-				startTracking();
-		}
 
 		setState(State.CREATED);
 
@@ -496,38 +563,9 @@ public class MapFragment extends Fragment implements MapListener,
 				}
 			}, State.DS_RECEIVED);
 		}
-
-		// Listen for mapView shown
-		ViewTreeObserver vto = mapView.getViewTreeObserver();
-		assert vto != null;
-		vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-			@SuppressWarnings("deprecation")
-			@Override
-			public void onGlobalLayout() {
-				log.trace("New size {} {}", mapView.getWidth(), mapView.getHeight());
-
-				mapView.getController().setZoom(initialZoom);
-				mapView.getController().setCenter(initialPosition);
-				updateRadius();
-
-				ViewTreeObserver obs = mapView.getViewTreeObserver();
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-					obs.removeOnGlobalLayoutListener(this);
-				} else {
-					obs.removeGlobalOnLayoutListener(this);
-				}
-			}
-		});
-
-		checkProvidersEnabled();
-		checkNetworkAvailable();
-
 	}
-
+*/
 	private void checkNavigationDataAvailable() {
-		SharedPreferences pref = PreferenceManager
-				.getDefaultSharedPreferences(getActivity());
-
 		if (!navigationDataToastShown && recommendedContentItem == null) {
 			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
@@ -555,9 +593,6 @@ public class MapFragment extends Fragment implements MapListener,
 		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
 
 		if (!networkToastShown && !networkActive && tileProviderManager.isOnline()) {
-			SharedPreferences pref = PreferenceManager
-					.getDefaultSharedPreferences(getActivity());
-
 			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_network,
 						R.string.configure_use_offline_map,
@@ -565,8 +600,8 @@ public class MapFragment extends Fragment implements MapListener,
 						SettingsActivity.WARN_NETWORK_DISABLED) {
 					@Override
 					protected void onAccept() {
-						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						getActivity().startActivity(intent);
+						Intent intent = new Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS);
+						startActivity(intent);
 					}
 				};
 				dialog.show(getFragmentManager(), "network-dialog");
@@ -590,9 +625,6 @@ public class MapFragment extends Fragment implements MapListener,
 						.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 				&& !locationManager
 						.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-
-			SharedPreferences pref = PreferenceManager
-					.getDefaultSharedPreferences(getActivity());
 			if (!pref.getBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_providers,
 						R.string.configure_providers,
@@ -626,16 +658,11 @@ public class MapFragment extends Fragment implements MapListener,
 		clearState(State.DS_CREATED);
 
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(directionsReceiver);
-		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(locationReceiver);
 		LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(pathReceiver);
 
 		getActivity().unbindService(serviceConnection);
 		
-		PreferenceManager.getDefaultSharedPreferences(getActivity()).unregisterOnSharedPreferenceChangeListener(this);
-
-        getActivity().getSharedPreferences("MapFragment", Context.MODE_PRIVATE).edit()
-                .putInt("last-pos-lat", mapView.getMapCenter().getLatitudeE6())
-                .putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
+		pref.unregisterOnSharedPreferenceChangeListener(this);
 
 		PointsManager.getInstance().removeListener(this);
 
@@ -650,12 +677,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 		super.onDestroy();
 	}
-	
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		return inflater.inflate(R.layout.map_fragment, container, false);
-	}
+
 
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -697,11 +719,6 @@ public class MapFragment extends Fragment implements MapListener,
 			showFilterDialog();
 			break;
 
-/*
-		case R.id.action_about:
-			showAboutDialog();
-			break;
-*/
 		case R.id.action_remove_path:
 			if (pathOverlay != null) {
 				mapView.getOverlays().remove(pathOverlay);
@@ -851,8 +868,7 @@ public class MapFragment extends Fragment implements MapListener,
 		mapState.zoomLevel = mapView.getZoomLevel();
 		mapState.isTracking = isTracking;
 		mapState.warningShown = providersToastShown || navigationDataToastShown || networkToastShown;
-		//mapState.mapOrientation = mapView.getMapOrientation();
-		outState.putParcelable("map-state", mapState);
+		outState.putParcelable("pref_map_state", mapState);
 	}
 	
 	public void setCenter(IGeoPoint geoPoint) {

@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.v4.widget.DrawerLayout;
 import android.text.util.Linkify;
 import android.view.ContextThemeWrapper;
+import android.view.Menu;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
@@ -222,7 +223,12 @@ public class DrawerActivity extends ActionBarActivity
 	public void onSectionAttached(String title, int navigationMode) {
 		mTitle = title;
 		mNavigationMode = navigationMode;
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
 		restoreActionBar();
+		return super.onPrepareOptionsMenu(menu);
 	}
 
 	public void restoreActionBar() {

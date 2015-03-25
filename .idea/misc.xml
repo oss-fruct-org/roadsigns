@@ -2,12 +2,13 @@
 <project version="4">
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
-    <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="org.fruct.oss.ikm.utils.bind.BindSetter" />
-      <item index="1" class="java.lang.String" itemvalue="org.simpleframework.xml.Attribute" />
-      <item index="2" class="java.lang.String" itemvalue="org.simpleframework.xml.Element" />
-      <item index="3" class="java.lang.String" itemvalue="org.simpleframework.xml.ElementList" />
-      <item index="4" class="java.lang.String" itemvalue="org.simpleframework.xml.ElementUnion" />
+    <list size="6">
+      <item index="0" class="java.lang.String" itemvalue="org.fruct.oss.ikm.events.EventReceiver" />
+      <item index="1" class="java.lang.String" itemvalue="org.fruct.oss.ikm.utils.bind.BindSetter" />
+      <item index="2" class="java.lang.String" itemvalue="org.simpleframework.xml.Attribute" />
+      <item index="3" class="java.lang.String" itemvalue="org.simpleframework.xml.Element" />
+      <item index="4" class="java.lang.String" itemvalue="org.simpleframework.xml.ElementList" />
+      <item index="5" class="java.lang.String" itemvalue="org.simpleframework.xml.ElementUnion" />
     </list>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">

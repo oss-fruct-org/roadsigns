@@ -1,6 +1,5 @@
 package org.fruct.oss.ikm;
 
-import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
@@ -9,12 +8,8 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
-import android.widget.Toast;
 
-import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.mapcontent.content.ContentService;
-import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.utils.DirUtil;
@@ -29,7 +24,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String WARN_NETWORK_DISABLED = "warn_network_disabled";
 	public static final String WARN_NAVIGATION_DATA_DISABLED = "warn_navigation_data_disabled";
 
-    public static final String STORE_LOCATION = "store_location";
+    public static final String START_TRACKING_MODE = "start_tracking_mode";
     public static final String NEAREST_POINTS = "nearest_points";
 	public static final String SHOW_ACCURACY = "show_accuracy";
 	public static final String AUTOZOOM = "autozoom";
@@ -74,7 +69,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
 
-		storeLocationsPref = (CheckBoxPreference) findPreference(STORE_LOCATION);
+		storeLocationsPref = (CheckBoxPreference) findPreference(START_TRACKING_MODE);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);
 		vehiclePref = (ListPreference) findPreference(VEHICLE);
 

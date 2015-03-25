@@ -46,8 +46,11 @@ import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
+import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.ScreenRadiusEvent;
+import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.service.Direction;
@@ -278,19 +281,6 @@ public class MapFragment extends Fragment implements MapListener,
 		// Bind DirectionService
 		Intent intent = new Intent(getActivity(), DirectionService.class);
 		getActivity().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-		
-		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(directionsReceiver = new BroadcastReceiver() {
-			@Override
-			public void onReceive(Context context, Intent intent) {
-				log.trace("MapFragment DIRECTIONS_READY");
-				//GeoPoint geoPoint = intent.getParcelableExtra(DirectionService.CENTER);
-				ArrayList<Direction> directions = intent.getParcelableArrayListExtra(DirectionService.DIRECTIONS_RESULT);
-				updateDirectionOverlay(directions);
-
-				setState(State.DS_RECEIVED);
-			}
-		}, new IntentFilter(DirectionService.DIRECTIONS_READY));
-		
 
 		LocalBroadcastManager.getInstance(getActivity()).registerReceiver(pathReceiver = new BroadcastReceiver() {
 			@Override
@@ -335,9 +325,6 @@ public class MapFragment extends Fragment implements MapListener,
 		myLocation = location;
 
 		PointsManager.getInstance().updatePosition(new GeoPoint(location));
-		if (remoteContent != null) {
-			remoteContent.setLocation(myLocation);
-		}
 
 		myPositionOverlay.setLocation(location);
 
@@ -356,11 +343,18 @@ public class MapFragment extends Fragment implements MapListener,
 				}
 			}
 
-			safeAnimateTo(new GeoPoint(myLocation));
+			mapView.getController().animateTo(new GeoPoint(myLocation));
 			mapView.setMapOrientation(-location.getBearing());
 		}
 
 		mapView.invalidate();
+	}
+
+	@EventReceiver
+	public void onEventMainThread(DirectionsEvent directionsEvent) {
+		if (isTracking) {
+			updateDirectionOverlay(directionsEvent.getDirections());
+		}
 	}
 
 	private int getZoomBySpeed(float speed) {
@@ -476,17 +470,16 @@ public class MapFragment extends Fragment implements MapListener,
 
 		if (!mapState.currentPath.isEmpty())
 			showPath(mapState.currentPath);
-
-		if (mapState.isTracking)
-			startTracking();
 	}
 
-	private void loadInitialPositionFromPref() {
+	private void loadInitialStateFromPref() {
 		int lat = pref.getInt("last-pos-lat", PTZ.getLatitudeE6());
 		int lon = pref.getInt("last-pos-lon", PTZ.getLongitudeE6());
 
 		initialMapPosition = new GeoPoint(lat, lon);
 		initialZoom = DEFAULT_ZOOM;
+
+		mapState.isTracking = pref.getBoolean(SettingsActivity.START_TRACKING_MODE, false);
 	}
 
 	private void scheduleGlobalLayoutListener() {
@@ -498,6 +491,12 @@ public class MapFragment extends Fragment implements MapListener,
 				mapView.getController().setZoom(initialZoom);
 				mapView.getController().setCenter(initialMapPosition);
 				updateRadius();
+
+				if (mapState.isTracking) {
+					startTracking();
+				} else {
+					stopTracking();
+				}
 
 				ViewTreeObserver obs = mapView.getViewTreeObserver();
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -535,7 +534,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 			// No arguments so try load position from saved state
 			if (initialMapPosition == null) {
-				loadInitialPositionFromPref();
+				loadInitialStateFromPref();
 			}
 		}
 
@@ -555,7 +554,7 @@ public class MapFragment extends Fragment implements MapListener,
 		setState(State.CREATED);
 
 		// Start tracking if preference set
-		if (pref.getBoolean(SettingsActivity.STORE_LOCATION, false)) {
+		if (pref.getBoolean(SettingsActivity.START_TRACKING_MODE, false)) {
 			addPendingTask(new Runnable() {
 				@Override
 				public void run() {
@@ -759,7 +758,7 @@ public class MapFragment extends Fragment implements MapListener,
 			mapView.getOverlays().removeAll(crossDirections);
 		}
 				
-		crossDirections = new ArrayList<ClickableDirectedLocationOverlay>();
+		crossDirections = new ArrayList<>();
 		for (Direction direction : directions) {
 			final GeoPoint directionPoint = direction.getDirection();
 			final GeoPoint centerPoint = direction.getCenter();
@@ -788,15 +787,7 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 		
 		mapState.directions = directions;
-		
-		// Update panelOverlay after fragment loaded
-		addPendingTask(new Runnable() {
-			@Override
-			public void run() {
-				panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
-			}
-		},  State.CREATED);
-		
+		panelOverlay.setDirections(directions, myLocation != null ? myLocation.getBearing() : 0);
 		mapView.invalidate();
 	}
 	
@@ -844,11 +835,11 @@ public class MapFragment extends Fragment implements MapListener,
 
 		updateRadius();
 
-		if (activeStates.contains(State.DS_CREATED))
-			directionService.startTracking();
+		EventBus.getDefault().postSticky(new TrackingModeEvent(true));
 	}
 	
 	public void stopTracking() {
+
 		isTracking = false;
 		myPositionOverlay.clearListener();
 		panelOverlay.setVisibility(View.GONE);
@@ -857,9 +848,11 @@ public class MapFragment extends Fragment implements MapListener,
 		if (menu != null)
 			menu.findItem(R.id.action_track).setIcon(R.drawable.ic_action_location_found);
 		
+		updateDirectionOverlay(Collections.<Direction>emptyList());
 		mapView.setMapOrientation(0);
-
 		updateRadius();
+
+		EventBus.getDefault().postSticky(new TrackingModeEvent(false));
 	}
 	
 	@Override
@@ -884,7 +877,6 @@ public class MapFragment extends Fragment implements MapListener,
 	 * @param geoPoint Target point
 	 */
 	public void safeAnimateTo(IGeoPoint geoPoint) {
-		mapView.getController().animateTo(geoPoint);
 	}
 	
 	public void showPath(final GeoPoint target) {
@@ -1021,13 +1013,7 @@ public class MapFragment extends Fragment implements MapListener,
 		if (dist == 0)
 			return;
 
-		addPendingTask(new Runnable() {
-			@Override
-			public void run() {
-				assert directionService != null;
-				directionService.setRadius(dist);
-			}
-		}, State.DS_CREATED);
+		EventBus.getDefault().postSticky(new ScreenRadiusEvent(dist));
 	}
 	
 	@Override
@@ -1066,6 +1052,12 @@ public class MapFragment extends Fragment implements MapListener,
 
 	@Override
 	public void filterStateChanged(List<PointDesc> newList) {
+		// FIXME: Null pointer exception
+		/*
+            at org.fruct.oss.ikm.fragment.MapFragment.filterStateChanged(MapFragment.java:1058)
+            at org.fruct.oss.ikm.poi.PointsManager.notifyFiltersUpdated(PointsManager.java:257)
+            at org.fruct.oss.ikm.poi.PointsManager.recreatePointList(PointsManager.java:183)
+        */
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {

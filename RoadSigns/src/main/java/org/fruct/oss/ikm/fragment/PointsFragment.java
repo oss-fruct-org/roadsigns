@@ -247,7 +247,6 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 		multiPanel.pushFragment(DetailsFragment.newInstance(point));
 	}
 
-	
 	private void setupTab(final Filter filter, boolean isSelected) {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();

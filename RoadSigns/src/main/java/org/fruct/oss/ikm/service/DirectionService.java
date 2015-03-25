@@ -16,7 +16,10 @@ import android.support.v4.content.LocalBroadcastManager;
 import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.events.DirectionsEvent;
+import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
 import org.fruct.oss.ikm.poi.PointsManager;
 import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
@@ -46,14 +49,9 @@ public class DirectionService extends Service implements
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
 	// Extras
-	public static final String DIRECTIONS_RESULT = "org.fruct.oss.ikm.GET_DIRECTIONS_RESULT";
-	public static final String CENTER = "org.fruct.oss.ikm.CENTER";
-	public static final String LOCATION = "org.fruct.oss.ikm.LOCATION";
 	public static final String PATH = "org.fruct.oss.ikm.PATH";
 
 	// Broadcasts
-	public static final String DIRECTIONS_READY = "org.fruct.oss.ikm.GET_DIRECTIONS_READY";
-
 	public static final String PATH_READY = "org.fruct.oss.ikm.PATH_READY";
 
 	public static final String MOCK_PROVIDER = "mock-provider";
@@ -61,37 +59,24 @@ public class DirectionService extends Service implements
 	private ContentService remoteContent;
 	private ContentServiceConnection remoteContentServiceConnection = new ContentServiceConnection(this);
 
-	private final Object dataServiceMutex = new Object();
-
 	private final Object dirManagerMutex = new Object();
 	private DirectionManager dirManager;
 
 	private final Object routingMutex = new Object();
 	private GHRouting routing;
 
-	private final AtomicBoolean setupInProgress = new AtomicBoolean(false);
-
 	private IMapMatcher mapMatcher;
-
-	private IBinder binder = new DirectionBinder();
 
 	private LocationReceiver locationReceiver;
 
-	// Last query result
-	private ArrayList<Direction> lastResultDirections;
-	private GeoPoint lastResultCenter;
-	private Location lastResultLocation;
-
 	private Location lastRawLocation;
-	private Location lastMatchedLocation;
-	private int lastMatchedNode;
 
 	private LocationIndexCache locationIndexCache;
 	private ContentItem recommendedContentItem;
 
 	private SharedPreferences pref;
-	private int radius;
 
+	private IBinder binder = new DirectionBinder();
 	public class DirectionBinder extends android.os.Binder {
 		public DirectionService getService() {
 			return DirectionService.this;
@@ -107,33 +92,20 @@ public class DirectionService extends Service implements
 	public void onCreate() {
 		super.onCreate();
 
-		File internalDir = getFilesDir();
-		assert internalDir != null;
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 
 		locationReceiver = new LocationReceiver(this);
+		locationReceiver.start();
+		locationReceiver.setListener(this);
+
 		locationIndexCache = new LocationIndexCache(this);
 
 		PointsManager.getInstance().addListener(this);
 		pref.registerOnSharedPreferenceChangeListener(this);
 
-		log.debug("DirectionService created");
-
 		remoteContentServiceConnection.bindService(this);
-	}
 
-	@Override
-	public void onContentServiceReady(ContentService contentService) {
-		synchronized (dataServiceMutex) {
-			remoteContent = contentService;
-			remoteContent.addListener(remoteContentListener);
-			updateDirectionsManager();
-		}
-	}
-
-	@Override
-	public void onContentServiceDisconnected() {
-		remoteContent = null;
+		log.debug("created");
 	}
 
 	@Override
@@ -142,6 +114,8 @@ public class DirectionService extends Service implements
 		if (locationReceiver != null && locationReceiver.isStarted()) {
 			locationReceiver.stop();
 		}
+
+		EventBus.getDefault().unregister(this);
 
 		pref.unregisterOnSharedPreferenceChangeListener(this);
 
@@ -165,6 +139,18 @@ public class DirectionService extends Service implements
 		}
 
 		remoteContentServiceConnection.unbindService(this);
+	}
+
+	@Override
+	public void onContentServiceReady(ContentService contentService) {
+		remoteContent = contentService;
+		remoteContent.addListener(remoteContentListener);
+		EventBus.getDefault().registerSticky(this);
+	}
+
+	@Override
+	public void onContentServiceDisconnected() {
+		remoteContent = null;
 	}
 
 	private GHRouting createRouting() {
@@ -192,11 +178,6 @@ public class DirectionService extends Service implements
 			protected Void doInBackground(Void... params) {
 				asyncUpdateDirectionsManager();
 				return null;
-			}
-
-			@Override
-			protected void onPostExecute(Void aVoid) {
-				startTracking();
 			}
 		}.execute();
 	}
@@ -239,7 +220,6 @@ public class DirectionService extends Service implements
 
 			routing = createRouting();
 			if (routing == null) {
-				log.warn("Current graphhopper region invalid, disabling it");
 				locationIndexCache.reset();
 				return;
 			}
@@ -250,11 +230,9 @@ public class DirectionService extends Service implements
 		synchronized (dirManagerMutex) {
 			dirManager = new DirectionManager(routing);
 			dirManager.setListener(DirectionService.this);
-			dirManager.setRadius(radius);
-		}
-
-		if (lastRawLocation != null) {
-			asyncNewLocation(lastRawLocation);
+			if (lastRawLocation != null) {
+				asyncNewLocation(lastRawLocation);
+			}
 		}
 	}
 
@@ -299,24 +277,20 @@ public class DirectionService extends Service implements
 		locationReceiver.sendLastLocation();
 	}
 
-	public void startTracking() {
-		if (locationReceiver.isStarted()) {
-			/*if (lastMatchedLocation != null) {
-				notifyLocationChanged(lastMatchedLocation);
-			} else {
-				notifyLocationChanged(lastRawLocation);
-			}*/
+	@EventReceiver
+	public void onEventMainThread(LocationEvent locationEvent) {
+		remoteContent.setLocation(locationEvent.getLocation());
+	}
 
-			if (lastResultDirections != null)
-				sendResult(lastResultDirections, lastResultCenter, lastResultLocation);
-
-			return;
+	@EventReceiver
+	public void onEventMainThread(TrackingModeEvent trackingModeEvent) {
+		if (!trackingModeEvent.isInTrackingMode()) {
+			EventBus.getDefault().removeStickyEvent(DirectionsEvent.class);
+		} else {
+			if (lastRawLocation != null) {
+				newLocation(lastRawLocation);
+			}
 		}
-
-		locationReceiver.setListener(this);
-
-		locationReceiver.start();
-		locationReceiver.sendLastLocation();
 	}
 
 	@Override
@@ -341,24 +315,17 @@ public class DirectionService extends Service implements
 			if (mapMatcher != null) {
 				mapMatcher.updateLocation(location);
 
-				lastMatchedLocation = mapMatcher.getMatchedLocation();
-				lastMatchedNode = mapMatcher.getMatchedNode();
-			} else {
-				notifyLocationChanged(location);
-			}
-		}
+				Location matchedLocation = mapMatcher.getMatchedLocation();
+				int matchedNode = mapMatcher.getMatchedNode();
 
-		if (lastMatchedLocation != null) {
-			notifyLocationChanged(lastMatchedLocation);
-
-			synchronized (dirManagerMutex) {
-				if (dirManager != null) {
-					dirManager.updateLocation(lastMatchedLocation, lastMatchedNode);
-					dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+				if (matchedLocation != null) {
+					EventBus.getDefault().postSticky(new LocationEvent(matchedLocation, matchedNode));
+				} else {
+					EventBus.getDefault().postSticky(new LocationEvent(location));
 				}
+			} else {
+				EventBus.getDefault().postSticky(new LocationEvent(location));
 			}
-		} else {
-			notifyLocationChanged(location);
 		}
 	}
 
@@ -371,13 +338,6 @@ public class DirectionService extends Service implements
 		} else {
 			throw new IllegalStateException("Can't disable real location on running LocationReceiver");
 		}
-	}
-
-	private void notifyLocationChanged(Location matchedLocation) {
-		if (matchedLocation == null)
-			return;
-
-		EventBus.getDefault().postSticky(new LocationEvent(matchedLocation));
 	}
 
 	public void findPath(GeoPoint to) {
@@ -405,15 +365,16 @@ public class DirectionService extends Service implements
 	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
 		log.trace("DirectionService.onSharedPreferenceChanged {}", key);
-		if (key.equals(SettingsActivity.NEAREST_POINTS)) {
+		switch (key) {
+		case SettingsActivity.NEAREST_POINTS:
 			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			synchronized (dirManagerMutex) {
 				if (dirManager != null) {
 					dirManager.calculateForPoints(points);
 				}
 			}
-		} else if (key.equals(Settings.NAVIGATION_DATA)) {
-		} else if (key.equals(SettingsActivity.VEHICLE)) {
+			break;
+		case SettingsActivity.VEHICLE:
 			if (routing != null) {
 				String vehicle = pref.getString(key, "CAR");
 				routing.setEncoder(vehicle);
@@ -421,8 +382,10 @@ public class DirectionService extends Service implements
 				updateMapMatcher();
 
 			}
-		} else if (key.equals(SettingsActivity.MAPMATCHING)) {
+			break;
+		case SettingsActivity.MAPMATCHING:
 			updateMapMatcher();
+			break;
 		}
 	}
 
@@ -439,11 +402,7 @@ public class DirectionService extends Service implements
 
 	@Override
 	public void directionsUpdated(List<Direction> directions, GeoPoint center) {
-		this.lastResultDirections = new ArrayList<Direction>(directions);
-		this.lastResultCenter = center;
-		this.lastResultLocation = lastRawLocation;
-
-		sendResult(lastResultDirections, lastResultCenter, lastRawLocation);
+		EventBus.getDefault().postSticky(new DirectionsEvent(center, directions));
 	}
 
 	@Override
@@ -459,25 +418,6 @@ public class DirectionService extends Service implements
 		intent.putParcelableArrayListExtra(PATH, pathArray);
 
 		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-	}
-
-	private void sendResult(ArrayList<Direction> directions, GeoPoint center, Location location) {
-		Intent intent = new Intent(DIRECTIONS_READY);
-		intent.putParcelableArrayListExtra(DIRECTIONS_RESULT, directions);
-		intent.putExtra(CENTER, (Parcelable) center);
-		intent.putExtra(LOCATION, location);
-
-		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-	}
-
-	public void setRadius(int dist) {
-		this.radius = dist;
-		synchronized (dirManagerMutex) {
-			if (dirManager != null) {
-				dirManager.setRadius(dist);
-				dirManager.calculateForPoints(PointsManager.getInstance().getFilteredPoints());
-			}
-		}
 	}
 
 	private ContentListenerAdapter remoteContentListener = new ContentListenerAdapter() {

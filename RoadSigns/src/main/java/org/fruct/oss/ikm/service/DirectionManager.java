@@ -8,7 +8,12 @@ import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
+import org.fruct.oss.ikm.events.EventReceiver;
+import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.ScreenRadiusEvent;
+import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.poi.PointsManager;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import gnu.trove.stack.TIntStack;
+import de.greenrobot.event.EventBus;
 
 public class DirectionManager implements GHRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
@@ -47,22 +52,27 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	private Future<?> calculationTask;
 
+	private boolean isTrackingMode = false;
+
 	// POI, for that directions ready
-	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<PointDesc, Pair<GeoPoint, GeoPoint>>();
+	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<>();
 	
 	// POI, that pass filters
-	private List<PointDesc> activePoints = new ArrayList<PointDesc>();
+	private List<PointDesc> activePoints = new ArrayList<>();
 	
 	public DirectionManager(GHRouting routing) {
 		if (routing == null)
 			throw new IllegalArgumentException("DirectionManager: routing argument can not be null");
 
 		this.executor = Executors.newSingleThreadExecutor();
-
 		this.routing = routing;
+
+		EventBus.getDefault().registerSticky(this);
 	}
 
 	public void closeSync() {
+		EventBus.getDefault().unregister(this);
+
 		listener = null;
 		interrupt();
 
@@ -98,7 +108,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			@Override
 			public void run() {
 				try {
-					activePoints = new ArrayList<PointDesc>(points);
+					activePoints = new ArrayList<>(points);
 					doCalculateForPoints();
 				} catch (Exception ex) {
 					log.error("Routing error: ", ex);
@@ -170,7 +180,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		if (readyPoints.isEmpty())
 			return;
 		
-		HashMap<GeoPoint, Direction> directions = new HashMap<GeoPoint, Direction>();
+		HashMap<GeoPoint, Direction> directions = new HashMap<>();
 		for (PointDesc point : activePoints) {
 			Pair<GeoPoint, GeoPoint> dirPair = readyPoints.get(point);
 			
@@ -190,12 +200,19 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 		
 		// XXX: reset relative direction to non-active POI
-		ArrayList<Direction> lastResultDirections = new ArrayList<Direction>(directions.values());
+		ArrayList<Direction> lastResultDirections = new ArrayList<>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);
 	}
 
-	public void setRadius(final int radius) {
+	@EventReceiver
+	public void onEventMainThread(ScreenRadiusEvent screenRadiusEvent) {
+		final int radius = screenRadiusEvent.getRadius();
+
+		if (!isTrackingMode) {
+			return;
+		}
+
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -205,6 +222,22 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 				}
 			}
 		});
+	}
+
+	@EventReceiver
+	public void onEventMainThread(LocationEvent locationEvent) {
+		if (locationEvent.getMatchedNode() < 0)
+			return;
+
+		if (isTrackingMode) {
+			updateLocation(locationEvent.getLocation(), locationEvent.getMatchedNode());
+			calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+		}
+	}
+
+	@EventReceiver
+	public void onEventMainThread(TrackingModeEvent trackingModeEvent) {
+		isTrackingMode = trackingModeEvent.isInTrackingMode();
 	}
 
 	public void findPath(final GeoPoint to) {

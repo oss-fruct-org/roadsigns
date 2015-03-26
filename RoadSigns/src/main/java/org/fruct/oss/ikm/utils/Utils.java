@@ -78,6 +78,11 @@ public class Utils {
 		return (float) (StrictMath.IEEEremainder(degree, 360));
 	}
 
+	public static boolean isTrueString(String str) {
+		str = str.toLowerCase();
+		return "true".equals(str) || "1".equals(str) || "yes".equals(str);
+	}
+
 	/*public static String toHex(byte[] arr) {
 		StringBuilder builder = new StringBuilder();
 		for (byte b : arr) {

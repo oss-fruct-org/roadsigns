@@ -44,6 +44,10 @@ public class PointsStorage {
 		values.put("source", sourcePointLoader);
 
 		db.insert("points", null, values);
+
+		/*for (String photoUrl : point.getPhotos()) {
+
+		}*/
 	}
 
 	public void insertPoints(List<PointDesc> points, String sourcePointLoader) {
@@ -96,6 +100,9 @@ public class PointsStorage {
 		public void onUpgrade(SQLiteDatabase db, int old, int ne) {
 			switch (old) {
 			case 0:
+				db.execSQL("DROP TABLE IF EXISTS points;");
+				db.execSQL("DROP TABLE IF EXISTS photos;");
+
 				db.execSQL("CREATE TABLE points (" +
 						"id INTEGER PRIMARY KEY AUTOINCREMENT," +
 						"lat INTEGER," +
@@ -109,7 +116,7 @@ public class PointsStorage {
 			case 1:
 				db.execSQL("CREATE TABLE photos (" +
 						"id INTEGER PRIMARY KEY AUTOINCREMENT," +
-						"url TEXT NOT NULL," +
+						"url TEXT UNIQUE NOT NULL," +
 						"pointId INTEGER," +
 						"FOREIGN KEY (pointId) REFERENCES points(id) ON DELETE CASCADE);");
 				break;

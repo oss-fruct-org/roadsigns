@@ -95,6 +95,7 @@ public class GetsTest extends AndroidTestCase {
 			assertEquals("http://example.com/1.png", mark3.getPhotos().get(0));
 			assertEquals("http://example.com/2.png", mark3.getPhotos().get(1));
 			assertEquals("http://example.com/3.png", mark3.getPhotos().get(2));
+			assertEquals("123456", mark3.getUuid());
 		} finally {
 			if (stream != null)
 				stream.close();

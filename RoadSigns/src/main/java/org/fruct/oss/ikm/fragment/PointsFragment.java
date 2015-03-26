@@ -81,7 +81,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 			tag = new Tag();
 			tag.textView = (TextView) view.findViewById(android.R.id.text1);
 			tag.distanceView = (TextView) view.findViewById(android.R.id.text2);
-			tag.imageView = (ImageView) view.findViewById(android.R.id.icon1);
+			tag.imageView = (ImageView) view.findViewById(android.R.id.icon2);
 			view.setTag(tag);
 		}
 
@@ -140,6 +140,8 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 		return pointsFragment;
 	}
 
+	public PointsFragment() {
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

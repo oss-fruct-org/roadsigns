@@ -394,7 +394,7 @@ public class DirectionService extends Service implements
 			EventBus.getDefault().removeStickyEvent(PathEvent.class);
 			return;
 		}
-		
+
 		ArrayList<GeoPoint> pathArray = new ArrayList<>();
 		for (int i = 0; i < pointList.getSize(); i++)
 			pathArray.add(new GeoPoint(pointList.getLatitude(i), pointList.getLongitude(i)));

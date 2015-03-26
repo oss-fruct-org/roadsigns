@@ -22,8 +22,8 @@
             <description><![CDATA[test description 3]]></description>
             <Point><coordinates>34.1, 56.0, 0.0</coordinates></Point>
             <ExtendedData>
-                <Data name="category_id">
-                    <value>1</value>
+                <Data name="uuid">
+                    <value>123456</value>
                 </Data>
 
                 <gets:point>http://example.com/1.png</gets:point>

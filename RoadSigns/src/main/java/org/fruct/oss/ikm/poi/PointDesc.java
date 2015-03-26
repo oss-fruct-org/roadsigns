@@ -8,8 +8,10 @@ import org.fruct.oss.ikm.service.Direction.RelativeDirection;
 import org.osmdroid.util.GeoPoint;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -24,6 +26,9 @@ public class PointDesc implements Parcelable, Serializable {
 
 	private String category;
 	private String desc;
+	private String uuid;
+
+	private List<String> photos = new ArrayList<>();
 
 	private static int pointDataVersion = 0;
 	private static int nextId = 0;
@@ -37,20 +42,25 @@ public class PointDesc implements Parcelable, Serializable {
 	private transient boolean isDescriptionUrl = false;
 
 	public PointDesc(String name, int latE6, int lonE6) {
+		this(name, latE6, lonE6, Collections.<String>emptyList());
+	}
+
+	public PointDesc(String name, int latE6, int lonE6, List<String> photos) {
 		this.name = name;
 		this.latE6 = latE6;
 		this.lonE6 = lonE6;
+		this.photos.addAll(photos);
 
 		internalId = nextId++;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 
 	public PointDesc setCategory(String cat) {
 		this.category = cat;
 		return this;
-	}
-
-	public boolean isDescriptionUrl() {
-		return isDescriptionUrl;
 	}
 
 	public PointDesc setDescription(String d) {
@@ -69,6 +79,11 @@ public class PointDesc implements Parcelable, Serializable {
 		return this;
 	}
 
+	public boolean isDescriptionUrl() {
+		return isDescriptionUrl;
+	}
+
+
 	public String getName() {
 		return name;
 	}
@@ -79,6 +94,14 @@ public class PointDesc implements Parcelable, Serializable {
 
 	public String getCategory() {
 		return category;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public List<String> getPhotos() {
+		return photos;
 	}
 
 	public GeoPoint toPoint() {
@@ -204,12 +227,6 @@ public class PointDesc implements Parcelable, Serializable {
 					.setCategory(source.readString());
 
 			ret.internalId = source.readInt();
-
-			//int dirOrd = source.readInt();
-			//if (dirOrd >= 0)
-			//	ret.dir = RelativeDirection.values()[dirOrd];
-
-			//ret.distance = source.readInt();
 
 			return ret;
 		}

@@ -4,10 +4,10 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.poi.gets.Category;
+import org.fruct.oss.ikm.poi.gets.GetsException;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.gets.CategoriesList;
 import org.fruct.oss.ikm.poi.gets.Gets;
-import org.fruct.oss.ikm.poi.gets.LoginException;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,14 +52,14 @@ public class GetsPointLoader extends PointLoader {
 	}
 
 	@Override
-	public void loadPoints() throws IOException, LoginException {
+	public void loadPoints() throws IOException, GetsException {
 		log.trace("GetsPointLoader.loadPoints");
 
 		if (currentPosition != null) {
 			List<PointDesc> points = new ArrayList<PointDesc>();
-			List<CategoriesList.Category> categories = gets.getCategories();
+			List<Category> categories = gets.getCategories();
 
-			for (CategoriesList.Category cat : categories) {
+			for (Category cat : categories) {
 				try {
 					points.addAll(gets.getPoints(cat, currentPosition, radius));
 				} catch (IOException ex) {

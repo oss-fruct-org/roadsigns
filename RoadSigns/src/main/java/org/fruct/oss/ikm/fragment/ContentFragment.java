@@ -10,6 +10,7 @@ public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.
 	}
 
 	public static final String[] REMOTE_CONTENT_URLS = {
+			"http://kappa.cs.petrsu.ru/~ivashov/mordor2.xml",
 			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
 			"http://oss.fruct.org/projects/roadsigns/root.xml"};
 

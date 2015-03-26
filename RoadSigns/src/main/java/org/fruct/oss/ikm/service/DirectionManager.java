@@ -75,6 +75,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	public void closeSync() {
 		EventBus.getDefault().unregister(this);
+		log.debug("ASD unregistered");
 
 		listener = null;
 		interrupt();
@@ -104,7 +105,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	};
 
 	private void calculateForPoints(final List<PointDesc> points) {
-
+		log.debug("ASD calculateForPoints");
 		// This task will no start earlier than previous task interrupted
 		calculationTask = executor.submit(new Runnable() {
 			@Override
@@ -242,6 +243,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	@EventReceiver
 	public void onEventMainThread(LocationEvent locationEvent) {
+		log.debug("ASD received");
+
 		if (locationEvent.getMatchedNode() < 0)
 			return;
 

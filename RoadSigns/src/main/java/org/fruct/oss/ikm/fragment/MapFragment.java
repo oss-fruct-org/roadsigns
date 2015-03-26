@@ -263,8 +263,8 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onStart() {
 		super.onStart();
 
-		EventBus.getDefault().registerSticky(this);
 		PointsManager.getInstance().addListener(this);
+		EventBus.getDefault().registerSticky(this);
 
 		checkProvidersEnabled();
 		checkNetworkAvailable();
@@ -896,7 +896,7 @@ public class MapFragment extends Fragment implements MapListener,
 		boolean useOfflineMap = pref.getBoolean(SettingsActivity.USE_OFFLINE_MAP, false);
 
 		if (useOfflineMap) {
-			String offlineMapPath = remoteContent.requestContentItem(recommendedContentItem);
+			String offlineMapPath = remoteContent.requestContentItemSource(recommendedContentItem);
 
 			if (offlineMapPath != null) {
 				tileProviderManager.setFile(offlineMapPath);
@@ -978,7 +978,6 @@ public class MapFragment extends Fragment implements MapListener,
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				assert Looper.getMainLooper().getThread() == Thread.currentThread();
 				updatePOIOverlay();
 			}
 		});

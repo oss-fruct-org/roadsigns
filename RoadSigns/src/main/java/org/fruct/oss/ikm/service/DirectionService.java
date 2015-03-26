@@ -390,9 +390,11 @@ public class DirectionService extends Service implements
 
 	@Override
 	public void pathReady(PointList pointList) {
-		if (pointList == null)
+		if (pointList == null) {
+			EventBus.getDefault().removeStickyEvent(PathEvent.class);
 			return;
-
+		}
+		
 		ArrayList<GeoPoint> pathArray = new ArrayList<>();
 		for (int i = 0; i < pointList.getSize(); i++)
 			pathArray.add(new GeoPoint(pointList.getLatitude(i), pointList.getLongitude(i)));

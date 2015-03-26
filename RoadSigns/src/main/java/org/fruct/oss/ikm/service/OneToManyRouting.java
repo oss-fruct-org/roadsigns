@@ -181,6 +181,7 @@ public class OneToManyRouting extends GHRouting {
 
 		if (to == null) {
 			targetNode = -1;
+			callback.pathUpdated(null);
 			return;
 		}
 

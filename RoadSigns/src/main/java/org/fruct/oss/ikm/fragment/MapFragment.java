@@ -685,7 +685,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (pathOverlay != null) {
 				mapView.getOverlays().remove(pathOverlay);
 				menu.findItem(R.id.action_remove_path).setVisible(false);
-				pathOverlay= null;
+				pathOverlay = null;
 			}
 
 			EventBus.getDefault().postSticky(new TargetPointEvent(null));

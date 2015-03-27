@@ -24,7 +24,7 @@ import org.fruct.oss.ikm.fragment.ContentFragment;
 import org.fruct.oss.ikm.fragment.DetailsFragment;
 import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.fragment.PointsFragment;
-import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
 
@@ -161,14 +161,14 @@ public class DrawerActivity extends ActionBarActivity
 	private void processIntent(Intent intent) {
 		switch (intent.getAction()) {
 		case PointsFragment.ACTION_SHOW_DETAILS:
-			PointDesc pointDesc = intent.getParcelableExtra(DetailsFragment.ARG_POINT);
+			Point point = intent.getParcelableExtra(DetailsFragment.ARG_POINT);
 
 			setRootFragment(new PointsFragment());
-			pushFragment(DetailsFragment.newInstance(pointDesc));
+			pushFragment(DetailsFragment.newInstance(point));
 			break;
 
 		case PointsFragment.ACTION_SHOW_POINTS:
-			ArrayList<PointDesc> points = intent.getParcelableArrayListExtra(PointsFragment.ARG_POINTS);
+			ArrayList<Point> points = intent.getParcelableArrayListExtra(PointsFragment.ARG_POINTS);
 			setRootFragment(PointsFragment.newInstance(points));
 			break;
 

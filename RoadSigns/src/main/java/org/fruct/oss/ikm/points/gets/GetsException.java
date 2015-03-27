@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.poi.gets;
+package org.fruct.oss.ikm.points.gets;
 
 public class GetsException extends Exception {
 	public GetsException(String detailMessage, Throwable throwable) {

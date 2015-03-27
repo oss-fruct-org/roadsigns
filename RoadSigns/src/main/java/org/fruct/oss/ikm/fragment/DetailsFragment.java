@@ -22,8 +22,8 @@ import android.widget.Toast;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.gets.Gets;
+import org.fruct.oss.ikm.points.Point;
+import org.fruct.oss.ikm.points.gets.Gets;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -156,9 +156,9 @@ public class DetailsFragment extends Fragment {
 		}
 	}
 
-	public static DetailsFragment newInstance(PointDesc pointDesc) {
+	public static DetailsFragment newInstance(Point point) {
 		Bundle args = new Bundle();
-		args.putParcelable(ARG_POINT, pointDesc);
+		args.putParcelable(ARG_POINT, point);
 
 		DetailsFragment detailsFragment = new DetailsFragment();
 		detailsFragment.setArguments(args);
@@ -180,7 +180,7 @@ public class DetailsFragment extends Fragment {
 			Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.details_fragment, container, false);
 
-		final PointDesc desc = getArguments().getParcelable(ARG_POINT);
+		final Point desc = getArguments().getParcelable(ARG_POINT);
 
 		TextView titleView = (TextView) view.findViewById(R.id.title_text);
 		TextView descView = (TextView) view.findViewById(R.id.details_text);

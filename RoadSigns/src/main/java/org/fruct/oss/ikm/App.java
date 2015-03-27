@@ -11,6 +11,7 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.download.BaseImageDownloader;
 
+import org.fruct.oss.ikm.points.PointsAccess;
 import org.fruct.oss.ikm.utils.Utils;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.osmdroid.tileprovider.BitmapPool;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.WeakHashMap;
 
@@ -33,7 +33,8 @@ public class App extends Application {
 
 	private static Context context;
 	private static App app;
-	private static ImageLoader imageLoader;
+	private ImageLoader imageLoader;
+	private PointsAccess pointsAccess;
 
 	private static WeakHashMap<Clearable, Object> clearables = new WeakHashMap<Clearable, Object>();
 
@@ -43,9 +44,17 @@ public class App extends Application {
 	
 		App.context = getApplicationContext();
 		App.app = this;
+
 		PreferenceManager.setDefaultValues(App.context, R.xml.preferences, false);
 		AndroidGraphicFactory.createInstance(this);
 		hackOsmdroidCache();
+
+		// Setup image loader
+		File imageCacheDir = new File(context.getCacheDir(), "image-cache");
+		setupImageLoader(imageCacheDir);
+
+		// Setup points database
+		pointsAccess = new PointsAccess(context);
 	}
 
 	private void hackOsmdroidCache() {
@@ -106,6 +115,20 @@ public class App extends Application {
 		return App.app;
 	}
 
+	public ImageLoader getImageLoader() {
+		if (imageLoader == null)
+			throw new IllegalStateException("Application not initialized yet");
+
+		return imageLoader;
+	}
+
+	public PointsAccess getPointsAccess() {
+		if (pointsAccess == null)
+			throw new IllegalStateException("Application not initialized yet");
+
+		return pointsAccess;
+	}
+
 	@Override
 	public void onLowMemory() {
 		super.onLowMemory();
@@ -117,13 +140,6 @@ public class App extends Application {
 
 	public static void addClearable(Clearable clearable) {
 		clearables.put(clearable, log /* dummy object */);
-	}
-
-	public static ImageLoader getImageLoader() {
-		if (imageLoader == null)
-			throw new IllegalStateException("Application not initialized yet");
-
-		return App.imageLoader;
 	}
 
 	public static void clearBitmapPool() {

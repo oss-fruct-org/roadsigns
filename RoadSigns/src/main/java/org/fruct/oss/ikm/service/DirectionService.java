@@ -19,9 +19,7 @@ import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PathEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
-import org.fruct.oss.ikm.poi.PointsManager.PointsListener;
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentListenerAdapter;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
@@ -39,7 +37,6 @@ import java.util.List;
 import de.greenrobot.event.EventBus;
 
 public class DirectionService extends Service implements
-		PointsListener,
 		DirectionManager.Listener,
 		OnSharedPreferenceChangeListener,
 		LocationReceiver.Listener, ContentServiceConnectionListener {
@@ -91,7 +88,6 @@ public class DirectionService extends Service implements
 
 		locationIndexCache = new LocationIndexCache(this);
 
-		PointsManager.getInstance().addListener(this);
 		pref.registerOnSharedPreferenceChangeListener(this);
 
 		remoteContentServiceConnection.bindService(this);
@@ -109,8 +105,6 @@ public class DirectionService extends Service implements
 		EventBus.getDefault().unregister(this);
 
 		pref.unregisterOnSharedPreferenceChangeListener(this);
-
-		PointsManager.getInstance().removeListener(this);
 
 		new AsyncTask<Void, Void, Void>() {
 			@Override
@@ -332,25 +326,11 @@ public class DirectionService extends Service implements
 	}
 
 	@Override
-	public void filterStateChanged(List<PointDesc> newList) {
-		synchronized (dirManagerMutex) {
-			if (dirManager != null && lastRawLocation != null) {
-				newLocation(lastRawLocation);
-			}
-		}
-	}
-
-	@Override
-	public void errorDownloading() {
-	}
-
-	@Override
 	public void onSharedPreferenceChanged(SharedPreferences pref,
 										  String key) {
 		log.trace("DirectionService.onSharedPreferenceChanged {}", key);
 		switch (key) {
 		case SettingsActivity.NEAREST_POINTS:
-			List<PointDesc> points = PointsManager.getInstance().getFilteredPoints();
 			synchronized (dirManagerMutex) {
 				if (dirManager != null && lastRawLocation != null) {
 					newLocation(lastRawLocation);

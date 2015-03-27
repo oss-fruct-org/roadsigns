@@ -1,8 +1,5 @@
 package org.fruct.oss.ikm.fragment;
 
-import java.util.List;
-
-import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.Projection;

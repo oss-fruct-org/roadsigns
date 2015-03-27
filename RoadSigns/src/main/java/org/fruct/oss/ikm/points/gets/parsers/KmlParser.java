@@ -1,8 +1,8 @@
-package org.fruct.oss.ikm.poi.gets.parsers;
+package org.fruct.oss.ikm.points.gets.parsers;
 
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.gets.ContentParser;
-import org.fruct.oss.ikm.poi.gets.XmlUtil;
+import org.fruct.oss.ikm.points.Point;
+import org.fruct.oss.ikm.points.gets.ContentParser;
+import org.fruct.oss.ikm.points.gets.XmlUtil;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -14,7 +14,7 @@ public class KmlParser implements ContentParser<Kml> {
 	@Override
 	public Kml parse(XmlPullParser parser) throws IOException, XmlPullParserException {
 		Kml kml = new Kml();
-		ArrayList<PointDesc> points = new ArrayList<>();
+		ArrayList<Point> points = new ArrayList<>();
 
 		parser.require(XmlPullParser.START_TAG, null, "content");
 		parser.nextTag();
@@ -48,7 +48,7 @@ public class KmlParser implements ContentParser<Kml> {
 		return kml;
 	}
 
-	public static PointDesc parsePoint(XmlPullParser parser) throws IOException, XmlPullParserException {
+	public static Point parsePoint(XmlPullParser parser) throws IOException, XmlPullParserException {
 		parser.require(XmlPullParser.START_TAG, null, "Placemark");
 
 		String name = null;
@@ -101,16 +101,16 @@ public class KmlParser implements ContentParser<Kml> {
 		double longitude = Double.parseDouble(tok.nextToken());
 		double latitude = Double.parseDouble(tok.nextToken());
 
-		PointDesc pointDesc = new PointDesc(name, (int) (latitude * 1e6), (int) (longitude * 1e6));
+		Point point = new Point(name, (int) (latitude * 1e6), (int) (longitude * 1e6));
 		if (description != null) {
-			pointDesc.setDescription(description);
+			point.setDescription(description);
 		}
 
 		if (extendedData != null) {
-			pointDesc.setUuid(extendedData.uuid);
+			point.setUuid(extendedData.uuid);
 		}
 
-		return pointDesc;
+		return point;
 	}
 
 	private static ExtendedData readExtendedData(XmlPullParser parser) throws IOException, XmlPullParserException {

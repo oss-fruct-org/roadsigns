@@ -2,11 +2,9 @@ package org.fruct.oss.ikm.fragment;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -14,7 +12,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.graphics.Point;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -27,7 +24,6 @@ import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -53,8 +49,7 @@ import org.fruct.oss.ikm.events.PathEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
 import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.fruct.oss.ikm.utils.Utils;
@@ -81,8 +76,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 
 import de.greenrobot.event.EventBus;
@@ -141,8 +134,7 @@ class MapState implements Parcelable {
 
 public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
-		MyPositionOverlay.OnScrollListener,
-		PointsManager.PointsListener, ContentServiceConnectionListener {
+		MyPositionOverlay.OnScrollListener, ContentServiceConnectionListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
 
 	private DefaultInfoWindow infoWindow;
@@ -263,7 +255,6 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onStart() {
 		super.onStart();
 
-		PointsManager.getInstance().addListener(this);
 		EventBus.getDefault().registerSticky(this);
 
 		checkProvidersEnabled();
@@ -295,8 +286,6 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onEventMainThread(LocationEvent locationEvent) {
 		Location location = locationEvent.getLocation();
 		myLocation = location;
-
-		PointsManager.getInstance().updatePosition(new GeoPoint(location));
 
 		myPositionOverlay.setLocation(location);
 
@@ -370,7 +359,7 @@ public class MapFragment extends Fragment implements MapListener,
 	private void setupMapCenterOverlay() {
 		// Setup map center overlay
 		Overlay overlay = new Overlay(getActivity()) {
-			final Point point = new Point();
+			final android.graphics.Point point = new android.graphics.Point();
 			Paint paint = new Paint();
 			{
 				paint.setColor(Color.GRAY);
@@ -385,7 +374,7 @@ public class MapFragment extends Fragment implements MapListener,
 					return;
 
 				Projection proj = mapView.getProjection();
-				Point mapCenter = proj.toPixels(mapView.getMapCenter(), point);
+				android.graphics.Point mapCenter = proj.toPixels(mapView.getMapCenter(), point);
 				canvas.drawCircle(mapCenter.x, mapCenter.y, 5, paint);
 			}
 		};
@@ -620,22 +609,17 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onDestroy() {
 		log.debug("MapFragment.onDestroy");
 
-        mapView.getTileProvider().clearTileCache();
+		mapView.getTileProvider().clearTileCache();
 
 		getActivity().unbindService(serviceConnection);
-		
+		remoteContentServiceConnection.unbindService(getActivity());
+
 		pref.unregisterOnSharedPreferenceChangeListener(this);
-
-		PointsManager.getInstance().removeListener(this);
-
-		log.debug("MapFragment removeContentStateListener");
 
 		if (remoteContent != null) {
 			remoteContent.removeListener(remoteContentAdapter);
 			remoteContent = null;
 		}
-
-		remoteContentServiceConnection.unbindService(getActivity());
 
 		super.onDestroy();
 	}
@@ -724,7 +708,7 @@ public class MapFragment extends Fragment implements MapListener,
 			final GeoPoint directionPoint = direction.getDirection();
 			final GeoPoint centerPoint = direction.getCenter();
 			
-			final List<PointDesc> points = direction.getPoints();
+			final List<Point> points = direction.getPoints();
 			
 			final double bearing = centerPoint.bearingTo(directionPoint);
 			//GeoPoint markerPosition = centerPoint.destinationPoint(50 << (DEFAULT_ZOOM - mapView.getZoomLevel()), (float) bearing);
@@ -759,9 +743,10 @@ public class MapFragment extends Fragment implements MapListener,
 		if (poiOverlay != null)
 			mapView.getOverlays().remove(poiOverlay);
 
-		List<PointDesc> points = PointsManager.getInstance()
+/*
+		List<Point> points = PointsManager.getInstance()
 				.getFilteredPoints();
-		/*List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
+		List<ExtendedOverlayItem> items2 = Utils.map(points,new Utils.Function<ExtendedOverlayItem, PointDesc>() {
 					public ExtendedOverlayItem apply(PointDesc point) {
 						ExtendedOverlayItem item = new ExtendedOverlayItem(point.getName(), point
 								.getDescription(), point.toPoint());
@@ -956,35 +941,10 @@ public class MapFragment extends Fragment implements MapListener,
 			break;
 		case SettingsActivity.GETS_ENABLE:
 		case SettingsActivity.GETS_SERVER:
-			PointsManager.getInstance().ensureGetsState();
-			break;
-		case SettingsActivity.GETS_RADIUS:
-			String value = sharedPreferences.getString(key, "200000");
-			int radius = Integer.parseInt(value);
 
-			PointsManager.getInstance().updateRadius(radius);
+			// TODO: reload points from new server
 			break;
 		}
-	}
-
-	@Override
-	public void filterStateChanged(List<PointDesc> newList) {
-		// FIXME: Null pointer exception
-		/*
-            at org.fruct.oss.ikm.fragment.MapFragment.filterStateChanged(MapFragment.java:1058)
-            at org.fruct.oss.ikm.poi.PointsManager.notifyFiltersUpdated(PointsManager.java:257)
-            at org.fruct.oss.ikm.poi.PointsManager.recreatePointList(PointsManager.java:183)
-        */
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				updatePOIOverlay();
-			}
-		});
-	}
-
-	@Override
-	public void errorDownloading() {
 	}
 
 	private ContentListenerAdapter remoteContentAdapter = new ContentListenerAdapter() {

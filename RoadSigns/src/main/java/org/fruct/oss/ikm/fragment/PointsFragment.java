@@ -5,20 +5,18 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.drawer.MultiPanel;
+import org.fruct.oss.ikm.points.Point;
+import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.AllFilter;
-import org.fruct.oss.ikm.poi.Filter;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -41,11 +39,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-class PointAdapter extends ArrayAdapter<PointDesc> {
+class PointAdapter extends ArrayAdapter<Point> {
 	private static Logger log = LoggerFactory.getLogger(PointAdapter.class);
 
 	private int resource;
-	private List<PointDesc> points;
+	private List<Point> points;
 
 	class Tag {
 		TextView textView;
@@ -53,7 +51,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 		ImageView imageView;
 	}
 
-	public PointAdapter(Context context, int resource, List<PointDesc> points) {
+	public PointAdapter(Context context, int resource, List<Point> points) {
 		super(context, resource, points);
 
 		this.resource = resource;
@@ -85,7 +83,7 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 			view.setTag(tag);
 		}
 
-		PointDesc point = points.get(position);
+		Point point = points.get(position);
 
 		tag.textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
@@ -109,17 +107,20 @@ class PointAdapter extends ArrayAdapter<PointDesc> {
 	}
 }
 
-public class PointsFragment extends ListFragment implements TextWatcher, PointsManager.PointsListener {
+public class PointsFragment extends ListFragment implements TextWatcher {
 	private static Logger log = LoggerFactory.getLogger(PointsFragment.class);
 
 	public static final String ACTION_SHOW_DETAILS = "org.fruct.oss.ikm.ACTION_SHOW_DETAILS";
 	public static final String ACTION_SHOW_POINTS = "org.fruct.oss.ikm.ACTION_SHOW_POINTS";
 	public static final String ARG_POINTS = "org.fruct.oss.ikm.fragment.POI_LIST";
 
-	private List<PointDesc> poiList;
-	private List<PointDesc> shownList = new ArrayList<>();
-	private Filter currentFilter = null;
-	
+	private List<Point> poiList;
+	private List<Point> shownList = new ArrayList<>();
+
+	private List<Category> categories;
+
+	private Category currentCategory = null;
+
 	private String searchText;
 
 	private TextView loadingView;
@@ -130,7 +131,7 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 		return new PointsFragment();
 	}
 
-	public static Fragment newInstance(ArrayList<PointDesc> points) {
+	public static Fragment newInstance(ArrayList<Point> points) {
 		PointsFragment pointsFragment = new PointsFragment();
 
 		Bundle args = new Bundle();
@@ -154,22 +155,23 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 			multiPanel = (MultiPanel) activity;
 		}
 
-		setHasOptionsMenu(true);
-		PointsManager.getInstance().addListener(this);
+
+		categories = new ArrayList<>(App.getInstance().getPointsAccess().loadCategories());
+
 
 		if (getArguments() != null) {
 			poiList = getArguments().getParcelableArrayList(ARG_POINTS);
 		} else {
-			poiList = PointsManager.getInstance().getAllPoints();
+			// TODO: should be called in AsyncTask
+			poiList = App.getInstance().getPointsAccess().loadAll();
 		}
 
 		updateList();
+		setHasOptionsMenu(true);
 	}
 
 	@Override
 	public void onDestroy() {
-		PointsManager.getInstance().removeListener(this);
-
 		super.onDestroy();
 	}
 
@@ -186,7 +188,6 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 			loadingView.setText(getActivity().getString(R.string.str_loading_items));
 			loadingView.setVisibility(View.VISIBLE);
 
-			PointsManager.getInstance().refresh();
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -207,15 +208,16 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 		searchBar.addTextChangedListener(this);
 
 		setupFilterBar(selectedBar);
+
 		return view;
 	}
 
 	private void updateList() {
 		shownList.clear();
-		Utils.select(poiList, shownList, new Utils.Predicate<PointDesc>() {
+		Utils.select(poiList, shownList, new Utils.Predicate<Point>() {
 			@Override
-			public boolean apply(PointDesc t) {
-				if (currentFilter != null && !currentFilter.accepts(t))
+			public boolean apply(Point t) {
+				if (currentCategory != null && currentCategory.getId() != t.getCategory().getId())
 					return false;
 				else if (searchText != null
 						&& searchText.length() > 0
@@ -231,9 +233,9 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 				R.layout.point_list_item,
 				shownList);
 
-		adapter.sort(new Comparator<PointDesc>() {
+		adapter.sort(new Comparator<Point>() {
 			@Override
-			public int compare(PointDesc plhs, PointDesc prhs) {
+			public int compare(Point plhs, Point prhs) {
 				int lhs = plhs.getDistance();
 				int rhs = prhs.getDistance();
 				return lhs < rhs ? -1 : (lhs == rhs ? 0 : 1);
@@ -245,16 +247,44 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		PointDesc point = shownList.get(position);
+		Point point = shownList.get(position);
 		multiPanel.pushFragment(DetailsFragment.newInstance(point));
 	}
 
-	private void setupTab(final Filter filter, boolean isSelected) {
+	private void setupAllTab(boolean isSelected) {
 		ActionBarActivity activity = (ActionBarActivity) getActivity();
 		ActionBar actionBar = activity.getSupportActionBar();
 
 		Tab tab = activity.getSupportActionBar().newTab();
-		tab.setText(filter.getString());
+		tab.setText(R.string.pref_all);
+
+		tab.setTabListener(new ActionBar.TabListener() {
+			@Override
+			public void onTabUnselected(Tab arg0, FragmentTransaction arg1) {
+
+			}
+
+			@Override
+			public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
+				currentCategory = null;
+				updateList();
+			}
+
+			@Override
+			public void onTabReselected(Tab arg0, FragmentTransaction arg1) {
+
+			}
+		});
+
+		actionBar.addTab(tab, isSelected);
+	}
+
+	private void setupTab(final Category category, boolean isSelected) {
+		ActionBarActivity activity = (ActionBarActivity) getActivity();
+		ActionBar actionBar = activity.getSupportActionBar();
+
+		Tab tab = activity.getSupportActionBar().newTab();
+		tab.setText(category.getName());
 		
 		tab.setTabListener(new ActionBar.TabListener() {
 			@Override
@@ -264,7 +294,7 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 			
 			@Override
 			public void onTabSelected(Tab arg0, FragmentTransaction arg1) {
-				currentFilter = filter;
+				currentCategory = category;
 				updateList();
 			}
 			
@@ -279,18 +309,17 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 	
 	private void setupFilterBar(int selectedBar) {
 		ActionBar actionBar = getActionBar();
-		List<Filter> filters = PointsManager.getInstance().getFilters();
 		actionBar.removeAllTabs();
 
-		setupTab(new AllFilter(), false);
+		setupAllTab(false);
 
 		int c = 1;
-		for (final Filter filter : filters) {
+		for (final Category category : categories) {
 			if (selectedBar == c) {
-				currentFilter = filter;
+				currentCategory = category;
 			}
 
-			setupTab(filter, selectedBar == c);
+			setupTab(category, selectedBar == c);
 			c++;
 		}
 		
@@ -325,21 +354,7 @@ public class PointsFragment extends ListFragment implements TextWatcher, PointsM
 		updateList();
 	}
 
-	@Override
-	public void filterStateChanged(List<PointDesc> newList) {
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				poiList = PointsManager.getInstance().getAllPoints();
-				updateList();
-				setupFilterBar(0);
 
-				loadingView.setVisibility(View.GONE);
-			}
-		});
-	}
-
-	@Override
 	public void errorDownloading() {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override

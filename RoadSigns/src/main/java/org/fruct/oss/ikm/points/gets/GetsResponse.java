@@ -1,4 +1,4 @@
-package org.fruct.oss.ikm.poi.gets;
+package org.fruct.oss.ikm.points.gets;
 
 import android.util.Xml;
 

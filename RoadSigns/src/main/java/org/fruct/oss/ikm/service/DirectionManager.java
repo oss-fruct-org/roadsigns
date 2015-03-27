@@ -13,8 +13,7 @@ import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
 import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
-import org.fruct.oss.ikm.poi.PointDesc;
-import org.fruct.oss.ikm.poi.PointsManager;
+import org.fruct.oss.ikm.points.Point;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +57,10 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private boolean isTrackingMode = false;
 
 	// POI, for that directions ready
-	private Map<PointDesc, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<>();
+	private Map<Point, Pair<GeoPoint, GeoPoint>> readyPoints = new HashMap<>();
 	
 	// POI, that pass filters
-	private List<PointDesc> activePoints = new ArrayList<>();
+	private List<Point> activePoints = new ArrayList<>();
 	
 	public DirectionManager(GHRouting routing) {
 		if (routing == null)
@@ -90,11 +89,11 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 	}
 
-	private Comparator<PointDesc> distanceComparator = new Comparator<PointDesc>() {
+	private Comparator<Point> distanceComparator = new Comparator<Point>() {
 		private GeoPoint point = new GeoPoint(0, 0);
 		
 		@Override
-		public int compare(PointDesc lhs, PointDesc rhs) {
+		public int compare(Point lhs, Point rhs) {
 			point.setCoordsE6((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
 			
 			int d1 = lhs.toPoint().distanceTo(point);
@@ -104,14 +103,12 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 	};
 
-	private void calculateForPoints(final List<PointDesc> points) {
-		log.debug("ASD calculateForPoints");
-		// This task will no start earlier than previous task interrupted
+	private void calculateForActivePoints() {
 		calculationTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					activePoints = new ArrayList<>(points);
+					activePoints = App.getInstance().getPointsAccess().loadActive();
 					doCalculateForPoints();
 				} catch (Exception ex) {
 					log.error("Routing error: ", ex);
@@ -172,15 +169,15 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		if (activePoints == null || userPosition == null)
 			return;
 
-		PointDesc.resetAllData();
+		//Point.resetAllData();
 		preparePoints();
-		routing.route(activePoints.toArray(new PointDesc[activePoints.size()]), radius, this);
+		routing.route(activePoints.toArray(new Point[activePoints.size()]), radius, this);
 		sendResult();
 	}
 
 	@Override
-	public void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc) {
-		readyPoints.put(pointDesc, Pair.create(center, target));
+	public void pointReady(GeoPoint center, GeoPoint target, Point point) {
+		readyPoints.put(point, Pair.create(center, target));
 		if (readyPoints.size() % BATCH_SIZE == 0) {
 			sendResult();
 		}
@@ -197,7 +194,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			return;
 		
 		HashMap<GeoPoint, Direction> directions = new HashMap<>();
-		for (PointDesc point : activePoints) {
+		for (Point point : activePoints) {
 			Pair<GeoPoint, GeoPoint> dirPair = readyPoints.get(point);
 			
 			if (dirPair != null) {
@@ -256,7 +253,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 		if (isTrackingMode) {
 			interrupt();
-			calculateForPoints(PointsManager.getInstance().getFilteredPoints());
+			calculateForActivePoints();
 		}
 	}
 

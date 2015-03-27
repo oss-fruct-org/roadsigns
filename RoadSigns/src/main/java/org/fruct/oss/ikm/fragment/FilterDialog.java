@@ -4,17 +4,15 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.fruct.oss.ikm.poi.Filter;
-import org.fruct.oss.ikm.poi.PointsManager;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.content.LocalBroadcastManager;
-import android.util.Pair;
+
+import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.points.PointsAccess;
+import org.fruct.oss.ikm.points.gets.Category;
 
 class Item implements Serializable {
 	Item(int idx, boolean state) {
@@ -27,11 +25,19 @@ class Item implements Serializable {
 }
 
 public class FilterDialog extends DialogFragment {
-	private String[] filterNames;
 	private boolean[] filterChecked;
 
 	// List stores user selection
 	private ArrayList<Item> checkedItems;
+
+	private PointsAccess pointsAccess;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+
+		pointsAccess = App.getInstance().getPointsAccess();
+	}
 
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
@@ -44,28 +50,29 @@ public class FilterDialog extends DialogFragment {
 	@SuppressWarnings("unchecked")
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		final List<Filter> filters = PointsManager.getInstance().getFilters();
+		final List<Category> categories = pointsAccess.loadCategories();
 
 		if (savedInstanceState != null) {
 			checkedItems = (ArrayList<Item>) savedInstanceState.getSerializable("checkedItems");
 		} else {
-			checkedItems = new ArrayList<Item>();
+			checkedItems = new ArrayList<>();
 		}
+
 		// Fill list data
-		filterNames = new String[filters.size()];
+		String[] filterNames = new String[categories.size()];
 
 		if (savedInstanceState != null) {
 			filterChecked = savedInstanceState.getBooleanArray("filterChecked");
 		} else {
-			filterChecked = new boolean[filters.size()];
+			filterChecked = new boolean[categories.size()];
 		}
 
 
-		for (int i = 0; i < filters.size(); i++) {
-			Filter filter = filters.get(i);
-			filterNames[i] = filter.getString();
+		for (int i = 0; i < categories.size(); i++) {
+			Category category = categories.get(i);
+			filterNames[i] = category.getName();
 			if (savedInstanceState == null)
-				filterChecked[i] = filter.isActive();
+				filterChecked[i] = category.isActive();
 		}
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -83,12 +90,9 @@ public class FilterDialog extends DialogFragment {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
 				for (Item item : checkedItems) {
-					Filter filter = filters.get(item.idx);
-					filter.setActive(item.state);
-				}
-
-				if (!checkedItems.isEmpty()) {
-					PointsManager.getInstance().notifyFiltersUpdated();
+					Category category = categories.get(item.idx);
+					category.setActive(item.state);
+					pointsAccess.setCategoryState(category, item.state);
 				}
 			}
 		});

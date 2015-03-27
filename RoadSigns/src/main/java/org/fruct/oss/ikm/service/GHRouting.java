@@ -18,7 +18,7 @@ import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ghpriority.FootPriorityFlagEncoder;
 import org.fruct.oss.ghpriority.PriorityGraphHopper;
-import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.utils.Utils;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
@@ -234,7 +234,7 @@ public abstract class GHRouting implements Closeable {
 
 	public abstract void prepare(int fromId);
 
-	public abstract void route(PointDesc[] targetPoints, float radius, RoutingCallback callback);
+	public abstract void route(Point[] targetPoints, float radius, RoutingCallback callback);
 	public abstract void route(GeoPoint to, RoutingCallback callback);
 
 	public void setEncoder(String encoding) {
@@ -258,7 +258,7 @@ public abstract class GHRouting implements Closeable {
 	}
 
 	public interface RoutingCallback {
-		void pointReady(GeoPoint center, GeoPoint target, PointDesc pointDesc);
+		void pointReady(GeoPoint center, GeoPoint target, Point point);
 		void pathUpdated(PointList path);
 	}
 }

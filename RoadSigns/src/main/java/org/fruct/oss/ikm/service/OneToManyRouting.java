@@ -3,22 +3,15 @@ package org.fruct.oss.ikm.service;
 import android.util.Pair;
 
 import com.graphhopper.coll.IntDoubleBinHeap;
-import com.graphhopper.routing.QueryGraph;
 import com.graphhopper.routing.util.DefaultEdgeFilter;
 import com.graphhopper.routing.util.EdgeFilter;
-import com.graphhopper.routing.util.EncodingManager;
-import com.graphhopper.routing.util.FastestWeighting;
-import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.routing.util.Weighting;
 import com.graphhopper.storage.Graph;
-import com.graphhopper.storage.GraphHopperStorage;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
-import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.PointList;
 
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.PointDesc;
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +26,6 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.stack.TIntStack;
 import gnu.trove.stack.array.TIntArrayStack;
-import org.fruct.oss.ikm.utils.Timer;
 
 public class OneToManyRouting extends GHRouting {
 	private static final int MAX_TARGET_PATH_SEARCH = 10;
@@ -130,21 +122,21 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	@Override
-	public void route(PointDesc[] targetPoints, float radius, RoutingCallback callback) {
+	public void route(Point[] targetPoints, float radius, RoutingCallback callback) {
 		// TODO: possibly use more efficient multi-map
-		TIntObjectMap<List<PointDesc>> targetNodes = new TIntObjectHashMap<List<PointDesc>>(targetPoints.length);
+		TIntObjectMap<List<Point>> targetNodes = new TIntObjectHashMap<List<Point>>(targetPoints.length);
 
 		// Prepare location index
-		for (PointDesc point : targetPoints) {
+		for (Point point : targetPoints) {
 			int nodeId = getPointIndex(point.toPoint(), true);
 
 			if (nodeId >= 0) {
 				if (closed[nodeId]) {
-					ArrayList<PointDesc> points = new ArrayList<>(1);
+					ArrayList<Point> points = new ArrayList<>(1);
 					points.add(point);
 					sendPointDirection(nodeId, points, radius, callback);
 				} else {
-					List<PointDesc> nodePoints = targetNodes.get(nodeId);
+					List<Point> nodePoints = targetNodes.get(nodeId);
 					if (nodePoints == null) {
 						nodePoints = new ArrayList<>();
 						targetNodes.put(nodeId, nodePoints);
@@ -164,7 +156,7 @@ public class OneToManyRouting extends GHRouting {
 		while (!heap.isEmpty() && targetNodes.size() > 0) {
 			int node = findNextNode();
 			if (targetNodes.containsKey(node)) {
-				List<PointDesc> nodePoints = targetNodes.remove(node);
+				List<Point> nodePoints = targetNodes.remove(node);
 				sendPointDirection(node, nodePoints, radius, callback);
 			}
 
@@ -213,16 +205,16 @@ public class OneToManyRouting extends GHRouting {
 		}
 	}
 
-	private void sendPointDirection(int node, List<PointDesc> targetPoints, float radius, RoutingCallback callback) {
+	private void sendPointDirection(int node, List<Point> targetPoints, float radius, RoutingCallback callback) {
 		// Build direction for found target point
 		buildPath(node, tmpPath);
 		int dist = distances[node];
 
 		Pair<GeoPoint, GeoPoint> dirPair = findDirection(tmpPath, radius);
 		if (dirPair != null) {
-			for (PointDesc pointDesc : targetPoints) {
-				pointDesc.setDistance(dist);
-				callback.pointReady(dirPair.first, dirPair.second, pointDesc);
+			for (Point point : targetPoints) {
+				point.setDistance(dist);
+				callback.pointReady(dirPair.first, dirPair.second, point);
 			}
 		}
 	}

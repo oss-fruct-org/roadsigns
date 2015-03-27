@@ -1,6 +1,6 @@
-package org.fruct.oss.ikm.poi.gets.parsers;
+package org.fruct.oss.ikm.points.gets.parsers;
 
-import org.fruct.oss.ikm.poi.gets.ContentParser;
+import org.fruct.oss.ikm.points.gets.ContentParser;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 

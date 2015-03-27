@@ -5,16 +5,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.fruct.oss.ikm.PointsActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
-import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.utils.Utils;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,7 +24,7 @@ import android.widget.TextView;
 
 public class DirectionsPanel extends RelativeLayout {
 	private List<Direction> directions;
-	private List<PointDesc> points;
+	private List<Point> points;
 
 	private boolean isOverlayHidden = true;
 	
@@ -56,17 +54,17 @@ public class DirectionsPanel extends RelativeLayout {
 
 		// Generate plain array of PointDesc from Direction' array
 		List<String> strings = new ArrayList<String>();
-		points = new ArrayList<PointDesc>();
+		points = new ArrayList<Point>();
 		for (Direction direction : directions) {
-			for (PointDesc p : direction.getPoints()) {
+			for (Point p : direction.getPoints()) {
 				strings.add(p.getName());
 				points.add(p);
 			}
 		}
 
-		Collections.sort(points, new Comparator<PointDesc>() {
+		Collections.sort(points, new Comparator<Point>() {
 			@Override
-			public int compare(PointDesc plhs, PointDesc prhs) {
+			public int compare(Point plhs, Point prhs) {
 				int lhs = plhs.getDistance();
 				int rhs = prhs.getDistance();
 				return lhs < rhs ? -1 : (lhs == rhs ? 0 : 1);
@@ -138,7 +136,7 @@ public class DirectionsPanel extends RelativeLayout {
 				public void onClick(View v) {
 					Intent intent = new Intent(PointsFragment.ACTION_SHOW_POINTS, null,
 							getContext(), DrawerActivity.class);
-					intent.putParcelableArrayListExtra(PointsFragment.ARG_POINTS, new ArrayList<PointDesc>(points));
+					intent.putParcelableArrayListExtra(PointsFragment.ARG_POINTS, new ArrayList<Point>(points));
 					getContext().startActivity(intent);
 				}
 			});
@@ -157,7 +155,7 @@ public class DirectionsPanel extends RelativeLayout {
 	}
 
 	public void onItemClick(int pos) {
-		PointDesc point = points.get(pos);
+		Point point = points.get(pos);
 
 		Intent intent = new Intent(PointsFragment.ACTION_SHOW_DETAILS, null, getContext(), DrawerActivity.class);
 		intent.putExtra(DetailsFragment.ARG_POINT, (android.os.Parcelable) point);

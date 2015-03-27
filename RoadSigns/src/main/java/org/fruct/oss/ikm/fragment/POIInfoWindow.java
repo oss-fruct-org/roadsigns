@@ -9,13 +9,13 @@ import android.widget.ImageButton;
 
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
-import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.points.Point;
 import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.bonuspack.overlays.ExtendedOverlayItem;
 import org.osmdroid.views.MapView;
 
 public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchListener {
-	private PointDesc point;
+	private Point point;
 
 	public POIInfoWindow(int res, MapView mapView) {
 		super(res, mapView);
@@ -67,7 +67,7 @@ public class POIInfoWindow extends DefaultInfoWindow implements View.OnTouchList
 	public void onOpen(Object itemo) {
 		super.onOpen(itemo);
 		ExtendedOverlayItem item = (ExtendedOverlayItem) itemo;
-		point = (PointDesc) item.getRelatedObject();
+		point = (Point) item.getRelatedObject();
 	}
 
 	@Override

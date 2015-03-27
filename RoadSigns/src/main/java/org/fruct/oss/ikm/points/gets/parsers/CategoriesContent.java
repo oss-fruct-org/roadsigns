@@ -1,9 +1,9 @@
-package org.fruct.oss.ikm.poi.gets.parsers;
+package org.fruct.oss.ikm.points.gets.parsers;
 
-import org.fruct.oss.ikm.poi.gets.Category;
-import org.fruct.oss.ikm.poi.gets.GetsProperties;
-import org.fruct.oss.ikm.poi.gets.IContent;
-import org.fruct.oss.ikm.poi.gets.XmlUtil;
+import org.fruct.oss.ikm.points.gets.Category;
+import org.fruct.oss.ikm.points.gets.GetsProperties;
+import org.fruct.oss.ikm.points.gets.IContent;
+import org.fruct.oss.ikm.points.gets.XmlUtil;
 import org.fruct.oss.ikm.utils.Utils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -79,8 +79,7 @@ public class CategoriesContent implements IContent {
 		getsProperties.addJson("description", rawDescription);
 		getsProperties.addJson("url", rawUrl);
 
-		return new Category(getsProperties.getProperty("url", ""), name,
-				getsProperties.getProperty("description"), id);
+		return new Category(id, name, getsProperties.getProperty("description"), getsProperties.getProperty("url", ""));
 	}
 
 	public static List<Category> filterByPrefix(List<Category> categories) {

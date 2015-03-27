@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.PointDesc;
+import org.fruct.oss.ikm.points.Point;
 import org.osmdroid.util.GeoPoint;
 
 import android.os.Parcel;
@@ -35,7 +35,7 @@ public class Direction implements Parcelable {
 		}
 	}
 	
-	private ArrayList<PointDesc> points = new ArrayList<PointDesc>();
+	private ArrayList<Point> points = new ArrayList<Point>();
 	
 	private GeoPoint center;
 	private GeoPoint direction;
@@ -45,7 +45,7 @@ public class Direction implements Parcelable {
 		this.direction = direction;
 	}
 	
-	public void addPoint(PointDesc point) {
+	public void addPoint(Point point) {
 		points.add(point);
 	}
 	
@@ -57,7 +57,7 @@ public class Direction implements Parcelable {
 		return direction;
 	}
 	
-	public List<PointDesc> getPoints() {
+	public List<Point> getPoints() {
 		return points;
 	}
 	
@@ -74,7 +74,7 @@ public class Direction implements Parcelable {
 	}
 	
 	private Direction(Parcel source) {
-		source.readTypedList(points, PointDesc.CREATOR);
+		source.readTypedList(points, Point.CREATOR);
 		center = source.readParcelable(GeoPoint.class.getClassLoader());
 		direction = source.readParcelable(GeoPoint.class.getClassLoader());
 	}

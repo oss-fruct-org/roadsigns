@@ -4,19 +4,19 @@ import android.content.Context;
 import android.test.AndroidTestCase;
 
 import org.fruct.oss.ikm.utils.Utils;
-import org.fruct.oss.ikm.poi.gets.AuthToken;
-import org.fruct.oss.ikm.poi.gets.CategoriesList;
-import org.fruct.oss.ikm.poi.gets.Kml;
-import org.fruct.oss.ikm.poi.gets.Response;
+import org.fruct.oss.ikm.points.gets.AuthToken;
+import org.fruct.oss.ikm.points.gets.CategoriesList;
+import org.fruct.oss.ikm.points.gets.Kml;
+import org.fruct.oss.ikm.points.gets.Response;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.InputStream;
 import java.util.List;
 
-import static org.fruct.oss.ikm.poi.gets.CategoriesList.Category;
-import static org.fruct.oss.ikm.poi.gets.Kml.Document;
-import static org.fruct.oss.ikm.poi.gets.Kml.Placemark;
+import static org.fruct.oss.ikm.points.gets.CategoriesList.Category;
+import static org.fruct.oss.ikm.points.gets.Kml.Document;
+import static org.fruct.oss.ikm.points.gets.Kml.Placemark;
 
 public class GetsTest extends AndroidTestCase {
 	private Context testContext;

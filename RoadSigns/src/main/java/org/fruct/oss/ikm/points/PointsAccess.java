@@ -67,7 +67,7 @@ public class PointsAccess {
 		values.put("lat", point.toPoint().getLatitudeE6());
 		values.put("lon", point.toPoint().getLongitudeE6());
 		values.put("name", point.getName());
-		values.put("category", point.getCategory().getId());
+		values.put("categoryId", point.getCategory().getId());
 		values.put("desc", point.getDescription());
 		values.put("timestamp", System.currentTimeMillis());
 

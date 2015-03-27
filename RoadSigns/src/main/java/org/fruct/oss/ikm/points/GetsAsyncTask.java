@@ -7,12 +7,16 @@ import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.points.gets.Gets;
 import org.fruct.oss.ikm.points.gets.GetsException;
 import org.osmdroid.util.GeoPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, GetsAsyncTask.Result> {
+	private static final Logger log = LoggerFactory.getLogger(GetsAsyncTask.class);
+
 	private final String server;
 	private final Gets gets;
 	private final PointsAccess pointsAccess;
@@ -37,6 +41,9 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 			pointsAccess.insertCategories(categories);
 
 			for (int i = 0; i < categories.size(); i++) {
+				if (isCancelled())
+					return null;
+
 				Category category = categories.get(i);
 				List<Point> points = gets.getPoints(category, geoPoint, (int) radius);
 
@@ -51,8 +58,9 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 			result.points = allLoadedPoints;
 			return result;
 		} catch (IOException e) {
-			// TODO: process error
+			log.error("IO error while refreshing points", e);
 		} catch (GetsException e) {
+			log.error("Server error while refreshing points", e);
 		}
 
 		return null;

@@ -129,7 +129,7 @@
 -->
 
         <EditTextPreference
-            android:defaultValue="http://getsi.ddns.net/getslocal/"
+            android:defaultValue="http://gets.cs.petrsu.ru/gets/service/"
             android:key="gets_server"
             android:title="GeTS Server"
             android:inputType="textUri"/>

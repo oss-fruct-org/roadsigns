@@ -9,7 +9,10 @@ import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
 import org.fruct.oss.ikm.drawer.MultiPanel;
+import org.fruct.oss.ikm.events.EventReceiver;
+import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.ikm.points.Point;
+import org.fruct.oss.ikm.points.PointsUpdateService;
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
@@ -39,9 +42,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-class PointAdapter extends ArrayAdapter<Point> {
-	private static Logger log = LoggerFactory.getLogger(PointAdapter.class);
+import de.greenrobot.event.EventBus;
 
+class PointAdapter extends ArrayAdapter<Point> {
 	private int resource;
 	private List<Point> points;
 
@@ -127,10 +130,6 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 
 	private MultiPanel multiPanel;
 
-	public static PointsFragment newInstance() {
-		return new PointsFragment();
-	}
-
 	public static Fragment newInstance(ArrayList<Point> points) {
 		PointsFragment pointsFragment = new PointsFragment();
 
@@ -156,22 +155,18 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		}
 
 
-		categories = new ArrayList<>(App.getInstance().getPointsAccess().loadCategories());
+		EventBus.getDefault().register(this);
 
-
-		if (getArguments() != null) {
-			poiList = getArguments().getParcelableArrayList(ARG_POINTS);
-		} else {
-			// TODO: should be called in AsyncTask
-			poiList = App.getInstance().getPointsAccess().loadAll();
-		}
-
-		updateList();
 		setHasOptionsMenu(true);
 	}
 
 	@Override
 	public void onDestroy() {
+		EventBus.getDefault().unregister(this);
+
+		ActionBar actionBar = getActionBar();
+		actionBar.removeAllTabs();
+
 		super.onDestroy();
 	}
 
@@ -188,6 +183,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			loadingView.setText(getActivity().getString(R.string.str_loading_items));
 			loadingView.setVisibility(View.VISIBLE);
 
+			PointsUpdateService.startDefault(getActivity());
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -199,15 +195,25 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		View view = inflater.inflate(R.layout.point_list_layout, container, false);
 		loadingView = (TextView) view.findViewById(R.id.progress_text);
 
+		EditText searchBar = (EditText) view.findViewById(R.id.search_field);
+		searchBar.addTextChangedListener(this);
+
 		int selectedBar = 0;
 		if (savedInstanceState != null) {
 			selectedBar = savedInstanceState.getInt("selectedBar", 0);
 		}
 
-		EditText searchBar = (EditText) view.findViewById(R.id.search_field);
-		searchBar.addTextChangedListener(this);
-
+		categories = new ArrayList<>(App.getInstance().getPointsAccess().loadCategories());
 		setupFilterBar(selectedBar);
+
+
+		if (getArguments() != null) {
+			poiList = getArguments().getParcelableArrayList(ARG_POINTS);
+		} else {
+			// TODO: should be called in AsyncTask
+			poiList = App.getInstance().getPointsAccess().loadAll();
+		}
+		updateList();
 
 		return view;
 	}
@@ -219,7 +225,8 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			public boolean apply(Point t) {
 				if (currentCategory != null && currentCategory.getId() != t.getCategory().getId())
 					return false;
-				else if (searchText != null
+				else //noinspection RedundantIfStatement
+					if (searchText != null
 						&& searchText.length() > 0
 						&& !t.getName().toLowerCase(Locale.getDefault()).contains(searchText))
 					return false;
@@ -354,14 +361,21 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		updateList();
 	}
 
+	@EventReceiver
+	public void onEventMainThread(PointsUpdatedEvent pointsUpdatedEvent) {
+		if (!pointsUpdatedEvent.isSuccess()) {
+			Toast.makeText(getActivity(), R.string.error_downloading, Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(getActivity(), R.string.download_finished, Toast.LENGTH_LONG).show();
 
-	public void errorDownloading() {
-		getActivity().runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				Toast.makeText(getActivity(), R.string.error_downloading, Toast.LENGTH_LONG).show();
-				loadingView.setVisibility(View.GONE);
-			}
-		});
+			int selectedTab = getActionBar().getSelectedNavigationIndex();
+			this.categories = pointsUpdatedEvent.getCategories();
+			this.poiList = App.getInstance().getPointsAccess().loadAll();
+
+			setupFilterBar(selectedTab);
+			updateList();
+		}
+
+		loadingView.setVisibility(View.GONE);
 	}
 }

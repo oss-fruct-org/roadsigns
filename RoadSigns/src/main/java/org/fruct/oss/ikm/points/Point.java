@@ -40,8 +40,9 @@ public class Point implements Parcelable, Serializable {
 		this.photos.addAll(photos);
 	}
 
-	public void setUuid(String uuid) {
+	public Point setUuid(String uuid) {
 		this.uuid = uuid;
+		return this;
 	}
 
 	public Point setCategory(Category category) {

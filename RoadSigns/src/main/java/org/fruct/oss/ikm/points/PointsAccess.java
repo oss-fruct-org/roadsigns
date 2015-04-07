@@ -163,7 +163,8 @@ public class PointsAccess {
 	private Point toPoint(Cursor cursor, int offset) {
 		return new Point(cursor.getString(offset), cursor.getInt(offset + 2), cursor.getInt(offset + 3))
 				.setDescription(cursor.getString(offset + 1))
-				.setCategory(toCategory(cursor, offset + 5));
+				.setCategory(toCategory(cursor, offset + 5))
+				.setUuid(cursor.getString(offset + 4));
 	}
 
 	private Category toCategory(Cursor cursor, int offset) {

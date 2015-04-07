@@ -98,8 +98,8 @@ public class PointsAccess {
 
 	public List<Point> loadActive() {
 		Cursor cursor = db.rawQuery("SELECT " + POINT_SELECT + ',' + CATEGORY_SELECT +
-				" FROM point JOIN category ON point.categoryId = category.id" +
-				"WHERE category.active=1;", null);
+				" FROM point JOIN category ON point.categoryId = category.id " +
+				" WHERE category.active=1;", null);
 
 		try {
 			List<Point> points = new ArrayList<>(cursor.getCount());

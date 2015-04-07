@@ -50,7 +50,7 @@ dependencies {
         compile files('lib/trove-3.0.3-minified.jar')
     }
 
-    compile('com.graphhopper:graphhopper:0.4.0') {
+    compile('com.graphhopper:graphhopper:0.4.1') {
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
     }
 

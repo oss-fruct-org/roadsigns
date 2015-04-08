@@ -36,12 +36,14 @@ import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
+import org.fruct.oss.ikm.drawer.MultiPanel;
 import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
@@ -532,8 +534,9 @@ public class MapFragment extends Fragment implements MapListener,
 						SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
 					@Override
 					protected void onAccept() {
-						Intent intent = new Intent(getActivity(), OnlineContentActivity.class);
-						getActivity().startActivity(intent);
+						Intent intent = new Intent(getActivity(), DrawerActivity.class);
+						intent.setAction(ContentFragment.ACTION_SHOW_ONLINE_CONTENT);
+						startActivity(intent);
 					}
 				};
 				dialog.show(getFragmentManager(), "navigation-data-dialog");

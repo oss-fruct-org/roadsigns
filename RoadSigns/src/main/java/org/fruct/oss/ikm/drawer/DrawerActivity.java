@@ -95,7 +95,7 @@ public class DrawerActivity extends ActionBarActivity
 			break;
 
 		case 2:
-			fragment = new ContentFragment();
+			fragment = ContentFragment.newInstance();
 			break;
 
 		case 3:
@@ -180,6 +180,11 @@ public class DrawerActivity extends ActionBarActivity
 		case MapFragment.ACTION_SHOW_PATH:
 			geoPoint = intent.getParcelableExtra(MapFragment.ARG_SHOW_PATH_TARGET);
 			setRootFragment(MapFragment.newInstanceForPath(geoPoint));
+			break;
+
+		case ContentFragment.ACTION_SHOW_ONLINE_CONTENT:
+			setRootFragment(ContentFragment.newInstance(true));
+			break;
 		}
 	}
 

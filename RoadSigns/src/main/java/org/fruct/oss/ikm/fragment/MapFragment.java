@@ -854,15 +854,6 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent = contentService;
 		remoteContent.addListener(remoteContentAdapter);
 
-		Handler checkerHandler = new Handler(Looper.getMainLooper());
-		checkerHandler.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				if (remoteContent != null) {
-					checkNavigationDataAvailable();
-				}
-			}
-		}, 1000);
 	}
 
 	@Override
@@ -967,6 +958,23 @@ public class MapFragment extends Fragment implements MapListener,
 			if (recommendedContentItem != null) {
 				setupOfflineMap();
 			}
+		}
+
+		@Override
+		public void recommendedRegionItemNotFound(String contentType) {
+			if (!contentType.equals(ContentManagerImpl.GRAPHHOPPER_MAP)) {
+				return;
+			}
+
+			Handler checkerHandler = new Handler(Looper.getMainLooper());
+			checkerHandler.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					if (remoteContent != null) {
+						checkNavigationDataAvailable();
+					}
+				}
+			}, 1000);
 		}
 	};
 }

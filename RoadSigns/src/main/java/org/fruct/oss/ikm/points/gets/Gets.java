@@ -4,6 +4,7 @@ import org.fruct.oss.ikm.points.gets.parsers.CategoriesContent;
 import org.fruct.oss.ikm.points.gets.parsers.CategoriesParser;
 import org.fruct.oss.ikm.points.gets.parsers.Kml;
 import org.fruct.oss.ikm.points.gets.parsers.KmlParser;
+import org.fruct.oss.ikm.utils.Timer;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.ikm.points.Point;
 import org.osmdroid.util.GeoPoint;
@@ -66,7 +67,6 @@ public class Gets {
 		requestBuilder.append("</params></request>");
 
 		String responseStr = downloadUrl(getsServerUrl + "loadPoints.php",requestBuilder.toString());
-		log.trace("Req {}", requestBuilder.toString());
 		GetsResponse<Kml> kmlGetsResponse = GetsResponse.parse(responseStr, new KmlParser());
 		if (kmlGetsResponse.getCode() != 0) {
 			log.warn("getCategories returned with code {} message '{}'", kmlGetsResponse.getCode(),

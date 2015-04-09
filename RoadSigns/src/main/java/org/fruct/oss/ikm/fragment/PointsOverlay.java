@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -33,7 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PointsOverlay extends Overlay {
-	private final int itemSize;
+	private final int itemSizeLarge;
+	private final int itemSizeSmall;
+
 	private final DisplayImageOptions displayOptions;
 	private final MapView mapView;
 
@@ -61,7 +62,8 @@ public class PointsOverlay extends Overlay {
 
 		markerDrawable.getPadding(markerPadding);
 
-		itemSize = Utils.getDP(24);
+		itemSizeLarge = Utils.getDP(24);
+		itemSizeSmall = itemSizeLarge / 2;
 
 		displayOptions = new DisplayImageOptions.Builder()
 				.cacheOnDisk(true)
@@ -84,7 +86,7 @@ public class PointsOverlay extends Overlay {
 		}
 
 		mapView.getIntrinsicScreenRect(screenClipRect);
-		screenClipRect.inset(-itemSize, -itemSize);
+		screenClipRect.inset(-itemSizeLarge, -itemSizeLarge);
 
 		drawItems(canvas, mapView);
 	}
@@ -115,10 +117,11 @@ public class PointsOverlay extends Overlay {
 
 			String photoUrl = item.point.getPhoto();
 			ImageLoader.getInstance().displayImage(photoUrl,
-					new ItemImageAware(photoUrl, new ImageSize(itemSize * 2, itemSize * 2), item),
+					new ItemImageAware(photoUrl, new ImageSize(itemSizeLarge * 2, itemSizeLarge * 2), item),
 					displayOptions);
 		}
 
+		int itemSize = item.point.hasPhoto() ? this.itemSizeLarge : this.itemSizeSmall;
 		Drawable drawable = item == touchedItem ? markerClickedDrawable : markerDrawable;
 
 		drawable.setBounds(point1.x - itemSize - markerPadding.left,
@@ -142,7 +145,13 @@ public class PointsOverlay extends Overlay {
 	public boolean onTouchEvent(MotionEvent event, MapView mapView) {
 		if (event.getAction() == MotionEvent.ACTION_DOWN) {
 			touchedItem = testHit(event, mapView);
-			mapView.invalidate();
+
+			if (touchedItem != null) {
+				mapView.invalidate();
+				return true;
+			} else {
+				return false;
+			}
 		} else if (touchedItem != null && event.getAction() == MotionEvent.ACTION_UP) {
 			Intent intent = new Intent(mapView.getContext(), DrawerActivity.class);
 			intent.setAction(PointsFragment.ACTION_SHOW_DETAILS);
@@ -151,6 +160,7 @@ public class PointsOverlay extends Overlay {
 
 			touchedItem = null;
 			mapView.invalidate();
+			return true;
 		}
 
 		return false;
@@ -168,7 +178,7 @@ public class PointsOverlay extends Overlay {
 		final int ix = point1.x - x;
 		final int iy = point1.y - y;
 
-		return ix >= -itemSize && iy >= 0 && ix <= itemSize && iy <= 2 * itemSize;
+		return ix >= -itemSizeLarge && iy >= 0 && ix <= itemSizeLarge && iy <= 2 * itemSizeLarge;
 	}
 
 	private Item testHit(MotionEvent e, MapView mapView) {

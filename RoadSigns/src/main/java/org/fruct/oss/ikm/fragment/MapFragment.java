@@ -49,10 +49,12 @@ import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PathEvent;
+import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
 import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
 import org.fruct.oss.ikm.points.Point;
+import org.fruct.oss.ikm.points.PointsUpdateService;
 import org.fruct.oss.ikm.service.Direction;
 import org.fruct.oss.ikm.service.DirectionService;
 import org.fruct.oss.ikm.utils.Utils;
@@ -162,6 +164,8 @@ public class MapFragment extends Fragment implements MapListener,
 	private Menu menu;
 	private MapView mapView;
 	private TestOverlay panelOverlay;
+
+	private long lastScrollRefreshTime = 0;
 
 	// Zoom and map center that should be set after map ready ("on global layout")
 	private GeoPoint initialMapPosition;
@@ -317,6 +321,11 @@ public class MapFragment extends Fragment implements MapListener,
 		}
 	}
 
+	@EventReceiver
+	public void onEventMainThread(PointsUpdatedEvent event) {
+		updatePOIOverlay();
+	}
+
 	private int getZoomBySpeed(float speed) {
 		float speedkmh = speed * 3.6f;
 		
@@ -383,6 +392,7 @@ public class MapFragment extends Fragment implements MapListener,
 
 	private void setupMyPositionOverlay() {
 		myPositionOverlay = new MyPositionOverlay(getActivity(), mapView);
+		myPositionOverlay.setListener(this);
 
 		// Apply SHOW_ACCURACY preference
 		myPositionOverlay.setShowAccuracy(pref.getBoolean(SettingsActivity.SHOW_ACCURACY, false));
@@ -774,7 +784,6 @@ public class MapFragment extends Fragment implements MapListener,
 	
 	public void startTracking() {
 		isTracking = true;
-		myPositionOverlay.setListener(this);
 		panelOverlay.setVisibility(View.VISIBLE);
 		panelOverlay.setHidden(false);
 
@@ -787,9 +796,8 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 	
 	public void stopTracking() {
-
 		isTracking = false;
-		myPositionOverlay.clearListener();
+
 		panelOverlay.setVisibility(View.GONE);
 		panelOverlay.setHidden(true);
 		
@@ -839,7 +847,6 @@ public class MapFragment extends Fragment implements MapListener,
 		menu.findItem(R.id.action_remove_path).setVisible(true);
 	}
 
-	// Scroll from MapListener
 	@Override
 	public boolean onScroll(ScrollEvent event) {
 		return false;
@@ -849,6 +856,20 @@ public class MapFragment extends Fragment implements MapListener,
 	public void onScroll() {
 		if (isTracking)
 			stopTracking();
+
+		if (mapView.getZoomLevel() < 13 && System.currentTimeMillis() - lastScrollRefreshTime > 1000) {
+			log.info("Scroll map with zoom level less than 14: refreshing points");
+			lastScrollRefreshTime = System.currentTimeMillis();
+
+			Location mapCenterLocation = new Location("no-provider");
+			IGeoPoint mapCenter = mapView.getMapCenter();
+
+			mapCenterLocation.setLatitude(mapCenter.getLatitude());
+			mapCenterLocation.setLongitude(mapCenter.getLongitude());
+
+			PointsUpdateService.startRefreshActive(getActivity(), mapCenterLocation, getScreenHalfWidthMeters(0));
+		}
+
 	}
 
 	@Override
@@ -886,29 +907,29 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void updateRadius() {
+		int dist = getScreenHalfWidthMeters(Utils.getDP(isTracking ? 160 : 10));
+		if (dist == 0)
+			return;
+
+		EventBus.getDefault().postSticky(new ScreenRadiusEvent(dist));
+	}
+
+	private int getScreenHalfWidthMeters(int marginDp) {
 		Projection proj = mapView.getProjection();
 
-		int width = mapView.getWidth() - Utils.getDP(10);
-		int height = mapView.getHeight() - Utils.getDP(10);
+		int width = mapView.getWidth() - marginDp;
+		int height = mapView.getHeight() - marginDp;
 
 		if (isTracking) {
-			width -= Utils.getDP(160);
-			height -= Utils.getDP(160);
+			width -= marginDp;
+			height -= marginDp;
 		}
 
 		GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
 		IGeoPoint p2 = proj.fromPixels(width, 0);
 		IGeoPoint p3 = proj.fromPixels(0, height);
 
-		final int dist = Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
-		log.trace("Size {} {}", mapView.getWidth(), mapView.getHeight());
-		log.trace("Dist {} {}", p1.distanceTo(p2), p1.distanceTo(p3));
-		log.trace("Zoom level {}", mapView.getZoomLevel());
-
-		if (dist == 0)
-			return;
-
-		EventBus.getDefault().postSticky(new ScreenRadiusEvent(dist));
+		return Math.min(p1.distanceTo(p2), p1.distanceTo(p3)) / 2;
 	}
 	
 	@Override

@@ -5,12 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
 
 import org.fruct.oss.ikm.SettingsActivity;
-import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.slf4j.Logger;
@@ -24,8 +23,12 @@ public class PointsUpdateService extends Service {
 	public static final String ACTION_REFRESH = "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH";
 
 	// Both arguments optional
-	public static final String ARG_RADIUS = "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_RADIUS";
-	public static final String ARG_LOCATION = "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_LOCATION";
+	public static final String ARG_RADIUS
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_RADIUS";
+	public static final String ARG_LOCATION
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_LOCATION";
+	public static final String ARG_SKIP_CATEGORIES
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_SKIP_CATEGORIES";
 
 	private Location location;
 	private int radius;
@@ -38,6 +41,16 @@ public class PointsUpdateService extends Service {
 
 	public static void startDefault(Context context) {
 		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null, context, PointsUpdateService.class);
+		context.startService(intent);
+	}
+
+	public static void startRefreshActive(Context context, Location location, int radius) {
+		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null, context, PointsUpdateService.class);
+
+		intent.putExtra(ARG_LOCATION, location);
+		intent.putExtra(ARG_RADIUS, radius);
+		intent.putExtra(ARG_SKIP_CATEGORIES, true);
+
 		context.startService(intent);
 	}
 
@@ -78,21 +91,23 @@ public class PointsUpdateService extends Service {
 			int radius = intent.getIntExtra(ARG_RADIUS,
 					Integer.parseInt(pref.getString(SettingsActivity.GETS_RADIUS, "-1")));
 
-			refresh(location, radius);
+			boolean skipCategories = intent.getBooleanExtra(ARG_SKIP_CATEGORIES, false);
+
+			refresh(location, radius, skipCategories);
 		}
 
 		return START_NOT_STICKY;
 	}
 
-	private void refresh(Location location, int radius) {
-		log.info("Starting points refresh for {} and radius {}", location, radius);
+	private void refresh(Location location, int radius, boolean skipCategories) {
+		log.info("Starting points refresh for {}, radius {} categories {}", location, radius, skipCategories);
 
-		if (getsAsyncTask != null){
-			getsAsyncTask.cancel(true);
+		if (getsAsyncTask != null && getsAsyncTask.getStatus() != AsyncTask.Status.FINISHED){
+			return;
 		}
 
 		getsAsyncTask = new Task(pref.getString(SettingsActivity.GETS_SERVER,
-				SettingsActivity.GETS_SERVER_DEFAULT));
+				SettingsActivity.GETS_SERVER_DEFAULT), skipCategories);
 		getsAsyncTask.execute(location.getLatitude(), location.getLongitude(), radius);
 	}
 
@@ -102,8 +117,8 @@ public class PointsUpdateService extends Service {
 	}
 
 	private class Task extends GetsAsyncTask {
-		public Task(String server) {
-			super(server);
+		public Task(String server, boolean skipCategories) {
+			super(server, skipCategories);
 		}
 
 		@Override

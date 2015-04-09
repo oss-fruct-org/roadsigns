@@ -18,11 +18,13 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 	private static final Logger log = LoggerFactory.getLogger(GetsAsyncTask.class);
 
 	private final String server;
+	private final boolean skipCategory;
 	private final Gets gets;
 	private final PointsAccess pointsAccess;
 
-	public GetsAsyncTask(String server) {
+	public GetsAsyncTask(String server, boolean skipCategory) {
 		this.server = server;
+		this.skipCategory = skipCategory;
 		this.gets = new Gets(server);
 		this.pointsAccess = App.getInstance().getPointsAccess();
 	}
@@ -37,8 +39,13 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 		List<Point> allLoadedPoints = new ArrayList<>();
 
 		try {
-			List<Category> categories = gets.getCategories();
-			pointsAccess.insertCategories(categories);
+			List<Category> categories;
+			if (!skipCategory) {
+				categories = gets.getCategories();
+				pointsAccess.insertCategories(categories);
+			} else {
+				categories = pointsAccess.loadActiveCategories();
+			}
 
 			for (int i = 0; i < categories.size(); i++) {
 				if (isCancelled())

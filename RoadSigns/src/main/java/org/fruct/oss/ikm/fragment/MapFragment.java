@@ -620,7 +620,7 @@ public class MapFragment extends Fragment implements MapListener,
 		pref.unregisterOnSharedPreferenceChangeListener(this);
 
 		if (remoteContent != null) {
-			remoteContent.removeListener(remoteContentAdapter);
+			remoteContent.removeItemListener(remoteContentAdapter);
 			remoteContent = null;
 		}
 
@@ -855,8 +855,8 @@ public class MapFragment extends Fragment implements MapListener,
 	@Override
 	public void onContentServiceReady(ContentService contentService) {
 		remoteContent = contentService;
-		remoteContent.addListener(remoteContentAdapter);
-
+		remoteContent.addItemListener(remoteContentAdapter);
+		remoteContent.requestRecommendedItem();
 	}
 
 	@Override

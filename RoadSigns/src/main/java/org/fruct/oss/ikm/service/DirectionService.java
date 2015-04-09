@@ -120,7 +120,7 @@ public class DirectionService extends Service implements
 		}.execute();
 
 		if (remoteContent != null) {
-			remoteContent.removeListener(remoteContentListener);
+			remoteContent.removeItemListener(remoteContentListener);
 		}
 
 		remoteContentServiceConnection.unbindService(this);
@@ -129,7 +129,8 @@ public class DirectionService extends Service implements
 	@Override
 	public void onContentServiceReady(ContentService contentService) {
 		remoteContent = contentService;
-		remoteContent.addListener(remoteContentListener);
+		remoteContent.addItemListener(remoteContentListener);
+		remoteContent.requestRecommendedItem();
 		EventBus.getDefault().registerSticky(this);
 	}
 
@@ -260,11 +261,6 @@ public class DirectionService extends Service implements
 
 	public void realLocation() {
 		locationReceiver.sendLastLocation();
-	}
-
-	@EventReceiver
-	public void onEventMainThread(LocationEvent locationEvent) {
-		remoteContent.setLocation(locationEvent.getLocation());
 	}
 
 	@EventReceiver

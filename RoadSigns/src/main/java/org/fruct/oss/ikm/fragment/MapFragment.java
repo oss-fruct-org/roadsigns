@@ -36,6 +36,7 @@ import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.MainActivity;
 import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.R;
@@ -146,7 +147,6 @@ public class MapFragment extends Fragment implements MapListener,
 	private boolean providersToastShown;
 
 	private Overlay poiOverlay;
-
 
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
@@ -740,11 +740,13 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 	
 	private void updatePOIOverlay() {
-		log.trace("MapFragment.updatePOIOverlay");
-		final Context context = getActivity();
-
 		if (poiOverlay != null)
 			mapView.getOverlays().remove(poiOverlay);
+
+		PointsOverlay pointsOverlay = new PointsOverlay(getActivity());
+		pointsOverlay.setPoints(App.getInstance().getPointsAccess().loadActive());
+		mapView.getOverlays().add(pointsOverlay);
+		mapView.invalidate();
 
 /*
 		List<Point> points = PointsManager.getInstance()
@@ -770,7 +772,6 @@ public class MapFragment extends Fragment implements MapListener,
 		};
 
 		mapView.getOverlays().add(poiOverlay);*/
-		log.trace("MapFragment.updatePOIOverlay EXIT");
 	}
 	
 	public void startTracking() {

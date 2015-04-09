@@ -744,7 +744,8 @@ public class MapFragment extends Fragment implements MapListener,
 		pointsOverlay.setPoints(App.getInstance().getPointsAccess().loadActive());
 		mapView.getOverlays().add(pointsOverlay);
 		mapView.invalidate();
-
+		
+		poiOverlay = pointsOverlay;
 /*
 		List<Point> points = PointsManager.getInstance()
 				.getFilteredPoints();

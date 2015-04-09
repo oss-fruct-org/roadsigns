@@ -70,5 +70,9 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_example">Example action</string>
+    <string name="str_details_show_on_map">On map</string>
+    <string name="str_details_show_path">Show path</string>
+    <string name="str_details_details">Details</string>
+    <string name="str_details_wikipedia">Wikipedia</string>
 
 </resources>

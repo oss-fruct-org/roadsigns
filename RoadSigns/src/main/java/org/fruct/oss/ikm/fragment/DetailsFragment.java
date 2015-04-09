@@ -14,10 +14,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.nostra13.universalimageloader.core.ImageLoader;
 
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
@@ -180,38 +184,39 @@ public class DetailsFragment extends Fragment {
 			Bundle savedInstanceState) {
 		View view = inflater.inflate(R.layout.details_fragment, container, false);
 
-		final Point desc = getArguments().getParcelable(ARG_POINT);
+		final Point point = getArguments().getParcelable(ARG_POINT);
 
+		ImageView imageView = (ImageView) view.findViewById(R.id.image_view);
 		TextView titleView = (TextView) view.findViewById(R.id.title_text);
 		TextView descView = (TextView) view.findViewById(R.id.details_text);
 
-		ImageButton placeButton = (ImageButton) view.findViewById(R.id.show_place_button);
+		Button placeButton = (Button) view.findViewById(R.id.show_place_button);
 		placeButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(getActivity(), DrawerActivity.class);
 				intent.setAction(MapFragment.ACTION_CENTER_MAP);
-				intent.putExtra(MapFragment.ARG_MAP_CENTER, (Parcelable) desc.toPoint());
+				intent.putExtra(MapFragment.ARG_MAP_CENTER, (Parcelable) point.toPoint());
 				startActivity(intent);
 			}
 		});
 
-		ImageButton pathButton = (ImageButton) view.findViewById(R.id.search_place_button);
+		Button pathButton = (Button) view.findViewById(R.id.search_place_button);
 		pathButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(getActivity(), DrawerActivity.class);
 				intent.setAction(MapFragment.ACTION_SHOW_PATH);
-				intent.putExtra(MapFragment.ARG_SHOW_PATH_TARGET, (Parcelable) desc.toPoint());
+				intent.putExtra(MapFragment.ARG_SHOW_PATH_TARGET, (Parcelable) point.toPoint());
 				startActivity(intent);
 			}
 		});
 
-		ImageButton searchButton = (ImageButton) view.findViewById(R.id.search_button);
+		Button searchButton = (Button) view.findViewById(R.id.search_button);
 		searchButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				String searchString = desc.getName();
+				String searchString = point.getName();
 
 				searchTask = new SearchTask();
 				searchTask.execute(searchString);
@@ -220,30 +225,34 @@ public class DetailsFragment extends Fragment {
 			}
 		});
 
+		if (point.hasPhoto()) {
+			ImageLoader.getInstance().displayImage(point.getPhoto(), imageView);
+		}
+
 		// Show web button if description of point represents URL
-		if (desc.isDescriptionUrl()) {
-			ImageButton webButton = (ImageButton) view.findViewById(R.id.browse_button);
+		if (point.isDescriptionUrl()) {
+			Button webButton = (Button) view.findViewById(R.id.browse_button);
 			webButton.setVisibility(View.VISIBLE);
 
 			webButton.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View view) {
 					Intent intent = new Intent(Intent.ACTION_VIEW);
-					Uri uri = Uri.parse(desc.getDescription());
+					Uri uri = Uri.parse(point.getDescription());
 					intent.setData(uri);
 					startActivity(intent);
 				}
 			});
 		}
 
-		titleView.setText(desc.getName());
+		titleView.setText(point.getName());
 
 		descView.setAutoLinkMask(Linkify.WEB_URLS);
 
-		if (desc.getDescription().isEmpty())
+		if (point.getDescription().isEmpty())
 			descView.setVisibility(View.GONE);
 		else
-			descView.setText(desc.getDescription());
+			descView.setText(point.getDescription());
 
 		return view;
 	}

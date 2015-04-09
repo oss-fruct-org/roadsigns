@@ -40,6 +40,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 
+	//public static final String GETS_SERVER_DEFAULT = "http://getsi.ddns.net/getslocal/";
+
 	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
 	public static final String VEHICLE = "vehicle";
 

@@ -91,11 +91,23 @@ public class Point implements Parcelable, Serializable {
 		return photos;
 	}
 
+	public Point setPhotos(List<String> photos) {
+		this.photos.addAll(photos);
+		return this;
+	}
+
+	public boolean hasPhoto() {
+		return !photos.isEmpty();
+	}
+
+	public String getPhoto() {
+		return photos.get(0);
+	}
+
 	public GeoPoint toPoint() {
 		return geoPoint == null ? geoPoint = new GeoPoint(latE6, lonE6)
 				: geoPoint;
 	}
-
 
 	@Override
 	public boolean equals(Object o) {
@@ -127,6 +139,7 @@ public class Point implements Parcelable, Serializable {
 		dest.writeString(name);
 		dest.writeString(desc);
 		dest.writeParcelable(category, flags);
+		dest.writeStringList(photos);
 	}
 
 	public static final Parcelable.Creator<Point> CREATOR = new Parcelable.Creator<Point>() {
@@ -141,9 +154,15 @@ public class Point implements Parcelable, Serializable {
 			int lon = source.readInt();
 			String name = source.readString();
 
+			String description = source.readString();
+			Category category = source.readParcelable(Category.class.getClassLoader());
+			List<String> photos = new ArrayList<>();
+			source.readStringList(photos);
+
 			return new Point(name, lat, lon)
-					.setDescription(source.readString())
-					.setCategory((Category) source.readParcelable(Category.class.getClassLoader()));
+					.setDescription(description)
+					.setCategory(category)
+					.setPhotos(photos);
 		}
 	};
 
@@ -164,4 +183,7 @@ public class Point implements Parcelable, Serializable {
 	public void setDistance(int dist) {
 
 	}
+
+
+
 }

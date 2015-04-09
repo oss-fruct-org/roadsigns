@@ -61,6 +61,8 @@ public class Gets {
 		requestBuilder.append("<longitude>").append(position.getLongitude()).append("</longitude>");
 		requestBuilder.append("<radius>").append(radius / 1000.0).append("</radius>");
 
+		requestBuilder.append("<category_id>").append(category.getId()).append("</category_id>");
+
 		requestBuilder.append("</params></request>");
 
 		String responseStr = downloadUrl(getsServerUrl + "loadPoints.php",requestBuilder.toString());

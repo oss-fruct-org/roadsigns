@@ -8,6 +8,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class KmlParser implements ContentParser<Kml> {
@@ -108,6 +109,7 @@ public class KmlParser implements ContentParser<Kml> {
 
 		if (extendedData != null) {
 			point.setUuid(extendedData.uuid);
+			point.setPhotos(extendedData.photos);
 		}
 
 		return point;
@@ -122,7 +124,8 @@ public class KmlParser implements ContentParser<Kml> {
 				continue;
 
 			String tagName = parser.getName();
-			if (tagName.equals("Data")) {
+			switch (tagName) {
+			case "Data":
 				String key = parser.getAttributeValue(null, "name");
 				if (key == null)
 					throw new XmlPullParserException("Data tag have to have attribute 'name'");
@@ -135,11 +138,22 @@ public class KmlParser implements ContentParser<Kml> {
 				case "uuid":
 					extendedData.uuid = value;
 					break;
+
+				case "photo":
+				case "photoUrl":
+					extendedData.photos.add(value);
 				}
 				parser.nextTag();
 				parser.require(XmlPullParser.END_TAG, null, "Data");
-			} else {
+				break;
+
+			case "gets:photo":
+				extendedData.photos.add(XmlUtil.readText(parser));
+				break;
+
+			default:
 				XmlUtil.skip(parser);
+				break;
 			}
 		}
 
@@ -148,5 +162,6 @@ public class KmlParser implements ContentParser<Kml> {
 
 	private static class ExtendedData {
 		String uuid;
+		List<String> photos = new ArrayList<>();
 	}
 }

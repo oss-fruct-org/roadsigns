@@ -743,7 +743,7 @@ public class MapFragment extends Fragment implements MapListener,
 		if (poiOverlay != null)
 			mapView.getOverlays().remove(poiOverlay);
 
-		PointsOverlay pointsOverlay = new PointsOverlay(getActivity());
+		PointsOverlay pointsOverlay = new PointsOverlay(getActivity(), mapView);
 		pointsOverlay.setPoints(App.getInstance().getPointsAccess().loadActive());
 		mapView.getOverlays().add(pointsOverlay);
 		mapView.invalidate();

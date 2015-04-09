@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import org.fruct.oss.ikm.points.gets.Category;
+import org.fruct.oss.mapcontent.content.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.List;
 public class PointsAccess {
 	private static final int VERSION = 2;
 
-	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon, point.uuid ";
+	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon, point.uuid, point.photosJson ";
 	private static String CATEGORY_SELECT = " category.id, category.name, category.description, category.url, category.active ";
 
 	private final Context context;
@@ -70,11 +71,17 @@ public class PointsAccess {
 		values.put("categoryId", point.getCategory().getId());
 		values.put("desc", point.getDescription());
 		values.put("timestamp", System.currentTimeMillis());
+		values.put("photosJson", Utils.serializeStringList(point.getPhotos()));
 
 		int updated = db.update("point", values, "uuid=?", new String[] { point.getUuid() });
 		if (updated == 0) {
 			values.put("uuid", point.getUuid());
 			db.insert("point", null, values);
+
+			for (String photoUrl : point.getPhotos()) {
+				ContentValues photoCv = new ContentValues(2);
+				photoCv.put("url", photoUrl);
+			}
 		}
 	}
 
@@ -106,6 +113,7 @@ public class PointsAccess {
 			while (cursor.moveToNext()) {
 				points.add(toPoint(cursor, 0));
 			}
+			points.size();
 			return points;
 		} finally {
 			cursor.close();
@@ -163,8 +171,9 @@ public class PointsAccess {
 	private Point toPoint(Cursor cursor, int offset) {
 		return new Point(cursor.getString(offset), cursor.getInt(offset + 2), cursor.getInt(offset + 3))
 				.setDescription(cursor.getString(offset + 1))
-				.setCategory(toCategory(cursor, offset + 5))
-				.setUuid(cursor.getString(offset + 4));
+				.setCategory(toCategory(cursor, offset + 6))
+				.setUuid(cursor.getString(offset + 4))
+				.setPhotos(Utils.deserializeStringList(cursor.getString(offset + 5)));
 	}
 
 	private Category toCategory(Cursor cursor, int offset) {
@@ -198,7 +207,6 @@ public class PointsAccess {
 			switch (old) {
 			case 0:
 				db.execSQL("DROP TABLE IF EXISTS point;");
-				db.execSQL("DROP TABLE IF EXISTS photo;");
 				db.execSQL("DROP TABLE IF EXISTS category;");
 
 				db.execSQL("CREATE TABLE point (" +
@@ -210,15 +218,9 @@ public class PointsAccess {
 						"categoryId INTEGER," +
 						"desc TEXT," +
 						"timestamp INTEGER," +
+						"photosJson TEXT," +
 
 						"FOREIGN KEY (categoryId) REFERENCES category(id) ON DELETE CASCADE);");
-
-				db.execSQL("CREATE TABLE photo (" +
-						"id INTEGER PRIMARY KEY AUTOINCREMENT," +
-						"url TEXT NOT NULL," +
-						"pointId INTEGER," +
-
-						"FOREIGN KEY (pointId) REFERENCES points(id) ON DELETE CASCADE);");
 
 				db.execSQL("CREATE TABLE category (" +
 						"id INTEGER PRIMARY KEY," +

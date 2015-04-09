@@ -8,7 +8,7 @@
     android:layout_height="match_parent" >
 
     <ImageView
-        android:id="@android:id/icon1"
+        android:id="@android:id/icon"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_margin="8dp"

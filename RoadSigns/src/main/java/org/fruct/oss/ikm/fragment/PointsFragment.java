@@ -42,6 +42,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.nostra13.universalimageloader.core.ImageLoader;
+
 import de.greenrobot.event.EventBus;
 
 class PointAdapter extends ArrayAdapter<Point> {
@@ -51,7 +53,8 @@ class PointAdapter extends ArrayAdapter<Point> {
 	class Tag {
 		TextView textView;
 		TextView distanceView;
-		ImageView imageView;
+		ImageView arrowImageView;
+		ImageView iconImageView;
 	}
 
 	public PointAdapter(Context context, int resource, List<Point> points) {
@@ -82,7 +85,8 @@ class PointAdapter extends ArrayAdapter<Point> {
 			tag = new Tag();
 			tag.textView = (TextView) view.findViewById(android.R.id.text1);
 			tag.distanceView = (TextView) view.findViewById(android.R.id.text2);
-			tag.imageView = (ImageView) view.findViewById(android.R.id.icon2);
+			tag.arrowImageView = (ImageView) view.findViewById(android.R.id.icon2);
+			tag.iconImageView = (ImageView) view.findViewById(android.R.id.icon);
 			view.setTag(tag);
 		}
 
@@ -90,12 +94,12 @@ class PointAdapter extends ArrayAdapter<Point> {
 
 		tag.textView.setText(point.getName());
 		if (point.getRelativeDirection() != null) {
-			tag.imageView.setImageResource(point.getRelativeDirection().getIconId());
-			tag.imageView.setContentDescription(point.getRelativeDirection().getDescription());
-			tag.imageView.setVisibility(View.VISIBLE);
+			tag.arrowImageView.setImageResource(point.getRelativeDirection().getIconId());
+			tag.arrowImageView.setContentDescription(point.getRelativeDirection().getDescription());
+			tag.arrowImageView.setVisibility(View.VISIBLE);
 			tag.distanceView.setVisibility(View.VISIBLE);
 		} else {
-			tag.imageView.setVisibility(View.GONE);
+			tag.arrowImageView.setVisibility(View.GONE);
 		}
 
 		int distance = point.getDistance();
@@ -104,6 +108,12 @@ class PointAdapter extends ArrayAdapter<Point> {
 			tag.distanceView.setVisibility(View.VISIBLE);
 		} else {
 			tag.distanceView.setVisibility(View.GONE);
+		}
+
+		if (point.hasPhoto()) {
+			ImageLoader.getInstance().displayImage(point.getPhoto(), tag.iconImageView);
+		} else {
+			tag.iconImageView.setImageDrawable(null);
 		}
 		
 		return view;

@@ -100,7 +100,7 @@ public class PointsAccess {
 	public void setCategoryState(Category category, boolean isActive) {
 		ContentValues cv = new ContentValues(1);
 		cv.put("active", isActive);
-		db.update("category", cv, "category.id=?", new String[] { "" + category.getId() });
+		db.update("category", cv, "category.id=?", new String[]{"" + category.getId()});
 	}
 
 	public List<Point> loadActive() {
@@ -163,6 +163,20 @@ public class PointsAccess {
 			cursor.close();
 		}
 	}
+
+	public List<Category> loadActiveCategories() {
+		Cursor cursor = db.rawQuery("SELECT " + CATEGORY_SELECT + " FROM category WHERE category.active=1;", null);
+		try {
+			List<Category> categories = new ArrayList<>(cursor.getCount());
+			while (cursor.moveToNext()) {
+				categories.add(toCategory(cursor, 0));
+			}
+			return categories;
+		} finally {
+			cursor.close();
+		}
+	}
+
 
 	public void deleteOlderThan(long timestamp) {
 		db.delete("point", "timestamp < ?", new String[] {String.valueOf(timestamp)});

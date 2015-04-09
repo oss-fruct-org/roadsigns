@@ -73,9 +73,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 
 		if (convertView != null && convertView.getTag() != null) {
 			tag = (Tag) convertView.getTag();
-			if (tag instanceof Tag) {
-				view = convertView;
-			}
+			view = convertView;
 		}
 
 		if (view == null) {
@@ -120,6 +118,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 	}
 }
 
+@SuppressWarnings("deprecation")
 public class PointsFragment extends ListFragment implements TextWatcher {
 	private static Logger log = LoggerFactory.getLogger(PointsFragment.class);
 
@@ -213,15 +212,14 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			selectedBar = savedInstanceState.getInt("selectedBar", 0);
 		}
 
-		categories = new ArrayList<>(App.getInstance().getPointsAccess().loadCategories());
+		categories = App.getInstance().getPointsAccess().loadActiveCategories();
 		setupFilterBar(selectedBar);
-
 
 		if (getArguments() != null) {
 			poiList = getArguments().getParcelableArrayList(ARG_POINTS);
 		} else {
 			// TODO: should be called in AsyncTask
-			poiList = App.getInstance().getPointsAccess().loadAll();
+			poiList = App.getInstance().getPointsAccess().loadActive();
 		}
 		updateList();
 
@@ -379,8 +377,8 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			Toast.makeText(getActivity(), R.string.download_finished, Toast.LENGTH_LONG).show();
 
 			int selectedTab = getActionBar().getSelectedNavigationIndex();
-			this.categories = pointsUpdatedEvent.getCategories();
-			this.poiList = App.getInstance().getPointsAccess().loadAll();
+			this.categories = App.getInstance().getPointsAccess().loadActiveCategories();
+			this.poiList = App.getInstance().getPointsAccess().loadActive();
 
 			setupFilterBar(selectedTab);
 			updateList();

@@ -3,6 +3,7 @@ package org.fruct.oss.ikm.points;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Patterns;
+import android.util.SparseLongArray;
 
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.service.Direction;
@@ -11,6 +12,7 @@ import org.osmdroid.util.GeoPoint;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -29,6 +31,20 @@ public class Point implements Parcelable, Serializable {
 	private boolean isDescriptionUrl = false;
 	private transient GeoPoint geoPoint;
 
+	private long dbId;
+
+	public Point(Parcel source) {
+		latE6 = source.readInt();
+		lonE6 = source.readInt();
+		name = source.readString();
+
+		desc = source.readString();
+		category = source.readParcelable(Category.class.getClassLoader());
+		source.readStringList(photos);
+
+		dbId = source.readLong();
+	}
+
 	public Point(String name, int latE6, int lonE6) {
 		this(name, latE6, lonE6, Collections.<String>emptyList());
 	}
@@ -38,6 +54,11 @@ public class Point implements Parcelable, Serializable {
 		this.latE6 = latE6;
 		this.lonE6 = lonE6;
 		this.photos.addAll(photos);
+	}
+
+	public Point setDbId(long dbId) {
+		this.dbId = dbId;
+		return this;
 	}
 
 	public Point setUuid(String uuid) {
@@ -140,6 +161,8 @@ public class Point implements Parcelable, Serializable {
 		dest.writeString(desc);
 		dest.writeParcelable(category, flags);
 		dest.writeStringList(photos);
+
+		dest.writeLong(dbId);
 	}
 
 	public static final Parcelable.Creator<Point> CREATOR = new Parcelable.Creator<Point>() {
@@ -150,40 +173,79 @@ public class Point implements Parcelable, Serializable {
 
 		@Override
 		public Point createFromParcel(Parcel source) {
-			int lat = source.readInt();
-			int lon = source.readInt();
-			String name = source.readString();
-
-			String description = source.readString();
-			Category category = source.readParcelable(Category.class.getClassLoader());
-			List<String> photos = new ArrayList<>();
-			source.readStringList(photos);
-
-			return new Point(name, lat, lon)
-					.setDescription(description)
-					.setCategory(category)
-					.setPhotos(photos);
+			return new Point(source);
 		}
 	};
 
+	private static long dataInvalidatedTime = 0;
+	private static HashMap<Long, RoutingData> routingDataMap = new HashMap<>();
 
+	private transient RoutingData routingData;
+	private transient long dataExtractTime = -1;
+
+	public static void invalidateData() {
+		routingDataMap.clear();
+		dataInvalidatedTime = System.currentTimeMillis();
+	}
 
 	public int getDistance() {
-		return 0;
+		extractData();
+		if (routingData != null) {
+			return routingData.distance;
+		} else {
+			return 0;
+		}
 	}
 
 	public Direction.RelativeDirection getRelativeDirection() {
-		return null;
+		extractData();
+		if (routingData != null) {
+			return routingData.direction;
+		} else {
+			return null;
+		}
 	}
 
 	public void setRelativeDirection(Direction.RelativeDirection relativeDirection) {
+		extractData();
+		if (routingData == null) {
+			createData();
+		}
 
+		routingData.direction = relativeDirection;
 	}
 
 	public void setDistance(int dist) {
+		extractData();
+		if (routingData == null) {
+			createData();
+		}
 
+		routingData.distance = dist;
 	}
 
+	private void extractData() {
+		if (routingData == null) {
+			routingData = routingDataMap.get(dbId);
+			dataExtractTime = dataInvalidatedTime;
+		} else if (dataInvalidatedTime != dataExtractTime) {
+			routingData = null;
+		}
+	}
 
+	private void createData() {
+		routingData = new RoutingData(0, null);
+		routingDataMap.put(dbId, routingData);
+		dataExtractTime = dataInvalidatedTime;
+	}
 
+	private static class RoutingData {
+		public RoutingData(int distance, Direction.RelativeDirection direction) {
+			this.distance = distance;
+			this.direction = direction;
+		}
+
+		int distance;
+		Direction.RelativeDirection direction;
+	}
 }

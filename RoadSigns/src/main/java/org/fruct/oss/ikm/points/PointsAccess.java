@@ -18,7 +18,7 @@ import java.util.List;
 public class PointsAccess {
 	private static final int VERSION = 2;
 
-	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon, point.uuid, point.photosJson ";
+	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon, point.uuid, point.photosJson, point.id ";
 	private static String CATEGORY_SELECT = " category.id, category.name, category.description, category.url, category.active ";
 
 	private final Context context;
@@ -171,9 +171,10 @@ public class PointsAccess {
 	private Point toPoint(Cursor cursor, int offset) {
 		return new Point(cursor.getString(offset), cursor.getInt(offset + 2), cursor.getInt(offset + 3))
 				.setDescription(cursor.getString(offset + 1))
-				.setCategory(toCategory(cursor, offset + 6))
+				.setCategory(toCategory(cursor, offset + 7))
 				.setUuid(cursor.getString(offset + 4))
-				.setPhotos(Utils.deserializeStringList(cursor.getString(offset + 5)));
+				.setPhotos(Utils.deserializeStringList(cursor.getString(offset + 5)))
+				.setDbId(cursor.getLong(6));
 	}
 
 	private Category toCategory(Cursor cursor, int offset) {

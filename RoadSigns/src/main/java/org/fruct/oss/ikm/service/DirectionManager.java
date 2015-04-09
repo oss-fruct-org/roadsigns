@@ -163,6 +163,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			Collections.sort(activePoints, distanceComparator);			
 			activePoints = activePoints.subList(0, nearest);
 		}
+
+		Point.invalidateData();
 	}
 
 	private void doCalculateForPoints() {
@@ -211,8 +213,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 				point.setRelativeDirection(direction.getRelativeDirection(location.getBearing()));
 			}
 		}
-		
-		// XXX: reset relative direction to non-active POI
+
 		ArrayList<Direction> lastResultDirections = new ArrayList<>(directions.values());
 		if (listener != null)
 			listener.directionsUpdated(lastResultDirections, userPosition);

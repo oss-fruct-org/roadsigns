@@ -44,7 +44,7 @@ configurations {
 }
 
 dependencies {
-    compile files('lib/osmbonuspack_v4.8.jar')
+    //compile files('lib/osmbonuspack_v4.8.jar')
 
     if (miniTrove) {
         compile files('lib/trove-3.0.3-minified.jar')

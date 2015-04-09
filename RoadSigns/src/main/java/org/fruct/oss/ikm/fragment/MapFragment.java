@@ -64,7 +64,6 @@ import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.api.IGeoPoint;
-import org.osmdroid.bonuspack.overlays.DefaultInfoWindow;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -139,8 +138,6 @@ public class MapFragment extends Fragment implements MapListener,
 		OnSharedPreferenceChangeListener,
 		MyPositionOverlay.OnScrollListener, ContentServiceConnectionListener {
 	private static Logger log = LoggerFactory.getLogger(MapFragment.class);
-
-	private DefaultInfoWindow infoWindow;
 
 	private boolean networkToastShown;
 	private boolean navigationDataToastShown;

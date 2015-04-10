@@ -82,9 +82,23 @@ public class PointsOverlay extends Overlay {
 	public void setPoints(List<Point> points) {
 		this.points = Collections.unmodifiableList(points);
 		lastUpdateZoom = -1;
+		updateItems();
 	}
 
 	private void updateItems() {
+		items.clear();
+		lastUpdateZoom = mapView.getZoomLevel();
+
+		for (Point point : points) {
+			if (point.hasPhoto()) {
+				items.add(new PhotoPointItem(point.toPoint(), point));
+			} else {
+				items.add(new PointItem(point.toPoint(), point));
+			}
+		}
+	}
+
+	private void updateClusters() {
 		items.clear();
 		lastUpdateZoom = mapView.getZoomLevel();
 
@@ -132,7 +146,7 @@ public class PointsOverlay extends Overlay {
 		}
 
 		if (lastUpdateZoom != mapView.getZoomLevel()) {
-			updateItems();
+			//updateItems();
 		}
 
 		mapView.getIntrinsicScreenRect(screenClipRect);
@@ -159,9 +173,6 @@ public class PointsOverlay extends Overlay {
 		}
 
 		item.onDraw(canvas, mapView, point1);
-
-		// If item returned to screen, then store strong reference again
-
 	}
 
 	@Override

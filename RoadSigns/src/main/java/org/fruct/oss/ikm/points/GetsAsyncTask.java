@@ -32,6 +32,8 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 	@Override
 	protected Result doInBackground(Params... params) {
 		Params param = params[0];
+		log.info("Starting points refresh for {}:{}, radius {} categories {}",
+				param.lat, param.lon, param.radius, skipCategory);
 
 		GeoPoint geoPoint = new GeoPoint(param.lat, param.lon);
 		double radius = param.radius;
@@ -63,6 +65,9 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 			Result result = new Result();
 			result.categories = categories;
 			result.points = allLoadedPoints;
+
+			log.info("Finished points refresh");
+
 			return result;
 		} catch (IOException e) {
 			log.error("IO error while refreshing points", e);

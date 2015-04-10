@@ -100,7 +100,6 @@ public class PointsUpdateService extends Service {
 	}
 
 	private void refresh(Location location, int radius, boolean skipCategories) {
-		log.info("Starting points refresh for {}, radius {} categories {}", location, radius, skipCategories);
 
 		if (getsAsyncTask != null && getsAsyncTask.getStatus() != AsyncTask.Status.FINISHED){
 			return;

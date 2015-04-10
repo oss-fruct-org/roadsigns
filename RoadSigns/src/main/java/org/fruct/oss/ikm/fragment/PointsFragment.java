@@ -14,6 +14,7 @@ import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.points.PointsUpdateService;
 import org.fruct.oss.ikm.points.gets.Category;
+import org.fruct.oss.ikm.utils.StaticTranslations;
 import org.fruct.oss.ikm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +139,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	private TextView loadingView;
 
 	private MultiPanel multiPanel;
+	private StaticTranslations staticTranslations;
 
 	public static Fragment newInstance(ArrayList<Point> points) {
 		PointsFragment pointsFragment = new PointsFragment();
@@ -163,6 +165,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			multiPanel = (MultiPanel) activity;
 		}
 
+		staticTranslations = StaticTranslations.createDefault(getResources());
 
 		EventBus.getDefault().register(this);
 
@@ -299,7 +302,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		ActionBar actionBar = activity.getSupportActionBar();
 
 		Tab tab = activity.getSupportActionBar().newTab();
-		tab.setText(category.getName());
+		tab.setText(staticTranslations.getString(category.getName()));
 		
 		tab.setTabListener(new ActionBar.TabListener() {
 			@Override

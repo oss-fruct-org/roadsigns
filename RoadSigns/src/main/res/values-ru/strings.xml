@@ -86,4 +86,5 @@
     <string name="trans_monasteries">Монастыри</string>
     <string name="trans_natural_monuments">Природные достопримечательности</string>
     <string name="trans_audio_other">Аудио Гиды</string>
+    <string name="str_search_wikipedia">Search on wikipedia</string>
 </resources>

@@ -70,4 +70,20 @@
         <item quantity="other">Расстояние: %.1f километров</item>
     </plurals>
     <string name="action_place_here">Установить местоположение</string>
+    <string name="trans_shops">Магазины</string>
+    <string name="trans_hostels">Хостелы</string>
+    <string name="trans_sights">Достопримечательности</string>
+    <string name="trans_large">Большие города</string>
+    <string name="trans_medium">Средние города</string>
+    <string name="trans_small">Малые города</string>
+    <string name="trans_automobile">Автомобильный туризм</string>
+    <string name="trans_apartment">Апартаменты</string>
+    <string name="trans_hotels">Гостиницы</string>
+    <string name="trans_sanatoriums">Санатории</string>
+    <string name="trans_monuments">Памятники</string>
+    <string name="trans_museums">Музеи</string>
+    <string name="trans_historical">Исторические города</string>
+    <string name="trans_monasteries">Монастыри</string>
+    <string name="trans_natural_monuments">Природные достопримечательности</string>
+    <string name="trans_audio_other">Аудио Гиды</string>
 </resources>

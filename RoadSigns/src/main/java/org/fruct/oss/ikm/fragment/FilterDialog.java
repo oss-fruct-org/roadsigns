@@ -13,6 +13,7 @@ import android.support.v4.app.DialogFragment;
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.points.PointsAccess;
 import org.fruct.oss.ikm.points.gets.Category;
+import org.fruct.oss.ikm.utils.StaticTranslations;
 
 class Item implements Serializable {
 	Item(int idx, boolean state) {
@@ -29,6 +30,7 @@ public class FilterDialog extends DialogFragment {
 
 	// List stores user selection
 	private ArrayList<Item> checkedItems;
+	private StaticTranslations translations;
 
 	private PointsAccess pointsAccess;
 
@@ -37,6 +39,7 @@ public class FilterDialog extends DialogFragment {
 		super.onCreate(savedInstanceState);
 
 		pointsAccess = App.getInstance().getPointsAccess();
+		translations = StaticTranslations.createDefault(getResources());
 	}
 
 	@Override
@@ -70,7 +73,7 @@ public class FilterDialog extends DialogFragment {
 
 		for (int i = 0; i < categories.size(); i++) {
 			Category category = categories.get(i);
-			filterNames[i] = category.getName();
+			filterNames[i] = translations.getString(category.getName());
 			if (savedInstanceState == null)
 				filterChecked[i] = category.isActive();
 		}

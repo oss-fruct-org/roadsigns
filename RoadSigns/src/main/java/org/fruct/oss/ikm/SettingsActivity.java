@@ -23,6 +23,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String WARN_PROVIDERS_DISABLED = "warn_providers_disabled";
 	public static final String WARN_NETWORK_DISABLED = "warn_network_disabled";
 	public static final String WARN_NAVIGATION_DATA_DISABLED = "warn_navigation_data_disabled";
+	public static final String WARN_UPDATE_READY = "warn_update_ready";
 
     public static final String START_TRACKING_MODE = "start_tracking_mode";
     public static final String NEAREST_POINTS = "nearest_points";

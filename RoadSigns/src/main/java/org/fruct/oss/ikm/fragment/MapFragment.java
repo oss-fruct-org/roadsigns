@@ -37,14 +37,11 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
-import org.fruct.oss.ikm.MainActivity;
-import org.fruct.oss.ikm.OnlineContentActivity;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.Smoother;
 import org.fruct.oss.ikm.TileProviderManager;
 import org.fruct.oss.ikm.drawer.DrawerActivity;
-import org.fruct.oss.ikm.drawer.MultiPanel;
 import org.fruct.oss.ikm.events.DirectionsEvent;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
@@ -537,7 +534,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
 						R.string.configure_navigation_data,
-						R.string.warn_providers_disable,
+						R.string.dont_show_again,
 						SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
 					@Override
 					protected void onAccept() {
@@ -564,7 +561,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_network,
 						R.string.configure_use_offline_map,
-						R.string.warn_providers_disable,
+						R.string.dont_show_again,
 						SettingsActivity.WARN_NETWORK_DISABLED) {
 					@Override
 					protected void onAccept() {
@@ -596,7 +593,7 @@ public class MapFragment extends Fragment implements MapListener,
 			if (!pref.getBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, false)) {
 				WarnDialog dialog = new WarnDialog(R.string.warn_no_providers,
 						R.string.configure_providers,
-						R.string.warn_providers_disable,
+						R.string.dont_show_again,
 						SettingsActivity.WARN_PROVIDERS_DISABLED) {
 					@Override
 					protected void onAccept() {
@@ -877,6 +874,7 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent = contentService;
 		remoteContent.addItemListener(remoteContentAdapter);
 		remoteContent.requestRecommendedItem();
+		remoteContent.refresh(ContentFragment.REMOTE_CONTENT_URLS);
 	}
 
 	@Override
@@ -998,6 +996,29 @@ public class MapFragment extends Fragment implements MapListener,
 					}
 				}
 			}, 1000);
+		}
+
+		@Override
+		public void updateReady() {
+			if (!pref.getBoolean(SettingsActivity.WARN_UPDATE_READY, false)) {
+				WarnDialog dialog = new WarnDialog(R.string.warn_update_ready,
+						R.string.configure_navigation_data,
+						R.string.dont_show_again,
+						SettingsActivity.WARN_UPDATE_READY) {
+					@Override
+					protected void onAccept() {
+						Intent intent = new Intent(getActivity(), DrawerActivity.class);
+						intent.setAction(ContentFragment.ACTION_UPDATE_READY);
+						startActivity(intent);
+					}
+				};
+				dialog.show(getFragmentManager(), "navigation-data-dialog");
+			} else {
+				Toast toast = Toast.makeText(getActivity(),
+						R.string.warn_update_ready, Toast.LENGTH_SHORT);
+				toast.show();
+
+			}
 		}
 	};
 }

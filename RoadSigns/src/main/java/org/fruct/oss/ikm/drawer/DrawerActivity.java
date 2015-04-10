@@ -183,7 +183,11 @@ public class DrawerActivity extends ActionBarActivity
 			break;
 
 		case ContentFragment.ACTION_SHOW_ONLINE_CONTENT:
-			setRootFragment(ContentFragment.newInstance(true));
+			setRootFragment(ContentFragment.newInstance(true, false));
+			break;
+
+		case ContentFragment.ACTION_UPDATE_READY:
+			setRootFragment(ContentFragment.newInstance(false, true));
 			break;
 		}
 	}

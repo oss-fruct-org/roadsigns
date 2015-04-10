@@ -14,7 +14,7 @@
     <string name="filter">Filter</string>
     <string name="warn_no_providers">No location providers enabled</string>
     <string name="configure_providers">Configure</string>
-    <string name="warn_providers_disable">Don\'t show this dialog again</string>
+    <string name="dont_show_again">Don\'t show this dialog again</string>
     <string name="pref_navigation_data">Navigation data</string>
     <string name="warn_no_network">Network not available</string>
     <string name="action_refresh">Refresh</string>
@@ -74,5 +74,6 @@
     <string name="str_details_show_path">Show path</string>
     <string name="str_details_details">Details</string>
     <string name="str_details_wikipedia">Wikipedia</string>
+    <string name="warn_update_ready">Navigation data updated</string>
 
 </resources>

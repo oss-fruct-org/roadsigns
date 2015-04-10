@@ -12,27 +12,21 @@ import java.util.List;
 
 public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.ContentFragment {
 	public static final String ACTION_SHOW_ONLINE_CONTENT = "org.fruct.oss.ikm.ACTION_SHOW_ONLINE_CONTENT";
+	public static final String ACTION_UPDATE_READY = "org.fruct.oss.ikm.ACTION_UPDATE_READY";
 
 	public static ContentFragment newInstance() {
-		return newInstance(false);
+		return newInstance(false, false);
 	}
 
-	public static ContentFragment newInstance(boolean suggestItem) {
+	public static ContentFragment newInstance(boolean suggestItem, boolean switchToUpdate) {
 		ContentFragment fragment = new ContentFragment();
 
 		Bundle args = new Bundle();
 		args.putBoolean("suggest", suggestItem);
+		args.putBoolean("update", switchToUpdate);
 		fragment.setArguments(args);
 
 		return fragment;
-	}
-
-	@Override
-	public void onAttach(Activity activity) {
-		super.onAttach(activity);
-
-		((DrawerActivity) activity).onSectionAttached(getString(R.string.online_content),
-				ActionBar.NAVIGATION_MODE_LIST);
 	}
 
 	public static final String[] REMOTE_CONTENT_URLS = {
@@ -48,6 +42,10 @@ public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		((DrawerActivity) getActivity()).onSectionAttached(getString(R.string.action_download_map),
+				ActionBar.NAVIGATION_MODE_LIST);
+
 		setRootUrls(REMOTE_CONTENT_URLS);
 		boolean suggest = false;
 

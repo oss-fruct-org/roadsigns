@@ -455,7 +455,6 @@ public class MapFragment extends Fragment implements MapListener,
 			public void onGlobalLayout() {
 				mapView.getController().setZoom(initialZoom);
 				mapView.getController().setCenter(initialMapPosition);
-				updateRadius();
 
 				if (mapState.isTracking) {
 					startTracking();
@@ -866,7 +865,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 			PointsUpdateService.startRefreshActive(getActivity(), mapCenterLocation, getScreenHalfWidthMeters(0));
 		}
-
 	}
 
 	@Override
@@ -917,11 +915,6 @@ public class MapFragment extends Fragment implements MapListener,
 
 		int width = mapView.getWidth() - marginDp;
 		int height = mapView.getHeight() - marginDp;
-
-		if (isTracking) {
-			width -= marginDp;
-			height -= marginDp;
-		}
 
 		GeoPoint p1 = Utils.copyGeoPoint(proj.fromPixels(0, 0));
 		IGeoPoint p2 = proj.fromPixels(width, 0);

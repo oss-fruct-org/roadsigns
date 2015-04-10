@@ -1,15 +1,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:yourapp="http://schemas.android.com/apk/res-auto" >
-
-    <item
-        android:id="@+id/action_search"
-        android:icon="@drawable/ic_action_make_available_offline"
-        android:title="@string/action_place_here"
-        yourapp:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_track"
         android:icon="@drawable/ic_action_location_found"
         android:title="@string/action_track"
+        yourapp:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_action_make_available_offline"
+        android:title="@string/action_place_here"
         yourapp:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_filter"

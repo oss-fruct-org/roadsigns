@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 
 import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.points.PointsAccess;
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.StaticTranslations;
@@ -79,32 +80,32 @@ public class FilterDialog extends DialogFragment {
 		}
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-		builder.setTitle("Filter")
-			   .setMultiChoiceItems(filterNames,
-					   filterChecked, new DialogInterface.OnMultiChoiceClickListener() {
-				   @Override
-				   public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-					   filterChecked[which] = isChecked;
-					   checkedItems.add(new Item(which, isChecked));
-				   }
-			   });
-		
-		builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				for (Item item : checkedItems) {
-					Category category = categories.get(item.idx);
-					category.setActive(item.state);
-					pointsAccess.setCategoryState(category, item.state);
-				}
-			}
-		});
-		
-		builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-			}
-		});
+		builder.setTitle(R.string.filter)
+				.setMultiChoiceItems(filterNames,
+						filterChecked, new DialogInterface.OnMultiChoiceClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+								filterChecked[which] = isChecked;
+								checkedItems.add(new Item(which, isChecked));
+							}
+						})
+
+				.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						for (Item item : checkedItems) {
+							Category category = categories.get(item.idx);
+							category.setActive(item.state);
+							pointsAccess.setCategoryState(category, item.state);
+						}
+					}
+				})
+
+				.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+					}
+				});
 
 		return builder.create();
 	}

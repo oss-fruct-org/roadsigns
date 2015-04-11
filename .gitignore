@@ -16,6 +16,7 @@ gen/
 
 *.ghz
 
-.idea/libraries/
-.idea/dictionaries/
 /build
+
+.idea
+*.iml

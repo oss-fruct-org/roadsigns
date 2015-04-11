@@ -249,6 +249,8 @@ public class MapFragment extends Fragment implements MapListener,
 		PreferenceManager.getDefaultSharedPreferences(getActivity()).registerOnSharedPreferenceChangeListener(this);
 
 		remoteContentServiceConnection.bindService(getActivity());
+
+		getActivity().startService(new Intent(getActivity(), ContentService.class));
 	}
 
 	@Override
@@ -872,7 +874,7 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent = contentService;
 		remoteContent.addItemListener(remoteContentAdapter);
 		remoteContent.requestRecommendedItem();
-		remoteContent.refresh(ContentFragment.REMOTE_CONTENT_URLS);
+		remoteContent.refresh(ContentFragment.REMOTE_CONTENT_URLS, false);
 	}
 
 	@Override

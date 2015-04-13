@@ -56,6 +56,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 		TextView distanceView;
 
 		TextView region4TextView;
+		TextView region6TextView;
 
 		ImageView arrowImageView;
 		ImageView iconImageView;
@@ -90,6 +91,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 			tag.arrowImageView = (ImageView) view.findViewById(android.R.id.icon2);
 			tag.iconImageView = (ImageView) view.findViewById(android.R.id.icon);
 			tag.region4TextView = (TextView) view.findViewById(android.R.id.text2);
+			tag.region6TextView = (TextView) view.findViewById(R.id.text3);
 			view.setTag(tag);
 		}
 
@@ -97,6 +99,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 
 		tag.textView.setText(point.getName());
 		tag.region4TextView.setText(point.getRegionId(4));
+		tag.region6TextView.setText(point.getRegionId(6));
 
 		if (point.getRelativeDirection() != null) {
 			tag.arrowImageView.setImageResource(point.getRelativeDirection().getIconId());

@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.mapcontent.content.utils.Utils;
+import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +17,11 @@ import java.util.List;
  * Allows to store points in local storage
  */
 public class PointsAccess {
-	private static final int VERSION = 2;
+	private static final int VERSION = 3;
 
-	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon, point.uuid, point.photosJson, point.id ";
+	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon," +
+			" point.uuid, point.photosJson, point.id," +
+			" point.regionId4, point.regionId6, point.regionUpdateTime ";
 	private static String CATEGORY_SELECT = " category.id, category.name, category.description, category.url, category.active ";
 
 	private final Context context;
@@ -72,6 +75,9 @@ public class PointsAccess {
 		values.put("desc", point.getDescription());
 		values.put("timestamp", System.currentTimeMillis());
 		values.put("photosJson", Utils.serializeStringList(point.getPhotos()));
+		values.put("regionId4", point.getRegionId(4));
+		values.put("regionId6", point.getRegionId(6));
+		values.put("regionUpdateTime", point.getRegionUpdateTime());
 
 		int updated = db.update("point", values, "uuid=?", new String[] { point.getUuid() });
 		if (updated == 0) {
@@ -182,13 +188,35 @@ public class PointsAccess {
 		db.delete("point", "timestamp < ?", new String[] {String.valueOf(timestamp)});
 	}
 
+	public List<Point> loadPointsWithoutRegion(long sinceTime) {
+		Cursor cursor = db.rawQuery("SELECT " + POINT_SELECT + ',' + CATEGORY_SELECT +
+				" FROM point JOIN category ON point.categoryId = category.id " +
+				" WHERE (point.regionId4 IS NULL OR point.regionId6) AND point.regionUpdateTime <= ?;",
+				new String[] {String.valueOf(sinceTime)});
+
+		try {
+			List<Point> points = new ArrayList<>(cursor.getCount());
+			while (cursor.moveToNext()) {
+				points.add(toPoint(cursor, 0));
+			}
+			points.size();
+			return points;
+		} finally {
+			cursor.close();
+		}
+
+	}
+
 	private Point toPoint(Cursor cursor, int offset) {
 		return new Point(cursor.getString(offset), cursor.getInt(offset + 2), cursor.getInt(offset + 3))
 				.setDescription(cursor.getString(offset + 1))
-				.setCategory(toCategory(cursor, offset + 7))
+				.setCategory(toCategory(cursor, offset + 10))
 				.setUuid(cursor.getString(offset + 4))
 				.setPhotos(Utils.deserializeStringList(cursor.getString(offset + 5)))
-				.setDbId(cursor.getLong(6));
+				.setDbId(cursor.getLong(6))
+				.setRegionId(cursor.getString(7), 4)
+				.setRegionId(cursor.getString(8), 6)
+				.setRegionUpdateTime(9);
 	}
 
 	private Category toCategory(Cursor cursor, int offset) {
@@ -234,6 +262,9 @@ public class PointsAccess {
 						"desc TEXT," +
 						"timestamp INTEGER," +
 						"photosJson TEXT," +
+						"regionId4 TEXT," +
+						"regionId6 TEXT," +
+						"regionUpdateTime INTEGER," +
 
 						"FOREIGN KEY (categoryId) REFERENCES category(id) ON DELETE CASCADE);");
 

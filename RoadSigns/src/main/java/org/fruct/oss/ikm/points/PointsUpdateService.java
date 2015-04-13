@@ -9,15 +9,27 @@ import android.os.AsyncTask;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 
+import com.graphhopper.util.PointAccess;
+
+import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PointsUpdatedEvent;
+import org.fruct.oss.mapcontent.content.ContentService;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.utils.Region;
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import de.greenrobot.event.EventBus;
 
-public class PointsUpdateService extends Service {
+public class PointsUpdateService extends Service implements ContentServiceConnectionListener {
 	private static final Logger log = LoggerFactory.getLogger(PointsUpdateService.class);
 
 	public static final String ACTION_REFRESH = "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH";
@@ -35,6 +47,11 @@ public class PointsUpdateService extends Service {
 
 	private SharedPreferences pref;
 	private GetsAsyncTask getsAsyncTask;
+
+	private ContentServiceConnection contentServiceConnection = new ContentServiceConnection(this);
+
+	private ExecutorService regionsExecutor = Executors.newSingleThreadExecutor();
+	private ContentService contentService;
 
 	public PointsUpdateService() {
 	}
@@ -59,6 +76,7 @@ public class PointsUpdateService extends Service {
 		super.onCreate();
 
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
+		contentServiceConnection.bindService(this);
 	}
 
 	@Override
@@ -66,7 +84,8 @@ public class PointsUpdateService extends Service {
 		if (getsAsyncTask != null) {
 			getsAsyncTask.cancel(true);
 		}
-
+		regionsExecutor.shutdownNow();
+		contentServiceConnection.unbindService(this);
 		super.onDestroy();
 	}
 
@@ -100,7 +119,6 @@ public class PointsUpdateService extends Service {
 	}
 
 	private void refresh(Location location, int radius, boolean skipCategories) {
-
 		if (getsAsyncTask != null && getsAsyncTask.getStatus() != AsyncTask.Status.FINISHED){
 			return;
 		}
@@ -113,6 +131,50 @@ public class PointsUpdateService extends Service {
 	@Override
 	public IBinder onBind(Intent intent) {
 		throw new UnsupportedOperationException("Not yet implemented");
+	}
+
+	@Override
+	public synchronized void onContentServiceReady(ContentService contentService) {
+		this.contentService = contentService;
+	}
+
+	@Override
+	public synchronized void onContentServiceDisconnected() {
+		this.contentService = null;
+	}
+
+	private void scheduleRegionsCacheUpdate() {
+		regionsExecutor.execute(new Runnable() {
+			@Override
+			public void run() {
+				long lastRegionsUpdate = pref.getLong(ContentService.PREF_LAST_REFRESH_TIME, 0);
+				List<Point> points = App.getInstance().getPointsAccess().loadPointsWithoutRegion(lastRegionsUpdate);
+				for (Point point : points) {
+					updatePointRegion(point);
+				}
+			}
+		});
+	}
+
+	private synchronized void updatePointRegion(Point point) {
+		if (contentService == null) {
+			return;
+		}
+
+		log.debug("Checking region for point {}", point.getName());
+		Location pointLocation = new Location("no-provider");
+		pointLocation.setLatitude(point.toPoint().getLatitude());
+		pointLocation.setLongitude(point.toPoint().getLongitude());
+
+		List<RegionCache.RegionDesc> regions = contentService.getRegionCache().findRegions(pointLocation);
+
+		for (RegionCache.RegionDesc regionDesc : regions) {
+			log.debug("Region {} found", regionDesc.name);
+			point.setRegionId(regionDesc.regionId, regionDesc.adminLevel);
+		}
+
+		point.setRegionUpdateTime(System.currentTimeMillis());
+		App.getInstance().getPointsAccess().insertPoint(point);
 	}
 
 	private class Task extends GetsAsyncTask {
@@ -129,7 +191,8 @@ public class PointsUpdateService extends Service {
 			} else {
 				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
 			}
-			// TODO: probably service can be safely finished
+
+			scheduleRegionsCacheUpdate();
 		}
 
 		@Override

@@ -26,6 +26,10 @@ public class Point implements Parcelable, Serializable {
 	private String desc;
 	private String uuid;
 
+	private String regionId4;
+	private String regionId6;
+	private long regionUpdateTime;
+
 	private List<String> photos = new ArrayList<>();
 
 	private boolean isDescriptionUrl = false;
@@ -43,6 +47,9 @@ public class Point implements Parcelable, Serializable {
 		source.readStringList(photos);
 
 		dbId = source.readLong();
+		regionId4 = source.readString();
+		regionId6 = source.readString();
+		regionUpdateTime = source.readLong();
 	}
 
 	public Point(String name, int latE6, int lonE6) {
@@ -84,6 +91,20 @@ public class Point implements Parcelable, Serializable {
 			isDescriptionUrl = true;
 		}
 
+		return this;
+	}
+
+	public Point setRegionId(String regionId, int adminLevel) {
+		if (adminLevel == 6) {
+			regionId6 = regionId;
+		} else if (adminLevel == 4) {
+			regionId4 = regionId;
+		}
+		return this;
+	}
+
+	public Point setRegionUpdateTime(long time) {
+		this.regionUpdateTime = time;
 		return this;
 	}
 
@@ -130,6 +151,20 @@ public class Point implements Parcelable, Serializable {
 				: geoPoint;
 	}
 
+	public String getRegionId(int adminLevel) {
+		if (adminLevel == 4) {
+			return regionId4;
+		} else if (adminLevel == 6) {
+			return regionId6;
+		} else {
+			return null;
+		}
+	}
+
+	public long getRegionUpdateTime() {
+		return regionUpdateTime;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -163,6 +198,10 @@ public class Point implements Parcelable, Serializable {
 		dest.writeStringList(photos);
 
 		dest.writeLong(dbId);
+
+		dest.writeString(regionId4);
+		dest.writeString(regionId6);
+		dest.writeLong(regionUpdateTime);
 	}
 
 	public static final Parcelable.Creator<Point> CREATOR = new Parcelable.Creator<Point>() {

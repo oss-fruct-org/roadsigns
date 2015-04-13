@@ -51,12 +51,12 @@
     <string name="str_cant_delete_active_content">Can\'t delete active content</string>
 
     <plurals name="distance_meters">
-        <item quantity="one">Distance: %d meter</item>
-        <item quantity="other">Distance: %d meters</item>
+        <item quantity="one">%d m.</item>
+        <item quantity="other">%d m.</item>
     </plurals>
     <plurals name="distance_kilometers">
-        <item quantity="one">Distance: %.1f kilometer</item>
-        <item quantity="other">Distance: %.1f kilometers</item>
+        <item quantity="one">%.1f km.</item>
+        <item quantity="other">%.1f km.</item>
     </plurals>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>

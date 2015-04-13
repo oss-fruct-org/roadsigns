@@ -75,9 +75,17 @@ public class PointsAccess {
 		values.put("desc", point.getDescription());
 		values.put("timestamp", System.currentTimeMillis());
 		values.put("photosJson", Utils.serializeStringList(point.getPhotos()));
-		values.put("regionId4", point.getRegionId(4));
-		values.put("regionId6", point.getRegionId(6));
-		values.put("regionUpdateTime", point.getRegionUpdateTime());
+
+		String region4 = point.getRegionId(4);
+		if (region4 != null)
+			values.put("regionId4", region4);
+
+		String region6 = point.getRegionId(6);
+			values.put("regionId6", region6);
+
+		long regionUpdateTime = point.getRegionUpdateTime();
+		if (regionUpdateTime > 0)
+			values.put("regionUpdateTime", regionUpdateTime);
 
 		int updated = db.update("point", values, "uuid=?", new String[] { point.getUuid() });
 		if (updated == 0) {
@@ -262,8 +270,8 @@ public class PointsAccess {
 						"desc TEXT," +
 						"timestamp INTEGER," +
 						"photosJson TEXT," +
-						"regionId4 TEXT," +
-						"regionId6 TEXT," +
+						"regionId4 TEXT," + // Currently there saved only region name, not id
+						"regionId6 TEXT," + // Currently there saved only region name, not id
 						"regionUpdateTime INTEGER," +
 
 						"FOREIGN KEY (categoryId) REFERENCES category(id) ON DELETE CASCADE);");

@@ -57,17 +57,17 @@
     <string name="str_loading_items">Загрузка…</string>
 
     <plurals  name="distance_meters">
-        <item quantity="one">Расстояние: %d метр</item>
-        <item quantity="few">Расстояние: %d метра</item>
-        <item quantity="many">Расстояние: %d метров</item>
-        <item quantity="other">Расстояние: %d метров</item>
+        <item quantity="one">%d м.</item>
+        <item quantity="few">%d м.</item>
+        <item quantity="many">%d м.</item>
+        <item quantity="other">%d м.</item>
     </plurals>
     
     <plurals name="distance_kilometers">
-        <item quantity="one">Расстояние: %.1f километр</item>
-        <item quantity="few">Расстояние: %.1f километра</item>
-        <item quantity="many">Расстояние: %.1f километров</item>
-        <item quantity="other">Расстояние: %.1f километров</item>
+        <item quantity="one">%.1f км.</item>
+        <item quantity="few">%.1f км.</item>
+        <item quantity="many">%.1f км.</item>
+        <item quantity="other">%.1f км.</item>
     </plurals>
     <string name="action_place_here">Установить местоположение</string>
     <string name="trans_shops">Магазины</string>

@@ -199,7 +199,8 @@ public class PointsAccess {
 	public List<Point> loadPointsWithoutRegion(long sinceTime) {
 		Cursor cursor = db.rawQuery("SELECT " + POINT_SELECT + ',' + CATEGORY_SELECT +
 				" FROM point JOIN category ON point.categoryId = category.id " +
-				" WHERE (point.regionId4 IS NULL OR point.regionId6) AND point.regionUpdateTime <= ?;",
+				" WHERE (point.regionId4 IS NULL OR point.regionId6 IS NULL)" +
+						" AND point.regionUpdateTime <= ?;",
 				new String[] {String.valueOf(sinceTime)});
 
 		try {
@@ -272,7 +273,7 @@ public class PointsAccess {
 						"photosJson TEXT," +
 						"regionId4 TEXT," + // Currently there saved only region name, not id
 						"regionId6 TEXT," + // Currently there saved only region name, not id
-						"regionUpdateTime INTEGER," +
+						"regionUpdateTime INTEGER DEFAULT 0," +
 
 						"FOREIGN KEY (categoryId) REFERENCES category(id) ON DELETE CASCADE);");
 

@@ -41,10 +41,11 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 
-	//public static final String GETS_SERVER_DEFAULT = "http://getsi.ddns.net/getslocal/";
+	public static final String VEHICLE = "vehicle";
 
 	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
-	public static final String VEHICLE = "vehicle";
+	public static final int GETS_RADIUS_DEFAULT = 200000;
+
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
@@ -191,7 +192,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	}
 
 	private void updateRadius(SharedPreferences pref) {
-		String value = pref.getString(GETS_RADIUS, "200000");
+		String value = pref.getString(GETS_RADIUS, String.valueOf(GETS_RADIUS_DEFAULT));
 		int index = getsRadius.findIndexOfValue(value);
 		if (index >= 0) {
 			getsRadius.setSummary(getString(R.string.pref_radius) + " " + getsRadius.getEntries()[index]);

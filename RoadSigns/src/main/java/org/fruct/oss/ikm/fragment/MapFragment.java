@@ -876,7 +876,7 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent.requestRecommendedItem();
 		remoteContent.refresh(ContentFragment.REMOTE_CONTENT_URLS, false);
 
-		PointsUpdateService.startRegionCache(getActivity());
+		PointsUpdateService.startTryRefresh(getActivity());
 	}
 
 	@Override

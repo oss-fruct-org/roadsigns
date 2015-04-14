@@ -65,6 +65,8 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 			Result result = new Result();
 			result.categories = categories;
 			result.points = allLoadedPoints;
+			result.lat = param.lat;
+			result.lon = param.lon;
 
 			log.info("Finished points refresh");
 
@@ -98,12 +100,22 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 		private List<Category> categories;
 		private List<Point> points;
 
+		private double lat, lon;
+
 		public List<Category> getCategories() {
 			return categories;
 		}
 
 		public List<Point> getPoints() {
 			return points;
+		}
+
+		public double getLat() {
+			return lat;
+		}
+
+		public double getLon() {
+			return lon;
 		}
 	}
 }

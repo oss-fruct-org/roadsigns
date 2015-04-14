@@ -29,10 +29,17 @@ import de.greenrobot.event.EventBus;
 public class PointsUpdateService extends Service implements ContentServiceConnectionListener {
 	private static final Logger log = LoggerFactory.getLogger(PointsUpdateService.class);
 
+	private static final String PREF_LAST_REFRESH_LAT
+			= "org.fruct.oss.ikm.points.PointsUpdateService.LAST_REFRESH_LAT";
+	private static final String PREF_LAST_REFRESH_LON
+			= "org.fruct.oss.ikm.points.PointsUpdateService.LAST_REFRESH_LON";
+	private static final String PREF_LAST_REFRESH_TIME
+			= "org.fruct.oss.ikm.points.PointsUpdateService.LAST_REFRESH_TIME";
+
 	private static final String ACTION_REFRESH
 			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH";
-	private static final String ACTION_REGION_CACHE
-			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REGION_CACHE";
+	private static final String ACTION_TRY_REFRESH
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_TRY_REFRESH";
 
 	// Both arguments optional
 	public static final String ARG_RADIUS
@@ -42,8 +49,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	public static final String ARG_SKIP_CATEGORIES
 			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_SKIP_CATEGORIES";
 
-	private Location location;
-	private int radius;
+	private static final float REFRESH_DELTA_TIME = 3600000;
 
 	private SharedPreferences pref;
 	private GetsAsyncTask getsAsyncTask;
@@ -75,8 +81,8 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 		context.startService(intent);
 	}
 
-	public static void startRegionCache(Context context) {
-		Intent intent = new Intent(PointsUpdateService.ACTION_REGION_CACHE, null,
+	public static void startTryRefresh(Context context) {
+		Intent intent = new Intent(PointsUpdateService.ACTION_TRY_REFRESH, null,
 				context, PointsUpdateService.class);
 		context.startService(intent);
 	}
@@ -131,12 +137,35 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			refresh(location, radius, skipCategories);
 			break;
 
-		case ACTION_REGION_CACHE:
-			scheduleRegionsCacheUpdate();
+		case ACTION_TRY_REFRESH:
+			tryRefresh();
 			break;
 		}
 
 		return START_NOT_STICKY;
+	}
+
+	private void tryRefresh() {
+		LocationEvent locationEvent = EventBus.getDefault().getStickyEvent(LocationEvent.class);
+		if (locationEvent == null) {
+			return;
+		}
+
+		float dist[] = new float[1];
+		float lastRefreshLat = pref.getFloat(PREF_LAST_REFRESH_LAT, 0);
+		float lastRefreshLon = pref.getFloat(PREF_LAST_REFRESH_LON, 0);
+		float lastRefreshTime = pref.getFloat(PREF_LAST_REFRESH_LAT, 0);
+
+		int refreshRadius = Integer.parseInt(pref.getString(SettingsActivity.GETS_RADIUS,
+				String.valueOf(SettingsActivity.GETS_RADIUS_DEFAULT)));
+
+		Location currentLocation = locationEvent.getLocation();
+		Location.distanceBetween(lastRefreshLat, lastRefreshLon,
+				currentLocation.getLatitude(), currentLocation.getLongitude(), dist);
+
+		if (dist[0] > refreshRadius / 4 || System.currentTimeMillis() - lastRefreshTime > REFRESH_DELTA_TIME) {
+			refresh(currentLocation, refreshRadius, false);
+		}
 	}
 
 	private void refresh(Location location, int radius, boolean skipCategories) {
@@ -216,11 +245,14 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 
 			if (result != null) {
 				EventBus.getDefault().post(new PointsUpdatedEvent(true, result.getCategories()));
+				scheduleRegionsCacheUpdate();
+				pref.edit().putFloat(PREF_LAST_REFRESH_LAT, (float) result.getLat())
+						.putFloat(PREF_LAST_REFRESH_LON, (float) result.getLon())
+						.putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis())
+						.apply();
 			} else {
 				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
 			}
-
-			scheduleRegionsCacheUpdate();
 		}
 
 		@Override

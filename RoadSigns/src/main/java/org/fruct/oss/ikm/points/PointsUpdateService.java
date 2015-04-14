@@ -29,7 +29,10 @@ import de.greenrobot.event.EventBus;
 public class PointsUpdateService extends Service implements ContentServiceConnectionListener {
 	private static final Logger log = LoggerFactory.getLogger(PointsUpdateService.class);
 
-	public static final String ACTION_REFRESH = "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH";
+	private static final String ACTION_REFRESH
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH";
+	private static final String ACTION_REGION_CACHE
+			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REGION_CACHE";
 
 	// Both arguments optional
 	public static final String ARG_RADIUS
@@ -50,21 +53,31 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	private ExecutorService regionsExecutor = Executors.newSingleThreadExecutor();
 	private ContentService contentService;
 
+	private boolean isRegionCacheUpdateScheduled;
+
 	public PointsUpdateService() {
 	}
 
 	public static void startDefault(Context context) {
-		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null, context, PointsUpdateService.class);
+		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null,
+				context, PointsUpdateService.class);
 		context.startService(intent);
 	}
 
 	public static void startRefreshActive(Context context, Location location, int radius) {
-		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null, context, PointsUpdateService.class);
+		Intent intent = new Intent(PointsUpdateService.ACTION_REFRESH, null,
+				context, PointsUpdateService.class);
 
 		intent.putExtra(ARG_LOCATION, location);
 		intent.putExtra(ARG_RADIUS, radius);
 		intent.putExtra(ARG_SKIP_CATEGORIES, true);
 
+		context.startService(intent);
+	}
+
+	public static void startRegionCache(Context context) {
+		Intent intent = new Intent(PointsUpdateService.ACTION_REGION_CACHE, null,
+				context, PointsUpdateService.class);
 		context.startService(intent);
 	}
 
@@ -88,7 +101,13 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		if (intent != null && ACTION_REFRESH.equals(intent.getAction())) {
+		if (intent == null || intent.getAction() == null) {
+			return START_NOT_STICKY;
+		}
+
+		String action = intent.getAction();
+		switch (action) {
+		case ACTION_REFRESH:
 			Location location = intent.getParcelableExtra(ARG_LOCATION);
 			if (location == null) {
 				LocationEvent lastLocationEvent = EventBus.getDefault().getStickyEvent(LocationEvent.class);
@@ -110,6 +129,11 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			boolean skipCategories = intent.getBooleanExtra(ARG_SKIP_CATEGORIES, false);
 
 			refresh(location, radius, skipCategories);
+			break;
+
+		case ACTION_REGION_CACHE:
+			scheduleRegionsCacheUpdate();
+			break;
 		}
 
 		return START_NOT_STICKY;
@@ -133,6 +157,10 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	@Override
 	public synchronized void onContentServiceReady(ContentService contentService) {
 		this.contentService = contentService;
+
+		if (isRegionCacheUpdateScheduled) {
+			scheduleRegionsCacheUpdate();
+		}
 	}
 
 	@Override
@@ -141,6 +169,13 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	}
 
 	private void scheduleRegionsCacheUpdate() {
+		if (contentService == null) {
+			isRegionCacheUpdateScheduled = true;
+			return;
+		} else {
+			isRegionCacheUpdateScheduled = false;
+		}
+
 		regionsExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -154,10 +189,6 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	}
 
 	private synchronized void updatePointRegion(Point point) {
-		if (contentService == null) {
-			return;
-		}
-
 		log.trace("Checking region for point {}", point.getName());
 		Location pointLocation = new Location("no-provider");
 		pointLocation.setLatitude(point.toPoint().getLatitude());

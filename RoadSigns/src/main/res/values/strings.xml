@@ -76,5 +76,6 @@
     <string name="str_details_wikipedia">Wikipedia</string>
     <string name="warn_update_ready">Navigation data updated</string>
     <string name="str_search_wikipedia">Search on Wikipedia</string>
+    <string name="refresh_title">Refresh</string>
 
 </resources>

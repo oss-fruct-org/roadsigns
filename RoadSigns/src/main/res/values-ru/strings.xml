@@ -86,5 +86,20 @@
     <string name="trans_monasteries">Монастыри</string>
     <string name="trans_natural_monuments">Природные достопримечательности</string>
     <string name="trans_audio_other">Аудио Гиды</string>
-    <string name="str_search_wikipedia">Search on wikipedia</string>
+    <string name="str_search_wikipedia">Искать на Википедии</string>
+    <string name="pref_disable_warn_update_ready">Обновления</string>
+    <string name="pref_disable_warn_update_ready_sum">Не предупреждать об обновлениях</string>
+    <string name="pref_header_data_sync">Синхронизация</string>
+    <string name="pref_header_general">Основные</string>
+    <string name="pref_header_notifications">Уведомления</string>
+    <string name="pref_ringtone_silent">Без звука</string>
+    <string name="refresh">Обновить</string>
+    <string name="str_details_details">Детали</string>
+    <string name="str_details_show_on_map">На карте</string>
+    <string name="str_details_show_path">Показать путь</string>
+    <string name="str_details_wikipedia">Википедия</string>
+    <string name="title_activity_content">Загружаемые данные</string>
+    <string name="title_activity_drawer"></string>
+    <string name="title_activity_settings">Настройки</string>
+    <string name="warn_update_ready">Доступно обноление</string>
 </resources>

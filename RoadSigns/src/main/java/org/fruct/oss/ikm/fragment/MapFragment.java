@@ -831,7 +831,7 @@ public class MapFragment extends Fragment implements MapListener,
 		if (pathOverlay != null) {
 			mapView.getOverlays().remove(pathOverlay);
 		}
-		
+
 		pathOverlay = new PathOverlay(Color.BLUE, 6f, new DefaultResourceProxyImpl(getActivity()));
 		pathOverlay.setAlpha(127);
 
@@ -840,9 +840,11 @@ public class MapFragment extends Fragment implements MapListener,
 
 		mapView.getOverlays().add(pathOverlay);
 		mapView.invalidate();
-		
+
 		mapState.currentPath = path;
-		menu.findItem(R.id.action_remove_path).setVisible(true);
+		if (menu != null) {
+			menu.findItem(R.id.action_remove_path).setVisible(true);
+		}
 	}
 
 	@Override

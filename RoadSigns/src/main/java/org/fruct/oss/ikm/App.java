@@ -136,36 +136,11 @@ public class App extends Application {
 		for (Clearable clearable : clearables.keySet()) {
 			clearable.clear();
 		}
+
+		BitmapPool.getInstance().clearBitmapPool();
 	}
 
 	public static void addClearable(Clearable clearable) {
 		clearables.put(clearable, log /* dummy object */);
-	}
-
-	public static void clearBitmapPool() {
-		// FIXME: use method clearBitmapPool() when it will be available in maven repository
-		BitmapPool pool = BitmapPool.getInstance();
-
-		Field[] fields = BitmapPool.class.getDeclaredFields();
-		for (Field field : fields) {
-			if (field.getName().equals("mPool")) {
-				field.setAccessible(true);
-				try {
-					LinkedList<Bitmap> mPool = (LinkedList) field.get(pool);
-					log.debug("Pool size = " + mPool.size());
-					synchronized (mPool) {
-						while (!mPool.isEmpty()) {
-							Bitmap bitmap = mPool.remove();
-							bitmap.recycle();
-						}
-					}
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-					return;
-				}
-
-				break;
-			}
-		}
 	}
 }

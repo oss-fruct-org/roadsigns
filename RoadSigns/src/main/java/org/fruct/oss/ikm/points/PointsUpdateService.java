@@ -154,7 +154,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 		float dist[] = new float[1];
 		float lastRefreshLat = pref.getFloat(PREF_LAST_REFRESH_LAT, 0);
 		float lastRefreshLon = pref.getFloat(PREF_LAST_REFRESH_LON, 0);
-		float lastRefreshTime = pref.getFloat(PREF_LAST_REFRESH_LAT, 0);
+		long lastRefreshTime = pref.getLong(PREF_LAST_REFRESH_TIME, 0);
 
 		int refreshRadius = Integer.parseInt(pref.getString(SettingsActivity.GETS_RADIUS,
 				String.valueOf(SettingsActivity.GETS_RADIUS_DEFAULT)));

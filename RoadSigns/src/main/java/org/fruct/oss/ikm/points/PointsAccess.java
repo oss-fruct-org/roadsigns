@@ -81,6 +81,7 @@ public class PointsAccess {
 			values.put("regionId4", region4);
 
 		String region6 = point.getRegionId(6);
+		if (region6 != null)
 			values.put("regionId6", region6);
 
 		long regionUpdateTime = point.getRegionUpdateTime();

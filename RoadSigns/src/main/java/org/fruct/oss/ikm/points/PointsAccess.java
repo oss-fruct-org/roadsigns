@@ -8,7 +8,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.mapcontent.content.utils.Utils;
-import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,14 +65,15 @@ public class PointsAccess {
 		}
 	}
 
-	public void insertPoint(Point point) {
+	public void insertPoint(Point point, boolean updateTimestamp) {
 		ContentValues values = new ContentValues();
 		values.put("lat", point.toPoint().getLatitudeE6());
 		values.put("lon", point.toPoint().getLongitudeE6());
 		values.put("name", point.getName());
 		values.put("categoryId", point.getCategory().getId());
 		values.put("desc", point.getDescription());
-		values.put("timestamp", System.currentTimeMillis());
+		if (updateTimestamp)
+			values.put("timestamp", System.currentTimeMillis());
 		values.put("photosJson", Utils.serializeStringList(point.getPhotos()));
 
 		String region4 = point.getRegionId(4);
@@ -104,7 +104,7 @@ public class PointsAccess {
 		db.beginTransaction();
 		try {
 			for (Point point : points) {
-				insertPoint(point);
+				insertPoint(point, true);
 			}
 			db.setTransactionSuccessful();
 		} finally {
@@ -193,8 +193,8 @@ public class PointsAccess {
 	}
 
 
-	public void deleteOlderThan(long timestamp) {
-		db.delete("point", "timestamp < ?", new String[] {String.valueOf(timestamp)});
+	public int deleteOlderThan(long timestamp) {
+		return db.delete("point", "timestamp < ?", new String[] {String.valueOf(timestamp)});
 	}
 
 	public List<Point> loadPointsWithoutRegion(long sinceTime) {

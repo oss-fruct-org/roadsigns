@@ -27,6 +27,8 @@ import java.util.concurrent.Executors;
 import de.greenrobot.event.EventBus;
 
 public class PointsUpdateService extends Service implements ContentServiceConnectionListener {
+	private static final long OBSOLETE_TIME = 60 * 60 * 24 * 30 * 1000l; // 30 days
+
 	private static final Logger log = LoggerFactory.getLogger(PointsUpdateService.class);
 
 	private static final String PREF_LAST_REFRESH_LAT
@@ -138,14 +140,18 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			break;
 
 		case ACTION_TRY_REFRESH:
-			tryRefresh();
+			maintain();
 			break;
 		}
 
 		return START_NOT_STICKY;
 	}
 
-	private void tryRefresh() {
+	private void maintain() {
+		long deleted = App.getInstance().getPointsAccess().deleteOlderThan(System.currentTimeMillis() - OBSOLETE_TIME);
+
+		log.info("{} old points deleted while maintaining points database", deleted);
+
 		LocationEvent locationEvent = EventBus.getDefault().getStickyEvent(LocationEvent.class);
 		if (locationEvent == null) {
 			return;
@@ -231,7 +237,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 		}
 
 		point.setRegionUpdateTime(System.currentTimeMillis());
-		App.getInstance().getPointsAccess().insertPoint(point);
+		App.getInstance().getPointsAccess().insertPoint(point, false);
 	}
 
 	private class Task extends GetsAsyncTask {

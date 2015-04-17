@@ -258,9 +258,6 @@ public class MapFragment extends Fragment implements MapListener,
 		super.onStart();
 
 		EventBus.getDefault().registerSticky(this);
-
-		checkProvidersEnabled();
-		checkNetworkAvailable();
 	}
 
 	@Override
@@ -507,110 +504,6 @@ public class MapFragment extends Fragment implements MapListener,
 		scheduleGlobalLayoutListener();
 
 		return view;
-	}
-/*
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
-		// Listen for new points in PointManager
-
-		setState(State.CREATED);
-
-		// Start tracking if preference set
-		if (pref.getBoolean(SettingsActivity.START_TRACKING_MODE, false)) {
-			addPendingTask(new Runnable() {
-				@Override
-				public void run() {
-					startTracking();
-				}
-			}, State.DS_RECEIVED);
-		}
-	}
-*/
-	private void checkNavigationDataAvailable() {
-		if (!navigationDataToastShown && recommendedContentItem == null) {
-			if (!pref.getBoolean(SettingsActivity.WARN_NAVIGATION_DATA_DISABLED, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_no_navigation_data,
-						R.string.configure_navigation_data,
-						R.string.dont_show_again,
-						SettingsActivity.WARN_NAVIGATION_DATA_DISABLED) {
-					@Override
-					protected void onAccept() {
-						Intent intent = new Intent(getActivity(), DrawerActivity.class);
-						intent.setAction(ContentFragment.ACTION_SHOW_ONLINE_CONTENT);
-						startActivity(intent);
-					}
-				};
-				dialog.show(getFragmentManager(), "navigation-data-dialog");
-			} else {
-				Toast toast = Toast.makeText(getActivity(),
-						R.string.warn_no_navigation_data, Toast.LENGTH_SHORT);
-				toast.show();
-
-			}
-			navigationDataToastShown = true;
-		}
-	}
-
-	private void checkNetworkAvailable() {
-		boolean networkActive = Utils.checkNetworkAvailability(getActivity());
-
-		if (!networkToastShown && !networkActive && tileProviderManager.isOnline()) {
-			if (!pref.getBoolean(SettingsActivity.WARN_NETWORK_DISABLED, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_no_network,
-						R.string.configure_use_offline_map,
-						R.string.dont_show_again,
-						SettingsActivity.WARN_NETWORK_DISABLED) {
-					@Override
-					protected void onAccept() {
-						Intent intent = new Intent(Settings.ACTION_NETWORK_OPERATOR_SETTINGS);
-						startActivity(intent);
-					}
-				};
-				dialog.show(getFragmentManager(), "network-dialog");
-			} else {
-				Toast toast = Toast.makeText(getActivity(),
-						R.string.warn_no_network, Toast.LENGTH_SHORT);
-				toast.show();
-			}
-
-			networkToastShown = true;
-		}
-	}
-
-	private void checkProvidersEnabled() {
-		LocationManager locationManager = (LocationManager) getActivity()
-				.getSystemService(Context.LOCATION_SERVICE);
-
-		// Check if all providers disabled and show warning
-		if (!providersToastShown
-				&& !locationManager
-						.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-				&& !locationManager
-						.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-			if (!pref.getBoolean(SettingsActivity.WARN_PROVIDERS_DISABLED, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_no_providers,
-						R.string.configure_providers,
-						R.string.dont_show_again,
-						SettingsActivity.WARN_PROVIDERS_DISABLED) {
-					@Override
-					protected void onAccept() {
-						Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-						startActivity(intent);
-					}
-				};
-
-				dialog.show(getFragmentManager(), "providers-dialog");
-			} else {
-				Toast toast = Toast.makeText(getActivity(),
-						R.string.warn_no_providers, Toast.LENGTH_SHORT);
-				toast.show();
-			}
-			providersToastShown = true;
-		}
 	}
 	
 	@Override
@@ -876,7 +769,7 @@ public class MapFragment extends Fragment implements MapListener,
 		remoteContent = contentService;
 		remoteContent.addItemListener(remoteContentAdapter);
 		remoteContent.requestRecommendedItem();
-		remoteContent.refresh(ContentFragment.REMOTE_CONTENT_URLS, false);
+		remoteContent.refresh(false);
 
 		PointsUpdateService.startTryRefresh(getActivity());
 	}
@@ -982,42 +875,10 @@ public class MapFragment extends Fragment implements MapListener,
 
 		@Override
 		public void recommendedRegionItemNotFound(String contentType) {
-			if (!contentType.equals(ContentManagerImpl.GRAPHHOPPER_MAP)) {
-				return;
-			}
-
-			Handler checkerHandler = new Handler(Looper.getMainLooper());
-			checkerHandler.postDelayed(new Runnable() {
-				@Override
-				public void run() {
-					if (remoteContent != null) {
-						checkNavigationDataAvailable();
-					}
-				}
-			}, 1000);
 		}
 
 		@Override
 		public void updateReady() {
-			if (!pref.getBoolean(SettingsActivity.WARN_UPDATE_READY, false)) {
-				WarnDialog dialog = new WarnDialog(R.string.warn_update_ready,
-						R.string.configure_navigation_data,
-						R.string.dont_show_again,
-						SettingsActivity.WARN_UPDATE_READY) {
-					@Override
-					protected void onAccept() {
-						Intent intent = new Intent(getActivity(), DrawerActivity.class);
-						intent.setAction(ContentFragment.ACTION_UPDATE_READY);
-						startActivity(intent);
-					}
-				};
-				dialog.show(getFragmentManager(), "navigation-data-dialog");
-			} else {
-				Toast toast = Toast.makeText(getActivity(),
-						R.string.warn_update_ready, Toast.LENGTH_SHORT);
-				toast.show();
-
-			}
 		}
 	};
 }

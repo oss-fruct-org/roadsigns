@@ -29,12 +29,6 @@ public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.
 		return fragment;
 	}
 
-	public static final String[] REMOTE_CONTENT_URLS = {
-			"http://gets.cs.petrsu.ru/maps/root/root.xml",
-			"http://kappa.cs.petrsu.ru/~ivashov/mordor2.xml",
-			"http://kappa.cs.petrsu.ru/~ivashov/mordor.xml",
-			"http://oss.fruct.org/projects/roadsigns/root.xml"};
-
 	public ContentFragment() {
 		super();
 	}
@@ -43,18 +37,6 @@ public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		((DrawerActivity) getActivity()).onSectionAttached(getString(R.string.action_download_map),
-				ActionBar.NAVIGATION_MODE_LIST);
-
-		setRootUrls(REMOTE_CONTENT_URLS);
-		boolean suggest = false;
-
-		if (getArguments() != null) {
-			suggest = getArguments().getBoolean("suggest");
-		}
-
-		if (suggest) {
-			suggestItem();
-		}
+		((DrawerActivity) getActivity()).onSectionAttached(getString(R.string.action_download_map), ActionBar.NAVIGATION_MODE_LIST);
 	}
 }

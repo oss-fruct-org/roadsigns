@@ -16,7 +16,7 @@ import java.util.List;
  * Allows to store points in local storage
  */
 public class PointsAccess {
-	private static final int VERSION = 3;
+	private static final int VERSION = 4;
 
 	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon," +
 			" point.uuid, point.photosJson, point.id," +
@@ -259,6 +259,9 @@ public class PointsAccess {
 		public void onUpgrade(SQLiteDatabase db, int old, int ne) {
 			switch (old) {
 			case 0:
+			case 1:
+			case 2:
+			case 3:
 				db.execSQL("DROP TABLE IF EXISTS point;");
 				db.execSQL("DROP TABLE IF EXISTS category;");
 

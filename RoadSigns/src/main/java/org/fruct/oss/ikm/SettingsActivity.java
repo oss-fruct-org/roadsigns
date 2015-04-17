@@ -72,6 +72,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
+		addPreferencesFromResource(org.fruct.oss.mapcontent.R.xml.preferences);
 
 		storeLocationsPref = (CheckBoxPreference) findPreference(START_TRACKING_MODE);
 		nearestPointsPref = (ListPreference) findPreference(NEAREST_POINTS);

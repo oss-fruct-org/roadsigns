@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.drawer;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.PersistableBundle;
@@ -26,6 +27,8 @@ import org.fruct.oss.ikm.fragment.MapFragment;
 import org.fruct.oss.ikm.fragment.PointsFragment;
 import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
+import org.fruct.oss.mapcontent.content.helper.ContentHelper;
 import org.osmdroid.util.GeoPoint;
 
 import java.util.ArrayList;
@@ -53,6 +56,10 @@ public class DrawerActivity extends ActionBarActivity
 
 	private int backStackCount;
 
+	private ContentHelper contentHelper;
+
+	private boolean isFromSavedState;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -72,6 +79,31 @@ public class DrawerActivity extends ActionBarActivity
 		} else if (getIntent().getAction() != null) {
 			processIntent(getIntent());
 		}
+
+		isFromSavedState = savedInstanceState != null;
+
+		contentHelper = new ContentHelper(this, new ContentServiceConnection(null));
+		contentHelper.enableNetworkNotifications();
+		contentHelper.enableLocationProviderNotifications();
+		contentHelper.enableUpdateNotifications(PendingIntent.getActivity(this, 0,
+				new Intent(org.fruct.oss.mapcontent.content.fragments.ContentFragment.ACTION_UPDATE_READY, null, this, DrawerActivity.class),
+				PendingIntent.FLAG_ONE_SHOT));
+
+		contentHelper.enableContentNotifications(PendingIntent.getActivity(this, 1,
+				new Intent(org.fruct.oss.mapcontent.content.fragments.ContentFragment.ACTION_SHOW_ONLINE_CONTENT, null, this, DrawerActivity.class),
+				PendingIntent.FLAG_ONE_SHOT));
+	}
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		contentHelper.onStart(isFromSavedState);
+	}
+
+	@Override
+	protected void onStop() {
+		contentHelper.onStop();
+		super.onStop();
 	}
 
 	@Override

@@ -91,39 +91,6 @@
         />
 
     <PreferenceCategory
-        android:enabled="true"
-        android:title="@string/pref_warnings"
-        android:key="warn_preferences">
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="warn_providers_disabled"
-            android:summary="@string/pref_disable_warn_providers_sum"
-            android:title="@string/pref_disable_warn_providers" />
-
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="warn_network_disabled"
-            android:summary="@string/pref_disable_warn_network_sum"
-            android:title="@string/pref_disable_warn_network" />
-
-        <CheckBoxPreference
-            android:defaultValue="false"
-
-            android:key="warn_navigation_data_disabled"
-            android:summary="@string/pref_disable_warn_navigation_sum"
-            android:title="@string/pref_disable_warn_navigation" />
-
-        <CheckBoxPreference
-            android:defaultValue="false"
-
-            android:key="warn_update_ready"
-            android:summary="@string/pref_disable_warn_update_ready_sum"
-            android:title="@string/pref_disable_warn_update_ready" />
-        />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
         android:title="GeTS preferences"
         android:key="gets_preferences">
         <CheckBoxPreference

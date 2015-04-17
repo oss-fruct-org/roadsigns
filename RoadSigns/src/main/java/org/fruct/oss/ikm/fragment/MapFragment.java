@@ -875,6 +875,10 @@ public class MapFragment extends Fragment implements MapListener,
 
 		@Override
 		public void recommendedRegionItemNotFound(String contentType) {
+			if (contentType.equals(ContentManagerImpl.MAPSFORGE_MAP)) {
+				tileProviderManager.setFile(null);
+				mapView.invalidate();
+			}
 		}
 
 		@Override

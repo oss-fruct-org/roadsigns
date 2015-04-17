@@ -2,7 +2,6 @@ package org.fruct.oss.ikm;
 
 import android.app.Application;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.preference.PreferenceManager;
 
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
@@ -20,8 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.lang.reflect.Field;
-import java.util.LinkedList;
 import java.util.WeakHashMap;
 
 public class App extends Application {
@@ -45,7 +42,7 @@ public class App extends Application {
 		App.context = getApplicationContext();
 		App.app = this;
 
-		PreferenceManager.setDefaultValues(App.context, R.xml.preferences, false);
+		PreferenceManager.setDefaultValues(App.context, R.xml.preferences_rs, false);
 		AndroidGraphicFactory.createInstance(this);
 		hackOsmdroidCache();
 

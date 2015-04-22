@@ -5,12 +5,15 @@ import org.fruct.oss.ikm.points.gets.Category;
 import java.util.List;
 
 public class PointsUpdatedEvent {
-	private boolean isSuccess;
-	private final List<Category> categories;
+	private final boolean isSuccess;
 
-	public PointsUpdatedEvent(boolean isSuccess, List<Category> categories) {
+	private final List<Category> categories;
+	private final String message;
+
+	public PointsUpdatedEvent(boolean isSuccess, List<Category> categories, String message) {
 		this.isSuccess = isSuccess;
 		this.categories = categories;
+		this.message = message;
 	}
 
 	public boolean isSuccess() {
@@ -19,5 +22,9 @@ public class PointsUpdatedEvent {
 
 	public List<Category> getCategories() {
 		return categories;
+	}
+
+	public String getMessage() {
+		return message;
 	}
 }

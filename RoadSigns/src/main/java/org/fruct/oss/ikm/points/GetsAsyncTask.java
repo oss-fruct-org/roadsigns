@@ -22,6 +22,8 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 	private final Gets gets;
 	private final PointsAccess pointsAccess;
 
+	protected Exception exception;
+
 	public GetsAsyncTask(String server, boolean skipCategory) {
 		this.server = server;
 		this.skipCategory = skipCategory;
@@ -72,8 +74,10 @@ public class GetsAsyncTask extends AsyncTask<GetsAsyncTask.Params, Integer, Gets
 
 			return result;
 		} catch (IOException e) {
+			exception = e;
 			log.error("IO error while refreshing points", e);
 		} catch (GetsException e) {
+			exception = e;
 			log.error("Server error while refreshing points", e);
 		}
 

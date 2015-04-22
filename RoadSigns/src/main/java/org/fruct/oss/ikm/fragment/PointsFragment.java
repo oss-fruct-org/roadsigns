@@ -384,7 +384,10 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 	@EventReceiver
 	public void onEventMainThread(PointsUpdatedEvent pointsUpdatedEvent) {
 		if (!pointsUpdatedEvent.isSuccess()) {
-			Toast.makeText(getActivity(), R.string.error_downloading, Toast.LENGTH_LONG).show();
+			Toast.makeText(getActivity(), R.string.error_downloading, Toast.LENGTH_SHORT).show();
+			if (pointsUpdatedEvent.getMessage() != null) {
+				Toast.makeText(getActivity(), pointsUpdatedEvent.getMessage(), Toast.LENGTH_LONG).show();
+			}
 		} else {
 			Toast.makeText(getActivity(), R.string.download_finished, Toast.LENGTH_LONG).show();
 

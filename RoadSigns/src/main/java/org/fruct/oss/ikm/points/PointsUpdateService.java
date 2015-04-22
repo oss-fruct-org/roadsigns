@@ -20,6 +20,8 @@ import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -127,7 +129,8 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			//noinspection ConstantConditions
 			if (location == null) {
 				log.warn("Trying refresh points without location");
-				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+				EventBus.getDefault().post(new PointsUpdatedEvent(false, null,
+						"Trying refresh points without location"));
 				return START_NOT_STICKY;
 			}
 
@@ -250,20 +253,29 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			super.onPostExecute(result);
 
 			if (result != null) {
-				EventBus.getDefault().post(new PointsUpdatedEvent(true, result.getCategories()));
+				EventBus.getDefault().post(new PointsUpdatedEvent(true, result.getCategories(), null));
 				scheduleRegionsCacheUpdate();
 				pref.edit().putFloat(PREF_LAST_REFRESH_LAT, (float) result.getLat())
 						.putFloat(PREF_LAST_REFRESH_LON, (float) result.getLon())
 						.putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis())
 						.apply();
 			} else {
-				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+				EventBus.getDefault().post(new PointsUpdatedEvent(false, null, "Exception: " + exception.getMessage()));
+			}
+
+			if (exception != null) {
+				try {
+					PrintWriter writer = new PrintWriter(new File("/sdcard/roadsigns.txt"));
+					exception.printStackTrace(writer);
+					writer.close();
+				} catch (Exception ignore) {
+				}
 			}
 		}
 
 		@Override
 		protected void onCancelled() {
-			EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+			EventBus.getDefault().post(new PointsUpdatedEvent(false, null, "Gets task was cancelled"));
 		}
 	}
 }

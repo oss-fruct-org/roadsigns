@@ -13,8 +13,8 @@ android {
         applicationId 'org.fruct.oss.ikm'
         minSdkVersion 10
         targetSdkVersion 22
-        versionCode 22
-        versionName '0.3.7-debug'
+        versionCode 23
+        versionName '0.3.7-debug-2'
     }
 
     lintOptions {

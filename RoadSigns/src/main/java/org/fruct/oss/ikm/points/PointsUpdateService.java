@@ -135,7 +135,8 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			}
 
 			int radius = intent.getIntExtra(ARG_RADIUS,
-					Integer.parseInt(pref.getString(SettingsActivity.GETS_RADIUS, "-1")));
+					Integer.parseInt(pref.getString(SettingsActivity.GETS_RADIUS,
+							String.valueOf(SettingsActivity.GETS_RADIUS_DEFAULT))));
 
 			boolean skipCategories = intent.getBooleanExtra(ARG_SKIP_CATEGORIES, false);
 
@@ -267,6 +268,20 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 				try {
 					PrintWriter writer = new PrintWriter(new File("/sdcard/roadsigns.txt"));
 					exception.printStackTrace(writer);
+
+					String getsServer = pref.getString(SettingsActivity.GETS_SERVER, "n/a");
+					if (getsServer != null)
+						writer.println("Server " + getsServer);
+
+					String getsRadius = pref.getString(SettingsActivity.GETS_RADIUS, "n/a");
+					if (getsRadius != null)
+						writer.println("Radius " + getsRadius);
+
+					LocationEvent locati = EventBus.getDefault().getStickyEvent(LocationEvent.class);
+					if (locati != null) {
+						writer.println("Location " + locati.getLocation().getLatitude() + " " + locati.getLocation().getLongitude());
+					}
+
 					writer.close();
 				} catch (Exception ignore) {
 				}

@@ -40,7 +40,7 @@ public class Gets {
 	 * @throws IOException
 	 */
 	public List<Category> getCategories() throws IOException, GetsException {
-		String responseStr = downloadUrl(getsServerUrl + "getCategories.php", String.format(GET_CATEGORIES_REQUEST));
+		String responseStr = downloadUrl(getsServerUrl + "getCategories.php", GET_CATEGORIES_REQUEST);
 		GetsResponse<CategoriesContent> resp = GetsResponse.parse(responseStr, new CategoriesParser());
 
 		if (resp.getCode() != 0) {
@@ -71,7 +71,7 @@ public class Gets {
 		if (kmlGetsResponse.getCode() != 0) {
 			log.warn("getCategories returned with code {} message '{}'", kmlGetsResponse.getCode(),
 					kmlGetsResponse.getMessage());
-			throw new GetsException("Server return error");
+			throw new GetsException("Server return error. Request " + requestBuilder.toString() + " response " + responseStr);
 		}
 
 		Kml kml = kmlGetsResponse.getContent();

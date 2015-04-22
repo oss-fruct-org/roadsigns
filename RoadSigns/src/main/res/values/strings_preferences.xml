@@ -30,6 +30,7 @@
 
     <string name="pref_radius">Radius</string>
     <string name="pref_radius_sum">Search points in</string>
+    <string name="pref_reset_server">Reset server address</string>
 
     <string-array name="pref_nearest_points_str">
         <item>@string/pref_all</item>

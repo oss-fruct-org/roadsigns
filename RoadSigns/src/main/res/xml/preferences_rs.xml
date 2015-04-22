@@ -112,6 +112,9 @@
             android:title="GeTS Server"
             android:inputType="textUri"/>
 
+        <Preference
+            android:key="button_reset_gets_server"
+            android:title="@string/pref_reset_server" />
 
         <ListPreference
             android:defaultValue="200000"

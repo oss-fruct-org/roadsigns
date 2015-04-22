@@ -8,6 +8,8 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceManager;
 
 import org.fruct.oss.mapcontent.content.ContentService;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
@@ -46,6 +48,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	public static final String GETS_SERVER_DEFAULT = "http://gets.cs.petrsu.ru/gets/service/";
 	public static final int GETS_RADIUS_DEFAULT = 200000;
 
+	private SharedPreferences pref;
 
 	private CheckBoxPreference storeLocationsPref;
 	private ListPreference nearestPointsPref;
@@ -56,7 +59,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private ListPreference getsRadius;
 
 	private ContentServiceConnection contentServiceConnection = new ContentServiceConnection(this);
-	private ContentService contentService;
 
 	@Override
 	public void onContentServiceReady(ContentService contentService) {
@@ -88,6 +90,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		getPreferenceScreen().removePreference(autoRegionPreference);
 
 		getsServerPref = (EditTextPreference) findPreference(GETS_SERVER);
+
+		pref = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 
 	@Override
@@ -96,6 +100,8 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		final SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
 
 		updateStoragePath(sharedPreferences, storagePathPref);
+		updateGetsServerSummary(sharedPreferences);
+		setupResetGetsServerPreference();
 	}
 
 	@Override
@@ -129,7 +135,7 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 			updateNearestPoints(sharedPreferences);
 			break;
 		case GETS_SERVER:
-			updateEditBoxPreference(sharedPreferences, GETS_SERVER, getsServerPref);
+			updateGetsServerSummary(sharedPreferences);
 			break;
 		case VEHICLE:
 			updateVehicle();
@@ -140,13 +146,31 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		}
 	}
 
-
-	private void updateEditBoxPreference(SharedPreferences sharedPreferences, String key, EditTextPreference pref) {
-		String value = sharedPreferences.getString(key, "");
+	private void updateGetsServerSummary(SharedPreferences sharedPreferences) {
+		String value = sharedPreferences.getString(GETS_SERVER, GETS_SERVER_DEFAULT);
 		if (value == null || value.isEmpty()) {
-			pref.setSummary(key.equals(GETS_SERVER) ? GETS_SERVER_DEFAULT : "");
+			getsServerPref.setSummary(GETS_SERVER_DEFAULT);
 		} else {
-			pref.setSummary(value);
+			getsServerPref.setSummary(value);
+		}
+	}
+
+	private void setupResetGetsServerPreference() {
+		Preference resetServerButton = findPreference("button_reset_gets_server");
+
+		String currentValue = pref.getString(GETS_SERVER, GETS_SERVER_DEFAULT);
+		if (GETS_SERVER_DEFAULT.equals(currentValue)) {
+			PreferenceCategory getsCategory = (PreferenceCategory) findPreference("gets_preferences");
+			getsCategory.removePreference(resetServerButton);
+		} else {
+			resetServerButton.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					pref.edit().putString(GETS_SERVER, GETS_SERVER_DEFAULT).apply();
+					return true;
+				}
+			});
+
 		}
 	}
 

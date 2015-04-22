@@ -77,5 +77,6 @@
     <string name="warn_update_ready">Navigation data updated</string>
     <string name="str_search_wikipedia">Search on Wikipedia</string>
     <string name="refresh_title">Refresh</string>
+    <string name="str_gets_server_updated">Gets server updated</string>
 
 </resources>

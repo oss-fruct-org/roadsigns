@@ -101,5 +101,6 @@
     <string name="title_activity_content">Загружаемые данные</string>
     <string name="title_activity_drawer"></string>
     <string name="title_activity_settings">Настройки</string>
-    <string name="warn_update_ready">Доступно обноление</string>
+    <string name="warn_update_ready">Доступно обновление</string>
+    <string name="str_gets_server_updated">Сервер GeTS обновлен</string>
 </resources>

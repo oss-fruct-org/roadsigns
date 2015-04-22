@@ -2,7 +2,9 @@ package org.fruct.oss.ikm;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
@@ -30,10 +32,11 @@ public class App extends Application {
 
 	private static Context context;
 	private static App app;
-	private ImageLoader imageLoader;
 	private PointsAccess pointsAccess;
 
-	private static WeakHashMap<Clearable, Object> clearables = new WeakHashMap<Clearable, Object>();
+	private final String[] OLD_DEFAULT_GETS_SERVERS = { "http://oss.fruct.org/projects/gets/service" };
+
+	private static WeakHashMap<Clearable, Object> clearables = new WeakHashMap<>();
 
 	@Override
 	public void onCreate() {
@@ -43,6 +46,9 @@ public class App extends Application {
 		App.app = this;
 
 		PreferenceManager.setDefaultValues(App.context, R.xml.preferences_rs, false);
+
+		updatePreferences();
+
 		AndroidGraphicFactory.createInstance(this);
 		hackOsmdroidCache();
 
@@ -52,6 +58,25 @@ public class App extends Application {
 
 		// Setup points database
 		pointsAccess = new PointsAccess(context);
+	}
+
+	private void updatePreferences() {
+		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+		String currentGetsServer = pref.getString(SettingsActivity.GETS_SERVER, SettingsActivity.GETS_SERVER_DEFAULT);
+
+		if (currentGetsServer == null) {
+			// It should not happen due to setDefaultValues
+			return;
+		}
+
+		// Only default values will be updated
+		for (String oldServer : OLD_DEFAULT_GETS_SERVERS) {
+			if (currentGetsServer.startsWith(oldServer)) {
+				pref.edit().putString(SettingsActivity.GETS_SERVER, SettingsActivity.GETS_SERVER_DEFAULT).apply();
+				Toast.makeText(context, getString(R.string.str_gets_server_updated), Toast.LENGTH_SHORT).show();
+				return;
+			}
+		}
 	}
 
 	private void hackOsmdroidCache() {
@@ -110,13 +135,6 @@ public class App extends Application {
 			throw new IllegalStateException("Application not initialized yet");
 
 		return App.app;
-	}
-
-	public ImageLoader getImageLoader() {
-		if (imageLoader == null)
-			throw new IllegalStateException("Application not initialized yet");
-
-		return imageLoader;
 	}
 
 	public PointsAccess getPointsAccess() {

@@ -93,19 +93,6 @@
     <PreferenceCategory
         android:title="GeTS preferences"
         android:key="gets_preferences">
-        <CheckBoxPreference
-            android:defaultValue="true"
-            android:key="gets_enable"
-            android:title="Enable GeTS"/>
-
-        <!--
-                <EditTextPreference
-                    android:defaultValue="http://gets.cs.petrsu.ru/gets/service/"
-                    android:key="gets_server"
-                    android:title="GeTS Server"
-                    android:inputType="textUri"/>
-        -->
-
         <EditTextPreference
             android:defaultValue="http://gets.cs.petrsu.ru/gets/service/"
             android:key="gets_server"

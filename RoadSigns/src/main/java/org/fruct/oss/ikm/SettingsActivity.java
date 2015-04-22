@@ -39,7 +39,6 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 
 	//public static final String
 
-	public static final String GETS_ENABLE = "gets_enable";
 	public static final String GETS_SERVER = "gets_server";
 	public static final String GETS_RADIUS = "gets_radius";
 

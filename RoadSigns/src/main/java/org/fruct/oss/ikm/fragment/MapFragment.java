@@ -843,9 +843,7 @@ public class MapFragment extends Fragment implements MapListener,
 		case SettingsActivity.USE_OFFLINE_MAP:
 			setupOfflineMap();
 			break;
-		case SettingsActivity.GETS_ENABLE:
 		case SettingsActivity.GETS_SERVER:
-
 			// TODO: reload points from new server
 			break;
 		}

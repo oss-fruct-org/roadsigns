@@ -148,7 +148,8 @@ public class OneToManyRouting extends GHRouting {
 				log.warn("Location index {} not found for {}", nodeId, point.getName());
 			}
 
-			if (Thread.interrupted()) {
+			if (Thread.currentThread().isInterrupted()) {
+				log.debug("Routing thread interrupted");
 				return;
 			}
 		}
@@ -160,7 +161,8 @@ public class OneToManyRouting extends GHRouting {
 				sendPointDirection(node, nodePoints, radius, callback);
 			}
 
-			if (Thread.interrupted()) {
+			if (Thread.currentThread().isInterrupted()) {
+				log.debug("Routing thread interrupted");
 				return;
 			}
 		}

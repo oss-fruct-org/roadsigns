@@ -684,8 +684,10 @@ public class MapFragment extends Fragment implements MapListener,
 		updateRadius();
 
 		EventBus.getDefault().postSticky(new TrackingModeEvent(true));
+		if (myLocation != null) {
+			mapView.getController().animateTo(new GeoPoint(myLocation));
+		}
 	}
-	
 	public void stopTracking() {
 		isTracking = false;
 

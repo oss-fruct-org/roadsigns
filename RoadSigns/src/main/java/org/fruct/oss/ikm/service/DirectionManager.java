@@ -52,7 +52,6 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private final ExecutorService executor;
 
 	private Future<?> calculationTask;
-	private Future<?> updatePathTask;
 
 	private boolean isTrackingMode = false;
 
@@ -61,6 +60,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	
 	// POI, that pass filters
 	private List<Point> activePoints = new ArrayList<>();
+
+	private boolean isClosed;
 	
 	public DirectionManager(GHRouting routing) {
 		if (routing == null)
@@ -72,19 +73,21 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		EventBus.getDefault().registerSticky(this);
 	}
 
-	public void closeSync() {
+	public synchronized void shutdown() {
 		EventBus.getDefault().unregister(this);
 		log.debug("ASD unregistered");
+
+		isClosed = true;
 
 		listener = null;
 		interrupt();
 
+		executor.shutdownNow();
+	}
+
+	public void awaitShutdown() {
 		try {
-			executor.shutdownNow();
-			if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-				log.error("Shutdown direction manager failed");
-			}
-			routing = null;
+			executor.awaitTermination(10, TimeUnit.SECONDS);
 		} catch (InterruptedException ignored) {
 		}
 	}
@@ -187,24 +190,27 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	@Override
 	public void pathUpdated(PointList pointList) {
-		if (listener != null)
-			listener.pathReady(pointList);
+		synchronized (this) {
+			if (!isClosed && listener != null) {
+				listener.pathReady(pointList);
+			}
+		}
 	}
 
 	private void sendResult() {
 		if (readyPoints.isEmpty())
 			return;
-		
+
 		HashMap<GeoPoint, Direction> directions = new HashMap<>();
 		for (Point point : activePoints) {
 			Pair<GeoPoint, GeoPoint> dirPair = readyPoints.get(point);
-			
+
 			if (dirPair != null) {
 				GeoPoint node1 = dirPair.first;
 				GeoPoint node2 = dirPair.second;
-				
+
 				Direction direction = directions.get(node2);
-				
+
 				if (direction == null) {
 					direction = new Direction(node1, node2);
 					directions.put(node2, direction);
@@ -215,10 +221,12 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 
 		ArrayList<Direction> lastResultDirections = new ArrayList<>(directions.values());
-		if (listener != null)
-			listener.directionsUpdated(lastResultDirections, userPosition);
+		synchronized (this) {
+			if (!isClosed && listener != null) {
+				listener.directionsUpdated(lastResultDirections, userPosition);
+			}
+		}
 	}
-
 	@EventReceiver
 	public void onEventMainThread(ScreenRadiusEvent screenRadiusEvent) {
 		int newRadius = screenRadiusEvent.getRadius();
@@ -261,6 +269,13 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	@EventReceiver
 	public void onEventMainThread(TrackingModeEvent trackingModeEvent) {
 		isTrackingMode = trackingModeEvent.isInTrackingMode();
+
+		if (isTrackingMode) {
+			LocationEvent locationEvent = EventBus.getDefault().getStickyEvent(LocationEvent.class);
+			if (locationEvent != null) {
+				onEventMainThread(locationEvent);
+			}
+		}
 	}
 
 	@EventReceiver

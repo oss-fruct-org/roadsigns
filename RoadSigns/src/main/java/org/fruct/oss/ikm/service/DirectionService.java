@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 
 import com.graphhopper.util.PointList;
 
@@ -33,6 +34,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import de.greenrobot.event.EventBus;
 
@@ -44,6 +48,8 @@ public class DirectionService extends Service implements
 
 	public static final String MOCK_PROVIDER = "mock-provider";
 
+	private ExecutorService executor = Executors.newSingleThreadExecutor();
+
 	private ContentService remoteContent;
 	private ContentServiceConnection remoteContentServiceConnection = new ContentServiceConnection(this);
 
@@ -51,6 +57,7 @@ public class DirectionService extends Service implements
 	private DirectionManager dirManager;
 
 	private final Object routingMutex = new Object();
+
 	private GHRouting routing;
 
 	private IMapMatcher mapMatcher;
@@ -102,26 +109,24 @@ public class DirectionService extends Service implements
 			locationReceiver.stop();
 		}
 
-		EventBus.getDefault().unregister(this);
+		//EventBus.getDefault().unregister(this);
 
 		pref.unregisterOnSharedPreferenceChangeListener(this);
-
-		new AsyncTask<Void, Void, Void>() {
-			@Override
-			protected Void doInBackground(Void... params) {
-				synchronized (dirManagerMutex) {
-					if (dirManager != null) {
-						asyncCloseDirectionManager();
-						locationIndexCache.close();
-					}
-				}
-				return null;
-			}
-		}.execute();
 
 		if (remoteContent != null) {
 			remoteContent.removeItemListener(remoteContentListener);
 		}
+
+		executor.execute(new Runnable() {
+			@Override
+			public void run() {
+				if (dirManager != null) {
+					asyncCloseDirectionManager();
+					locationIndexCache.close();
+				}
+			}
+		});
+		executor.shutdown();
 
 		remoteContentServiceConnection.unbindService(this);
 	}
@@ -131,7 +136,7 @@ public class DirectionService extends Service implements
 		remoteContent = contentService;
 		remoteContent.addItemListener(remoteContentListener);
 		remoteContent.requestRecommendedItem();
-		EventBus.getDefault().registerSticky(this);
+		//EventBus.getDefault().registerSticky(this);
 	}
 
 	@Override
@@ -159,13 +164,12 @@ public class DirectionService extends Service implements
 	}
 
 	private void updateDirectionsManager() {
-		new AsyncTask<Void, Void, Void>() {
+		executor.execute(new Runnable() {
 			@Override
-			protected Void doInBackground(Void... params) {
+			public void run() {
 				asyncUpdateDirectionsManager();
-				return null;
 			}
-		}.execute();
+		});
 	}
 
 	private void asyncCloseDirectionManager() {
@@ -188,7 +192,8 @@ public class DirectionService extends Service implements
 		}
 
 		if (oldDirManager != null) {
-			oldDirManager.closeSync();
+			oldDirManager.shutdown();
+			oldDirManager.awaitShutdown();
 		}
 
 		if (oldRouting != null) {
@@ -263,7 +268,7 @@ public class DirectionService extends Service implements
 		locationReceiver.sendLastLocation();
 	}
 
-	@EventReceiver
+	/*@EventReceiver
 	public void onEventMainThread(TrackingModeEvent trackingModeEvent) {
 		if (!trackingModeEvent.isInTrackingMode()) {
 			EventBus.getDefault().removeStickyEvent(DirectionsEvent.class);
@@ -272,23 +277,22 @@ public class DirectionService extends Service implements
 				newLocation(lastRawLocation);
 			}
 		}
-	}
+	}*/
 
 	@Override
 	public void newLocation(final Location location) {
 		lastRawLocation = location;
 
-		new AsyncTask<Void, Void, Void>() {
+		executor.execute(new Runnable() {
 			@Override
-			protected Void doInBackground(Void... params) {
+			public void run() {
 				try {
 					asyncNewLocation(location);
 				} catch (Exception ex) {
 					log.error("Exception during new location processing", ex);
 				}
-				return null;
 			}
-		}.execute();
+		});
 	}
 
 	public void asyncNewLocation(Location location) {
@@ -307,17 +311,6 @@ public class DirectionService extends Service implements
 			} else {
 				EventBus.getDefault().postSticky(new LocationEvent(location));
 			}
-		}
-	}
-
-	/**
-	 * Disable network and gps location provider for testing purposes.
-	 */
-	public void disableRealLocation() {
-		if (!locationReceiver.isStarted()) {
-			locationReceiver.disableRealLocation();
-		} else {
-			throw new IllegalStateException("Can't disable real location on running LocationReceiver");
 		}
 	}
 

@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.location.Location;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -16,11 +15,8 @@ import com.graphhopper.util.PointList;
 
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.DirectionsEvent;
-import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PathEvent;
-import org.fruct.oss.ikm.events.TrackingModeEvent;
-import org.fruct.oss.ikm.points.Point;
 import org.fruct.oss.mapcontent.content.ContentItem;
 import org.fruct.oss.mapcontent.content.ContentListenerAdapter;
 import org.fruct.oss.mapcontent.content.ContentManagerImpl;
@@ -34,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,6 +42,8 @@ public class DirectionService extends Service implements
 	private static Logger log = LoggerFactory.getLogger(DirectionService.class);
 
 	public static final String MOCK_PROVIDER = "mock-provider";
+
+	public static final String PREF_CURRENT_GRAPHHOPPER_PATH = "org.fruct.oss.ikm.service.PREF_CURRENT_GRAPHHOPPER_PATH";
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -135,8 +132,7 @@ public class DirectionService extends Service implements
 	public void onContentServiceReady(ContentService contentService) {
 		remoteContent = contentService;
 		remoteContent.addItemListener(remoteContentListener);
-		remoteContent.requestRecommendedItem();
-		//EventBus.getDefault().registerSticky(this);
+		updateDirectionsManager(false);
 	}
 
 	@Override
@@ -144,9 +140,8 @@ public class DirectionService extends Service implements
 		remoteContent = null;
 	}
 
-	private GHRouting createRouting() {
-		String navigationPath = remoteContent.requestContentItem(recommendedContentItem);
-
+	@Nullable
+	private GHRouting createRouting(String navigationPath) {
 		if (new File(navigationPath + "/nodes").exists()) {
 			OneToManyRouting routing = new OneToManyRouting(navigationPath, locationIndexCache);
 
@@ -158,16 +153,47 @@ public class DirectionService extends Service implements
 				return null;
 			}
 
+			setPrefCurrentGraphhopperPath(navigationPath);
+
 			return routing;
 		} else
 			return null;
 	}
 
-	private void updateDirectionsManager() {
+	private void updateDirectionsManager(boolean forceUpdate) {
+		log.debug("update direction manager. forceUpdate = {}", forceUpdate);
+
+		final String navigationPath;
+		if (recommendedContentItem == null) {
+			navigationPath = getPrefCurrentGraphhopperPath();
+			log.debug("  loading stored path: {}", navigationPath);
+		} else {
+			navigationPath = remoteContent.requestContentItem(recommendedContentItem);
+			log.debug("  loading recommended path: {}", navigationPath);
+
+			String oldNavigationPath = getPrefCurrentGraphhopperPath();
+			if (oldNavigationPath != null) {
+				if (!oldNavigationPath.equals(navigationPath)) {
+					log.debug("  resetting location index cache");
+					locationIndexCache.reset();
+				} else if (!forceUpdate) {
+					// Don't update direction manager if old navigation path equals new
+					log.debug("  skipping update");
+					return;
+				}
+			}
+		}
+
+		if (navigationPath == null) {
+			// TODO: if path loaded from pref and null, request recommended item
+			log.debug("  navigation path is null, skipping update");
+			return;
+		}
+
 		executor.execute(new Runnable() {
 			@Override
 			public void run() {
-				asyncUpdateDirectionsManager();
+				asyncUpdateDirectionsManager(navigationPath);
 			}
 		});
 	}
@@ -201,17 +227,12 @@ public class DirectionService extends Service implements
 		}
 	}
 
-	private void asyncUpdateDirectionsManager() {
+	private void asyncUpdateDirectionsManager(String navigationPath) {
 		asyncCloseDirectionManager();
 
 		synchronized (routingMutex) {
-			if (recommendedContentItem == null) {
-				return;
-			}
-
-			routing = createRouting();
+			routing = createRouting(navigationPath);
 			if (routing == null) {
-				locationIndexCache.reset();
 				return;
 			}
 
@@ -372,6 +393,14 @@ public class DirectionService extends Service implements
 		EventBus.getDefault().postSticky(pathEvent);
 	}
 
+	private void setPrefCurrentGraphhopperPath(String path) {
+		pref.edit().putString(PREF_CURRENT_GRAPHHOPPER_PATH, path).apply();
+	}
+
+	private String getPrefCurrentGraphhopperPath() {
+		return pref.getString(PREF_CURRENT_GRAPHHOPPER_PATH, null);
+	}
+
 	private ContentListenerAdapter remoteContentListener = new ContentListenerAdapter() {
 		@Override
 		public void recommendedRegionItemReady(ContentItem contentItem) {
@@ -379,12 +408,8 @@ public class DirectionService extends Service implements
 				return;
 			}
 
-			if (recommendedContentItem == contentItem) {
-				return;
-			}
-
 			recommendedContentItem = contentItem;
-			updateDirectionsManager();
+			updateDirectionsManager(false);
 		}
 
 		@Override
@@ -393,9 +418,7 @@ public class DirectionService extends Service implements
 				return;
 			}
 
-			// TODO: reset location index cache only when region changes
-			locationIndexCache.reset();
-			updateDirectionsManager();
+			updateDirectionsManager(true);
 		}
 	};
 }

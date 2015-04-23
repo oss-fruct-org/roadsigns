@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.fragment;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.RelativeLayout;
 import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.utils.Utils;
@@ -14,13 +15,17 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-public class TestOverlay extends RelativeLayout  {
-
+public class DirectionPanelLayout extends RelativeLayout  {
+	private View statusPanel;
 	private EnumMap<Direction.RelativeDirection, DirectionsPanel> panels = new EnumMap<Direction.RelativeDirection, DirectionsPanel>(
 			Direction.RelativeDirection.class);
 
-	public TestOverlay(Context context, AttributeSet attrs) {
+	public DirectionPanelLayout(Context context, AttributeSet attrs) {
 		super(context, attrs);
+	}
+
+	public void setStatusVisible(boolean statusVisible) {
+		statusPanel.setVisibility(statusVisible ? VISIBLE : GONE);
 	}
 	
 	public void setHidden(boolean isHidden) {
@@ -34,12 +39,12 @@ public class TestOverlay extends RelativeLayout  {
 	    DirectionsPanel topPanel = (DirectionsPanel) findViewById(R.id.directions_panel_top);
 	    DirectionsPanel bottomPanel = (DirectionsPanel) findViewById(R.id.directions_panel_bottom);
 
-	    
-	    panels.put(RelativeDirection.LEFT, leftPanel);
+		statusPanel = (View) findViewById(R.id.status_panel);
+
+		panels.put(RelativeDirection.LEFT, leftPanel);
 	    panels.put(RelativeDirection.RIGHT, rightPanel);
 	    panels.put(RelativeDirection.FORWARD, topPanel);
 	    panels.put(RelativeDirection.BACK, bottomPanel);
-
 	}
 
 	@Override

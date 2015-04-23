@@ -13,16 +13,12 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
 import android.view.LayoutInflater;
@@ -34,7 +30,6 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
@@ -47,6 +42,8 @@ import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PathEvent;
 import org.fruct.oss.ikm.events.PointsUpdatedEvent;
+import org.fruct.oss.ikm.events.RoutingFinishedEvent;
+import org.fruct.oss.ikm.events.RoutingStartedEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
 import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
@@ -160,7 +157,7 @@ public class MapFragment extends Fragment implements MapListener,
 	
 	private Menu menu;
 	private MapView mapView;
-	private TestOverlay panelOverlay;
+	private DirectionPanelLayout panelOverlay;
 
 	private long lastScrollRefreshTime = 0;
 
@@ -268,6 +265,16 @@ public class MapFragment extends Fragment implements MapListener,
 				.putInt("last-pos-lon", mapView.getMapCenter().getLongitudeE6()).apply();
 
 		super.onStop();
+	}
+
+	@EventReceiver
+	public void onEventMainThread(RoutingStartedEvent event) {
+		panelOverlay.setStatusVisible(true);
+	}
+
+	@EventReceiver
+	public void onEventMainThread(RoutingFinishedEvent event) {
+		panelOverlay.setStatusVisible(false);
 	}
 
 	@EventReceiver
@@ -480,7 +487,7 @@ public class MapFragment extends Fragment implements MapListener,
 		createMapView(view);
 
 		// Setup directions panel overlay
-		panelOverlay = (TestOverlay) view.findViewById(R.id.directions_panel);
+		panelOverlay = (DirectionPanelLayout) view.findViewById(R.id.directions_panel);
 		panelOverlay.initialize(mapView);
 
 		setupMapCenterOverlay();

@@ -10,6 +10,8 @@ import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.RoutingFinishedEvent;
+import org.fruct.oss.ikm.events.RoutingStartedEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
 import org.fruct.oss.ikm.events.TargetPointEvent;
 import org.fruct.oss.ikm.events.TrackingModeEvent;
@@ -175,9 +177,15 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			return;
 
 		//Point.resetAllData();
-		preparePoints();
-		routing.route(activePoints.toArray(new Point[activePoints.size()]), radius, this);
-		sendResult();
+		EventBus.getDefault().postSticky(new RoutingStartedEvent());
+		try {
+			preparePoints();
+			routing.route(activePoints.toArray(new Point[activePoints.size()]), radius, this);
+			sendResult();
+		} finally {
+			EventBus.getDefault().removeStickyEvent(RoutingStartedEvent.class);
+			EventBus.getDefault().post(new RoutingFinishedEvent());
+		}
 	}
 
 	@Override

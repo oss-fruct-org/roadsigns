@@ -1,25 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
 
-    <RelativeLayout 
+
+
+
+    <RelativeLayout
         android:id="@+id/map_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-    
-    <RelativeLayout 
+
+    <RelativeLayout
         android:id="@+id/map_layout_2"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-    
-    <org.fruct.oss.ikm.fragment.TestOverlay 
-        	android:id="@+id/directions_panel"
-            android:layout_height="match_parent"
-            android:layout_width="match_parent" >
-            
-        <org.fruct.oss.ikm.fragment.DirectionsPanel 
+
+
+    <org.fruct.oss.ikm.fragment.DirectionPanelLayout
+        android:id="@+id/directions_panel"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" >
+
+        <FrameLayout
+            android:id="@+id/status_panel"
+            android:layout_width="@dimen/status_panel_size"
+            android:layout_height="@dimen/status_panel_size"
+            android:background="@null"
+
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:visibility="gone"
+            >
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
+        </FrameLayout>
+
+        <org.fruct.oss.ikm.fragment.DirectionsPanel
             android:layout_width="@dimen/point_panel_width"
             android:layout_height="@dimen/point_panel_width"
 
@@ -32,11 +54,11 @@
             android:orientation="vertical"
 
             android:id="@+id/directions_panel_left"/>
-        
+
         <org.fruct.oss.ikm.fragment.DirectionsPanel
             android:layout_width="@dimen/point_panel_width"
             android:layout_height="@dimen/point_panel_width"
-            
+
             android:visibility="gone"
             android:background="#55444444"
 
@@ -46,11 +68,11 @@
             android:orientation="vertical"
 
             android:id="@+id/directions_panel_right"/>
-        
+
         <org.fruct.oss.ikm.fragment.DirectionsPanel
             android:layout_width="@dimen/point_panel_width"
             android:layout_height="@dimen/point_panel_width"
-            
+
             android:visibility="gone"
             android:background="#55444444"
 
@@ -60,11 +82,11 @@
             android:orientation="horizontal"
 
             android:id="@+id/directions_panel_top"/>
-        
+
         <org.fruct.oss.ikm.fragment.DirectionsPanel
             android:layout_width="@dimen/point_panel_width"
             android:layout_height="@dimen/point_panel_width"
-            
+
             android:visibility="gone"
             android:background="#55444444"
 
@@ -74,7 +96,7 @@
             android:orientation="horizontal"
 
             android:id="@+id/directions_panel_bottom"/>
-        
-    </org.fruct.oss.ikm.fragment.TestOverlay>
+
+    </org.fruct.oss.ikm.fragment.DirectionPanelLayout>
 
 </RelativeLayout>

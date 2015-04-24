@@ -18,6 +18,7 @@ import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.StaticTranslations;
 import org.fruct.oss.ikm.utils.Utils;
 import org.fruct.oss.mapcontent.content.ContentService;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.connections.GHContentServiceConnection;
 import org.fruct.oss.mapcontent.content.utils.Region;
@@ -169,7 +170,7 @@ public class PointsFragment extends ListFragment implements TextWatcher, Content
 	private MultiPanel multiPanel;
 	private StaticTranslations staticTranslations;
 	
-	private GHContentServiceConnection contentServiceConnection = new GHContentServiceConnection(this);
+	private ContentServiceConnection contentServiceConnection = new ContentServiceConnection(this);
 	private ContentService contentService;
 
 	public static Fragment newInstance(ArrayList<Point> points) {

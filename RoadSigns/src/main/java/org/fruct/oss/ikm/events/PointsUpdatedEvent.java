@@ -6,18 +6,12 @@ import java.util.List;
 
 public class PointsUpdatedEvent {
 	private boolean isSuccess;
-	private final List<Category> categories;
 
-	public PointsUpdatedEvent(boolean isSuccess, List<Category> categories) {
+	public PointsUpdatedEvent(boolean isSuccess) {
 		this.isSuccess = isSuccess;
-		this.categories = categories;
 	}
 
 	public boolean isSuccess() {
 		return isSuccess;
-	}
-
-	public List<Category> getCategories() {
-		return categories;
 	}
 }

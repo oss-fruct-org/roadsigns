@@ -127,7 +127,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			//noinspection ConstantConditions
 			if (location == null) {
 				log.warn("Trying refresh points without location");
-				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+				EventBus.getDefault().post(new PointsUpdatedEvent(false));
 				return START_NOT_STICKY;
 			}
 
@@ -221,6 +221,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 				for (Point point : points) {
 					updatePointRegion(point);
 				}
+				EventBus.getDefault().post(new PointsUpdatedEvent(true));
 			}
 		});
 	}
@@ -252,20 +253,20 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 			super.onPostExecute(result);
 
 			if (result != null) {
-				EventBus.getDefault().post(new PointsUpdatedEvent(true, result.getCategories()));
+				EventBus.getDefault().post(new PointsUpdatedEvent(true));
 				scheduleRegionsCacheUpdate();
 				pref.edit().putFloat(PREF_LAST_REFRESH_LAT, (float) result.getLat())
 						.putFloat(PREF_LAST_REFRESH_LON, (float) result.getLon())
 						.putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis())
 						.apply();
 			} else {
-				EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+				EventBus.getDefault().post(new PointsUpdatedEvent(false));
 			}
 		}
 
 		@Override
 		protected void onCancelled() {
-			EventBus.getDefault().post(new PointsUpdatedEvent(false, null));
+			EventBus.getDefault().post(new PointsUpdatedEvent(false));
 		}
 	}
 }

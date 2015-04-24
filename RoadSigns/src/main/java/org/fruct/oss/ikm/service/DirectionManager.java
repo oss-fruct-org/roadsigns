@@ -11,6 +11,7 @@ import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.EventReceiver;
 import org.fruct.oss.ikm.events.LocationEvent;
+import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.ikm.events.RoutingFinishedEvent;
 import org.fruct.oss.ikm.events.RoutingStartedEvent;
 import org.fruct.oss.ikm.events.ScreenRadiusEvent;
@@ -110,11 +111,19 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	};
 
 	private void calculateForActivePoints() {
+		log.debug("calculateForActivePoints");
+		if (isTrackingMode) {
+			interrupt();
+		} else {
+			log.debug("no tracking mode");
+		}
+
 		calculationTask = executor.submit(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					activePoints = App.getInstance().getPointsAccess().loadActive();
+					log.debug("Routing for {} points", activePoints.size());
 					doCalculateForPoints();
 				} catch (Exception ex) {
 					log.error("Routing error: ", ex);
@@ -136,7 +145,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		});
 	}
 
-	public void updateLocation(final Location location, final int node) {
+	private void updateLocation(final Location location, final int node) {
 		interrupt();
 
 		executor.execute(new Runnable() {
@@ -181,19 +190,25 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 
 		Point.invalidateData();
+		log.debug("{} points retained for region id {} and limit {}", activePoints.size(), regionId, nearest);
 	}
 
 	private void doCalculateForPoints() {
-		if (activePoints == null || userPosition == null)
+		if (activePoints == null || userPosition == null) {
+			log.debug("No active points or user position {} {}", activePoints, userPosition);
 			return;
+		}
 
 		//Point.resetAllData();
+		log.debug("Starting directions routing");
 		EventBus.getDefault().postSticky(new RoutingStartedEvent());
 		try {
 			preparePoints();
 			routing.route(activePoints.toArray(new Point[activePoints.size()]), radius, this);
 			sendResult();
+
 		} finally {
+			log.debug("End directions routing");
 			EventBus.getDefault().removeStickyEvent(RoutingStartedEvent.class);
 			EventBus.getDefault().post(new RoutingFinishedEvent());
 		}
@@ -268,10 +283,12 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	@EventReceiver
 	public void onEventMainThread(LocationEvent locationEvent) {
-		log.debug("ASD received");
+		log.debug("location received");
 
-		if (locationEvent.getMatchedNode() < 0)
+		if (locationEvent.getMatchedNode() < 0) {
+			log.debug("no matched node");
 			return;
+		}
 
 		updateLocation(locationEvent.getLocation(), locationEvent.getMatchedNode());
 
@@ -279,28 +296,27 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			updatePath(targetPoint);
 		}
 
-		if (isTrackingMode) {
-			interrupt();
-			calculateForActivePoints();
-		}
+		calculateForActivePoints();
 	}
 
 	@EventReceiver
 	public void onEventMainThread(TrackingModeEvent trackingModeEvent) {
 		isTrackingMode = trackingModeEvent.isInTrackingMode();
 
-		if (isTrackingMode) {
-			LocationEvent locationEvent = EventBus.getDefault().getStickyEvent(LocationEvent.class);
-			if (locationEvent != null) {
-				onEventMainThread(locationEvent);
-			}
-		}
+		calculateForActivePoints();
 	}
 
 	@EventReceiver
 	public void onEventMainThread(TargetPointEvent targetPointEvent) {
 		targetPoint = targetPointEvent.getGeoPoint();
 		updatePath(targetPoint);
+	}
+
+	@EventReceiver
+	public void onEventMainThread(PointsUpdatedEvent event) {
+		if (event.isSuccess()) {
+			calculateForActivePoints();
+		}
 	}
 
 	private void interrupt() {

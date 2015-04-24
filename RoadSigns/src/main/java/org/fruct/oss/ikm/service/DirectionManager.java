@@ -2,6 +2,7 @@ package org.fruct.oss.ikm.service;
 
 import android.location.Location;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.util.Pair;
 
 import com.graphhopper.util.PointList;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -37,7 +39,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 	private static Logger log = LoggerFactory.getLogger(DirectionManager.class);
 
 	private Listener listener;
-	
+	private String regionId;
+
 	public void setListener(Listener listener) {
 		this.listener = listener;
 	}
@@ -65,10 +68,8 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 	private boolean isClosed;
 	
-	public DirectionManager(GHRouting routing) {
-		if (routing == null)
-			throw new IllegalArgumentException("DirectionManager: routing argument can not be null");
-
+	public DirectionManager(@NonNull GHRouting routing, @NonNull String regionId) {
+		this.regionId = regionId;
 		this.executor = Executors.newSingleThreadExecutor();
 		this.routing = routing;
 
@@ -157,13 +158,23 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		int nearest;
 		
 		try {
-			String nearestStr = PreferenceManager.getDefaultSharedPreferences(App.getContext()).getString(SettingsActivity.NEAREST_POINTS, "");
+			String nearestStr = PreferenceManager.getDefaultSharedPreferences(
+					App.getContext()).getString(SettingsActivity.NEAREST_POINTS, "");
 			nearest = Integer.parseInt(nearestStr);
 		} catch (NumberFormatException ex) {
 			nearest = 0;
 		}
-		
-		// Retain only ${nearest} POI's
+
+		// Remove points from other regions
+		for (Iterator<Point> iterator = activePoints.iterator(); iterator.hasNext(); ) {
+			Point point = iterator.next();
+
+			if (!regionId.equals(point.getRegionId(4))) {
+				iterator.remove();
+			}
+		}
+
+		// Retain only $nearest points
 		if (nearest > 0 && activePoints.size() > nearest) {
 			Collections.sort(activePoints, distanceComparator);			
 			activePoints = activePoints.subList(0, nearest);

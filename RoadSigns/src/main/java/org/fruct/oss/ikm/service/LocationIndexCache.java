@@ -2,9 +2,11 @@ package org.fruct.oss.ikm.service;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.preference.PreferenceManager;
 
 import org.osmdroid.util.GeoPoint;
 import org.slf4j.Logger;
@@ -16,8 +18,10 @@ public class LocationIndexCache {
 
 	private DBHelper helper;
 	private SQLiteDatabase db;
+	private SharedPreferences pref;
 
 	public LocationIndexCache(Context context) {
+		pref = PreferenceManager.getDefaultSharedPreferences(context);
 		helper = new DBHelper(context);
 		db = helper.getWritableDatabase();
 	}
@@ -55,9 +59,21 @@ public class LocationIndexCache {
 		}
 	}
 
-	public void reset() {
+	public void reset(String regionId, String navigationPath) {
 		log.info("Resetting LocationIndexCache");
 		db.execSQL("delete from cache;");
+
+		pref.edit().putString("pref-location-index-cache-region-id", regionId)
+				.putString("pref-location-index-cache-navigationPath", navigationPath)
+				.apply();
+	}
+
+	public String getRegionId() {
+		return pref.getString("pref-location-index-cache-region-id", "");
+	}
+
+	public String getNavigationPath() {
+		return pref.getString("pref-location-index-cache-navigationPath", "");
 	}
 
 	private static class DBHelper extends SQLiteOpenHelper {

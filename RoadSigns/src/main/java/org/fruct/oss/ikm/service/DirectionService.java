@@ -43,8 +43,6 @@ public class DirectionService extends Service implements
 
 	public static final String MOCK_PROVIDER = "mock-provider";
 
-	public static final String PREF_CURRENT_GRAPHHOPPER_PATH = "org.fruct.oss.ikm.service.PREF_CURRENT_GRAPHHOPPER_PATH";
-
 	private ExecutorService executor = Executors.newSingleThreadExecutor();
 
 	private ContentService remoteContent;
@@ -153,8 +151,6 @@ public class DirectionService extends Service implements
 				return null;
 			}
 
-			setPrefCurrentGraphhopperPath(navigationPath);
-
 			return routing;
 		} else
 			return null;
@@ -165,17 +161,17 @@ public class DirectionService extends Service implements
 
 		final String navigationPath;
 		if (recommendedContentItem == null) {
-			navigationPath = getPrefCurrentGraphhopperPath();
+			navigationPath = locationIndexCache.getNavigationPath();
 			log.debug("  loading stored path: {}", navigationPath);
 		} else {
 			navigationPath = remoteContent.requestContentItem(recommendedContentItem);
 			log.debug("  loading recommended path: {}", navigationPath);
 
-			String oldNavigationPath = getPrefCurrentGraphhopperPath();
+			String oldNavigationPath = locationIndexCache.getNavigationPath();
 			if (oldNavigationPath != null) {
 				if (!oldNavigationPath.equals(navigationPath)) {
 					log.debug("  resetting location index cache");
-					locationIndexCache.reset();
+					locationIndexCache.reset(recommendedContentItem.getRegionId(), navigationPath);
 				} else if (!forceUpdate) {
 					// Don't update direction manager if old navigation path equals new
 					log.debug("  skipping update");
@@ -240,7 +236,7 @@ public class DirectionService extends Service implements
 		}
 
 		synchronized (dirManagerMutex) {
-			dirManager = new DirectionManager(routing);
+			dirManager = new DirectionManager(routing, locationIndexCache.getRegionId());
 			dirManager.setListener(DirectionService.this);
 			if (lastRawLocation != null) {
 				asyncNewLocation(lastRawLocation);
@@ -391,14 +387,6 @@ public class DirectionService extends Service implements
 
 		PathEvent pathEvent = new PathEvent(pathArray);
 		EventBus.getDefault().postSticky(pathEvent);
-	}
-
-	private void setPrefCurrentGraphhopperPath(String path) {
-		pref.edit().putString(PREF_CURRENT_GRAPHHOPPER_PATH, path).apply();
-	}
-
-	private String getPrefCurrentGraphhopperPath() {
-		return pref.getString(PREF_CURRENT_GRAPHHOPPER_PATH, null);
 	}
 
 	private ContentListenerAdapter remoteContentListener = new ContentListenerAdapter() {

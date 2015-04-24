@@ -232,7 +232,7 @@ public class Point implements Parcelable, Serializable {
 		if (routingData != null) {
 			return routingData.distance;
 		} else {
-			return 0;
+			return Integer.MAX_VALUE;
 		}
 	}
 

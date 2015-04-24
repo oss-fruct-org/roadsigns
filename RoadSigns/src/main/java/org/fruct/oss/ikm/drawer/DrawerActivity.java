@@ -204,6 +204,10 @@ public class DrawerActivity extends ActionBarActivity
 			setRootFragment(PointsFragment.newInstance(points));
 			break;
 
+		case MapFragment.ACTION_SHOW_MAP:
+			setRootFragment(MapFragment.newInstance());
+			break;
+
 		case MapFragment.ACTION_CENTER_MAP:
 			GeoPoint geoPoint = intent.getParcelableExtra(MapFragment.ARG_MAP_CENTER);
 			setRootFragment(MapFragment.newInstanceGeoPoint(geoPoint));

@@ -144,6 +144,7 @@ public class MapFragment extends Fragment implements MapListener,
 	public static final GeoPoint PTZ = new GeoPoint(61.783333, 34.350000);
 	public static final int DEFAULT_ZOOM = 18;
 
+	public static final String ACTION_SHOW_MAP = "org.fruct.oss.ikm.ACTION_SHOW_MAP"; // arg MapFragment.ARG_MAP_CENTER
 	public static final String ACTION_CENTER_MAP = "org.fruct.oss.ikm.ACTION_CENTER_MAP"; // arg MapFragment.ARG_MAP_CENTER
 	public static final String ACTION_SHOW_PATH = "org.fruct.oss.ikm.ACTION_SHOW_PATH";
 
@@ -184,6 +185,11 @@ public class MapFragment extends Fragment implements MapListener,
 	private ContentItem recommendedContentItem;
 
 	private SharedPreferences pref;
+
+	public static Fragment newInstance() {
+		MapFragment mapFragment = new MapFragment();
+		return mapFragment;
+	}
 
 	public static Fragment newInstanceGeoPoint(GeoPoint geoPoint) {
 		MapFragment mapFragment = new MapFragment();

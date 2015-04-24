@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.fragment;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 
@@ -38,5 +39,10 @@ public class ContentFragment extends org.fruct.oss.mapcontent.content.fragments.
 		super.onCreate(savedInstanceState);
 
 		((DrawerActivity) getActivity()).onSectionAttached(getString(R.string.action_download_map), ActionBar.NAVIGATION_MODE_LIST);
+	}
+
+	@Override
+	public void onAllItemsLoaded() {
+		getActivity().startActivity(new Intent(MapFragment.ACTION_SHOW_MAP, null, getActivity(), DrawerActivity.class));
 	}
 }

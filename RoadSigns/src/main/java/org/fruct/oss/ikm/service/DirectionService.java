@@ -177,6 +177,9 @@ public class DirectionService extends Service implements
 					log.debug("  skipping update");
 					return;
 				}
+			} else {
+				log.debug(" not old navigation path");
+				locationIndexCache.reset(recommendedContentItem.getRegionId(), navigationPath);
 			}
 		}
 

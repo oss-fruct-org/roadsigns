@@ -73,7 +73,7 @@ public class LocationIndexCache {
 	}
 
 	public String getNavigationPath() {
-		return pref.getString("pref-location-index-cache-navigationPath", "");
+		return pref.getString("pref-location-index-cache-navigationPath", null);
 	}
 
 	private static class DBHelper extends SQLiteOpenHelper {

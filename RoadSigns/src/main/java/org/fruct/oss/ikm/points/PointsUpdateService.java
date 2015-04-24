@@ -233,7 +233,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 
 		for (RegionCache.RegionDesc regionDesc : regions) {
 			log.trace("\tRegion {} found", regionDesc.name);
-			point.setRegionId(regionDesc.name, regionDesc.adminLevel);
+			point.setRegionId(regionDesc.regionId, regionDesc.adminLevel);
 		}
 
 		point.setRegionUpdateTime(System.currentTimeMillis());

@@ -16,7 +16,7 @@ import java.util.List;
  * Allows to store points in local storage
  */
 public class PointsAccess {
-	private static final int VERSION = 4;
+	private static final int VERSION = 5;
 
 	private static String POINT_SELECT = " point.name, point.desc, point.lat, point.lon," +
 			" point.uuid, point.photosJson, point.id," +
@@ -287,6 +287,10 @@ public class PointsAccess {
 						"description TEXT," +
 						"url TEXT," +
 						"active INTEGER DEFAULT 1);");
+				break;
+			case 4:
+				// Replacing region name kludge with real region id
+				db.execSQL("UPDATE point SET regionId4 = NULL, regionId6 = NULL;");
 				break;
 			}
 		}

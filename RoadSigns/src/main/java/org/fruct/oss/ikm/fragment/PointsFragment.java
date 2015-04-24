@@ -1,6 +1,7 @@
 package org.fruct.oss.ikm.fragment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -16,12 +17,18 @@ import org.fruct.oss.ikm.points.PointsUpdateService;
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.StaticTranslations;
 import org.fruct.oss.ikm.utils.Utils;
+import org.fruct.oss.mapcontent.content.ContentService;
+import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
+import org.fruct.oss.mapcontent.content.connections.GHContentServiceConnection;
+import org.fruct.oss.mapcontent.content.utils.Region;
+import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
@@ -48,10 +55,11 @@ import com.nostra13.universalimageloader.core.ImageLoader;
 import de.greenrobot.event.EventBus;
 
 class PointAdapter extends ArrayAdapter<Point> {
-	private int resource;
-	private List<Point> points;
+	private final RegionCache regionCache;
+	private final int resource;
+	private final List<Point> points;
 
-	class Tag {
+	class Holder {
 		TextView textView;
 		TextView distanceView;
 
@@ -62,11 +70,22 @@ class PointAdapter extends ArrayAdapter<Point> {
 		ImageView iconImageView;
 	}
 
-	public PointAdapter(Context context, int resource, List<Point> points) {
+	public PointAdapter(RegionCache regionCache, Context context, int resource, List<Point> points) {
 		super(context, resource, points);
 
+		this.regionCache = regionCache;
 		this.resource = resource;
-		this.points = points;
+		this.points = Collections.unmodifiableList(points);
+	}
+
+	@Nullable
+	private String getRegionName(String regionId) {
+		if (regionCache == null) {
+			return null;
+		}
+
+		RegionCache.RegionDesc region = regionCache.getRegionDesc(regionId);
+		return region != null ? region.name : null;
 	}
 	
 	@Override
@@ -74,10 +93,10 @@ class PointAdapter extends ArrayAdapter<Point> {
 		LayoutInflater inflater = ((Activity) getContext()).getLayoutInflater();
 		View view = null;
 
-		Tag tag = null;
+		Holder holder = null;
 
 		if (convertView != null && convertView.getTag() != null) {
-			tag = (Tag) convertView.getTag();
+			holder = (Holder) convertView.getTag();
 			view = convertView;
 		}
 
@@ -85,43 +104,43 @@ class PointAdapter extends ArrayAdapter<Point> {
 			view = inflater.inflate(resource, parent, false);
 			assert view != null;
 
-			tag = new Tag();
-			tag.textView = (TextView) view.findViewById(android.R.id.text1);
-			tag.distanceView = (TextView) view.findViewById(R.id.distance_text_view);
-			tag.arrowImageView = (ImageView) view.findViewById(android.R.id.icon2);
-			tag.iconImageView = (ImageView) view.findViewById(android.R.id.icon);
-			tag.region4TextView = (TextView) view.findViewById(android.R.id.text2);
-			tag.region6TextView = (TextView) view.findViewById(R.id.text3);
-			view.setTag(tag);
+			holder = new Holder();
+			holder.textView = (TextView) view.findViewById(android.R.id.text1);
+			holder.distanceView = (TextView) view.findViewById(R.id.distance_text_view);
+			holder.arrowImageView = (ImageView) view.findViewById(android.R.id.icon2);
+			holder.iconImageView = (ImageView) view.findViewById(android.R.id.icon);
+			holder.region4TextView = (TextView) view.findViewById(android.R.id.text2);
+			holder.region6TextView = (TextView) view.findViewById(R.id.text3);
+			view.setTag(holder);
 		}
 
 		Point point = points.get(position);
 
-		tag.textView.setText(point.getName());
-		tag.region4TextView.setText(point.getRegionId(4));
-		tag.region6TextView.setText(point.getRegionId(6));
+		holder.textView.setText(point.getName());
+		holder.region4TextView.setText(getRegionName(point.getRegionId(4)));
+		holder.region6TextView.setText(getRegionName(point.getRegionId(6)));
 
 		if (point.getRelativeDirection() != null) {
-			tag.arrowImageView.setImageResource(point.getRelativeDirection().getIconId());
-			tag.arrowImageView.setContentDescription(point.getRelativeDirection().getDescription());
-			tag.arrowImageView.setVisibility(View.VISIBLE);
-			tag.distanceView.setVisibility(View.VISIBLE);
+			holder.arrowImageView.setImageResource(point.getRelativeDirection().getIconId());
+			holder.arrowImageView.setContentDescription(point.getRelativeDirection().getDescription());
+			holder.arrowImageView.setVisibility(View.VISIBLE);
+			holder.distanceView.setVisibility(View.VISIBLE);
 		} else {
-			tag.arrowImageView.setVisibility(View.GONE);
+			holder.arrowImageView.setVisibility(View.GONE);
 		}
 
 		int distance = point.getDistance();
 		if (distance > 0 && distance != Integer.MAX_VALUE) {
-			tag.distanceView.setText(Utils.stringMeters(distance));
-			tag.distanceView.setVisibility(View.VISIBLE);
+			holder.distanceView.setText(Utils.stringMeters(distance));
+			holder.distanceView.setVisibility(View.VISIBLE);
 		} else {
-			tag.distanceView.setVisibility(View.GONE);
+			holder.distanceView.setVisibility(View.GONE);
 		}
 
 		if (point.hasPhoto()) {
-			ImageLoader.getInstance().displayImage(point.getPhoto(), tag.iconImageView);
+			ImageLoader.getInstance().displayImage(point.getPhoto(), holder.iconImageView);
 		} else {
-			tag.iconImageView.setImageDrawable(null);
+			holder.iconImageView.setImageDrawable(null);
 		}
 
 		return view;
@@ -129,7 +148,7 @@ class PointAdapter extends ArrayAdapter<Point> {
 }
 
 @SuppressWarnings("deprecation")
-public class PointsFragment extends ListFragment implements TextWatcher {
+public class PointsFragment extends ListFragment implements TextWatcher, ContentServiceConnectionListener {
 	private static Logger log = LoggerFactory.getLogger(PointsFragment.class);
 
 	public static final String ACTION_SHOW_DETAILS = "org.fruct.oss.ikm.ACTION_SHOW_DETAILS";
@@ -149,6 +168,9 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 
 	private MultiPanel multiPanel;
 	private StaticTranslations staticTranslations;
+	
+	private GHContentServiceConnection contentServiceConnection = new GHContentServiceConnection(this);
+	private ContentService contentService;
 
 	public static Fragment newInstance(ArrayList<Point> points) {
 		PointsFragment pointsFragment = new PointsFragment();
@@ -179,10 +201,14 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		EventBus.getDefault().register(this);
 
 		setHasOptionsMenu(true);
+
+		contentServiceConnection.bindService(getActivity());
 	}
 
 	@Override
 	public void onDestroy() {
+		contentServiceConnection.unbindService(getActivity());
+
 		EventBus.getDefault().unregister(this);
 
 		ActionBar actionBar = getActionBar();
@@ -233,7 +259,6 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 			// TODO: should be called in AsyncTask
 			poiList = App.getInstance().getPointsAccess().loadActive();
 		}
-		updateList();
 
 		return view;
 	}
@@ -256,6 +281,7 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		});
 		
 		PointAdapter adapter = new PointAdapter(
+				contentService.getRegionCache(),
 				getActivity(),
 				R.layout.point_list_item,
 				shownList);
@@ -397,5 +423,16 @@ public class PointsFragment extends ListFragment implements TextWatcher {
 		}
 
 		loadingView.setVisibility(View.GONE);
+	}
+
+	@Override
+	public void onContentServiceReady(ContentService contentService) {
+		this.contentService = contentService;
+		updateList();
+	}
+
+	@Override
+	public void onContentServiceDisconnected() {
+		this.contentService = null;
 	}
 }

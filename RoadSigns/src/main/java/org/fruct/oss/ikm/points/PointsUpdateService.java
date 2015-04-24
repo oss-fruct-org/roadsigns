@@ -172,6 +172,8 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 		if (dist[0] > refreshRadius / 4 || System.currentTimeMillis() - lastRefreshTime > REFRESH_DELTA_TIME) {
 			refresh(currentLocation, refreshRadius, false);
 		}
+
+		scheduleRegionsCacheUpdate();
 	}
 
 	private void refresh(Location location, int radius, boolean skipCategories) {

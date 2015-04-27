@@ -55,7 +55,7 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	public static final String ARG_SKIP_CATEGORIES
 			= "org.fruct.oss.ikm.points.PointsUpdateService.ACTION_REFRESH.ARG_SKIP_CATEGORIES";
 
-	private static final float REFRESH_DELTA_TIME = 3600000;
+	private static final long REFRESH_DELTA_TIME = 3600000;
 
 	private SharedPreferences pref;
 	private GetsAsyncTask getsAsyncTask;

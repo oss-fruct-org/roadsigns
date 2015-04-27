@@ -63,6 +63,7 @@ import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.ResourceProxyImpl;
 import org.osmdroid.views.MapView;
@@ -817,7 +818,7 @@ public class MapFragment extends Fragment implements MapListener,
 	}
 
 	private void updateRadius() {
-		int dist = getScreenHalfWidthMeters(Utils.getDP(isTracking ? 160 : 10));
+		int dist = getScreenHalfWidthMeters(Utils.getDP(isTracking ? 84 * 2 + 32 : 32));
 		if (dist == 0)
 			return;
 

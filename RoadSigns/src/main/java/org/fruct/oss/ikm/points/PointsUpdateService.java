@@ -8,18 +8,22 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import org.fruct.oss.ikm.App;
+import org.fruct.oss.ikm.R;
 import org.fruct.oss.ikm.SettingsActivity;
 import org.fruct.oss.ikm.events.LocationEvent;
 import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.mapcontent.content.ContentService;
+import org.fruct.oss.mapcontent.content.Settings;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnection;
 import org.fruct.oss.mapcontent.content.connections.ContentServiceConnectionListener;
 import org.fruct.oss.mapcontent.content.utils.RegionCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -244,8 +248,12 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 	}
 
 	private class Task extends GetsAsyncTask {
+		private String server;
+
 		public Task(String server, boolean skipCategories) {
 			super(server, skipCategories);
+
+			this.server = server;
 		}
 
 		@Override
@@ -260,6 +268,12 @@ public class PointsUpdateService extends Service implements ContentServiceConnec
 						.putLong(PREF_LAST_REFRESH_TIME, System.currentTimeMillis())
 						.apply();
 			} else {
+				if (exception != null && !server.equals(SettingsActivity.GETS_SERVER_DEFAULT)) {
+					Toast.makeText(PointsUpdateService.this,
+							getString(R.string.str_incorrect_server),
+							Toast.LENGTH_LONG).show();
+				}
+
 				EventBus.getDefault().post(new PointsUpdatedEvent(false));
 			}
 		}

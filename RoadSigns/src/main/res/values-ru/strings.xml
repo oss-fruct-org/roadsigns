@@ -99,8 +99,9 @@
     <string name="str_details_show_path">Показать путь</string>
     <string name="str_details_wikipedia">Википедия</string>
     <string name="title_activity_content">Загружаемые данные</string>
-    <string name="title_activity_drawer"></string>
+    <string name="title_activity_drawer">Дорожные знаки</string>
     <string name="title_activity_settings">Настройки</string>
     <string name="warn_update_ready">Доступно обновление</string>
     <string name="str_gets_server_updated">Сервер GeTS обновлен</string>
+    <string name="str_incorrect_server">Неверный сервер, попробуйте обновить его в настройках</string>
 </resources>

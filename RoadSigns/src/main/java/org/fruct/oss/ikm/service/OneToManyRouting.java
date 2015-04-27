@@ -45,6 +45,7 @@ public class OneToManyRouting extends GHRouting {
 	private transient GeoPoint tmpPoint = new GeoPoint(0, 0);
 
 	private int fromId;
+	private GeoPoint fromPoint;
 
 	private GeoPoint targetGeoPoint;
 	private int targetNode = -1;
@@ -56,9 +57,11 @@ public class OneToManyRouting extends GHRouting {
 	}
 
 	@Override
-	public void prepare(int fromId) {
+	public void prepare(GeoPoint current, int fromId) {
 		if (!ensureInitialized())
 			return;
+
+		this.fromPoint = current;
 
 		if (fromId == this.fromId) {
 			return;
@@ -124,7 +127,7 @@ public class OneToManyRouting extends GHRouting {
 	@Override
 	public void route(Point[] targetPoints, float radius, RoutingCallback callback) {
 		// TODO: possibly use more efficient multi-map
-		TIntObjectMap<List<Point>> targetNodes = new TIntObjectHashMap<List<Point>>(targetPoints.length);
+		TIntObjectMap<List<Point>> targetNodes = new TIntObjectHashMap<>(targetPoints.length);
 
 		// Prepare location index
 		for (Point point : targetPoints) {
@@ -181,6 +184,7 @@ public class OneToManyRouting extends GHRouting {
 
 		if (!to.equals(targetGeoPoint)) {
 			targetNode = getPointIndex(to, true);
+			targetGeoPoint = to;
 
 			if (targetNode == -1) {
 				return;
@@ -266,28 +270,31 @@ public class OneToManyRouting extends GHRouting {
 		if (path.size() < 2)
 			return null;
 
-		final GeoPoint current = new GeoPoint(0, 0);
-		GeoPoint point = new GeoPoint(0, 0);
-		getPoint(path.pop(), current);
-		GeoPoint prev = Utils.copyGeoPoint(current);
+		final GeoPoint centralPoint = fromPoint;
+		final GeoPoint nodePoint = new GeoPoint(0, 0);
 
+		//getPoint(path.pop(), centralPoint);
+		GeoPoint prev = Utils.copyGeoPoint(centralPoint);
+
+		// Remove first point in path
+		path.pop();
 		while (path.size() > 0) {
 			int node = path.pop();
-			getPoint(node, point);
+			getPoint(node, nodePoint);
 
-			final int dist = current.distanceTo(point);
+			final int dist = centralPoint.distanceTo(nodePoint);
 			if (dist > radius) {
 				final GeoPoint a = prev;
 				// TODO: remove magic number '2'
-				final double d = a.distanceTo(point) + 2;
-				final float bearing = (float) a.bearingTo(point);
+				final double d = a.distanceTo(nodePoint) + 2;
+				final float bearing = (float) a.bearingTo(nodePoint);
 
 				// TODO: catch exceptions
 				double sol = Utils.solve(0, d, 0.1, new Utils.FunctionDouble() {
 					@Override
 					public double apply(double x) {
 						GeoPoint mid = a.destinationPoint(x, bearing);
-						double distFromCenter = current.distanceTo(mid);
+						double distFromCenter = centralPoint.distanceTo(mid);
 						return distFromCenter - (radius + 2);
 					}
 				});
@@ -296,7 +303,7 @@ public class OneToManyRouting extends GHRouting {
 
 				return Pair.create(a, target);
 			}
-			prev = Utils.copyGeoPoint(point);
+			prev = Utils.copyGeoPoint(nodePoint);
 		}
 
 		return null;

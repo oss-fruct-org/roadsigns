@@ -232,7 +232,7 @@ public abstract class GHRouting implements Closeable {
 		return null;
 	}
 
-	public abstract void prepare(int fromId);
+	public abstract void prepare(GeoPoint current, int fromId);
 
 	public abstract void route(Point[] targetPoints, float radius, RoutingCallback callback);
 	public abstract void route(GeoPoint to, RoutingCallback callback);

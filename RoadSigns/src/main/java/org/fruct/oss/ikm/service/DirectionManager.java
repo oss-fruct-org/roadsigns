@@ -96,20 +96,6 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		}
 	}
 
-	private Comparator<Point> distanceComparator = new Comparator<Point>() {
-		private GeoPoint point = new GeoPoint(0, 0);
-		
-		@Override
-		public int compare(Point lhs, Point rhs) {
-			point.setCoordsE6((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
-			
-			int d1 = lhs.toPoint().distanceTo(point);
-			int d2 = rhs.toPoint().distanceTo(point);
-			
-			return d1 - d2;
-		}
-	};
-
 	private void calculateForActivePoints() {
 		log.debug("calculateForActivePoints");
 		if (isTrackingMode) {
@@ -152,13 +138,12 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 			@Override
 			public void run() {
 				DirectionManager.this.location = location;
-				GeoPoint current = new GeoPoint(location);
+				GeoPoint centralPoint = new GeoPoint(location);
 
-				routing.getPoint(node, current);
-				DirectionManager.this.userPosition = current;
+				DirectionManager.this.userPosition = centralPoint;
 				readyPoints.clear();
 
-				routing.prepare(node);
+				routing.prepare(centralPoint, node);
 			}
 		});
 	}
@@ -185,7 +170,7 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 
 		// Retain only $nearest points
 		if (nearest > 0 && activePoints.size() > nearest) {
-			Collections.sort(activePoints, distanceComparator);			
+			Collections.sort(activePoints, new DistanceComparator());
 			activePoints = activePoints.subList(0, nearest);
 		}
 
@@ -330,4 +315,21 @@ public class DirectionManager implements GHRouting.RoutingCallback {
 		void directionsUpdated(List<Direction> directions, GeoPoint center);
 		void pathReady(PointList pointList);
 	}
+
+	public class DistanceComparator implements Comparator<Point> {
+		private GeoPoint point = new GeoPoint(0, 0);
+
+		public DistanceComparator() {
+			point.setCoordsE6((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
+		}
+
+		@Override
+		public int compare(Point lhs, Point rhs) {
+
+			int d1 = lhs.toPoint().distanceTo(point);
+			int d2 = rhs.toPoint().distanceTo(point);
+
+			return d1 - d2;
+		}
+	};
 }

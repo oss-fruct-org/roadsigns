@@ -12,9 +12,12 @@ import android.support.v4.app.DialogFragment;
 
 import org.fruct.oss.ikm.App;
 import org.fruct.oss.ikm.R;
+import org.fruct.oss.ikm.events.PointsUpdatedEvent;
 import org.fruct.oss.ikm.points.PointsAccess;
 import org.fruct.oss.ikm.points.gets.Category;
 import org.fruct.oss.ikm.utils.StaticTranslations;
+
+import de.greenrobot.event.EventBus;
 
 class Item implements Serializable {
 	Item(int idx, boolean state) {
@@ -98,6 +101,8 @@ public class FilterDialog extends DialogFragment {
 							category.setActive(item.state);
 							pointsAccess.setCategoryState(category, item.state);
 						}
+
+						EventBus.getDefault().post(new PointsUpdatedEvent(true));
 					}
 				})
 
